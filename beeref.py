@@ -7,7 +7,7 @@ import sys
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-from lib.view import BeeGraphicsView
+from beeref.view import BeeGraphicsView
 
 
 logger = logging.getLogger('BeeRef')
