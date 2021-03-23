@@ -5,7 +5,7 @@ from PyQt6 import QtGui
 
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
-from beeref.tests.base import BeeTestCase
+from .base import BeeTestCase
 
 
 class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):

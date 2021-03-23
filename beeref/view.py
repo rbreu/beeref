@@ -186,13 +186,13 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         self.scene.addItem(item)
 
     def save_to_file(self, filename):
-        logging.info(f'Saving to file {filename}')
+        logger.info(f'Saving to file {filename}')
         with open(filename, 'w') as f:
             f.write(bee_json.dumps({'items': self.scene.items_for_export()}))
             self.filename = filename
 
     def open_from_file(self, filename):
-        logging.info(f'Opening file {filename}')
+        logger.info(f'Opening file {filename}')
         with open(filename, 'r') as f:
             items = bee_json.loads(f.read())['items']
             self.scene.clear()
@@ -263,11 +263,11 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
                 msg + errornames)
 
     def on_action_paste_images(self):
-        logging.info('Pasting image from clipboard...')
+        logger.info('Pasting image from clipboard...')
         clipboard = QtWidgets.QApplication.clipboard()
         img = clipboard.image()
         if img.isNull():
-            logging.info('No image data in clipboard')
+            logger.info('No image data in clipboard')
         else:
             self.scene.clearSelection()
             pos = self.mapToScene(
@@ -277,7 +277,6 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
     def on_selection_changed(self):
         for action in self.actions_active_when_selection:
             action.setEnabled(self.scene.has_selection())
-        self.viewport().repaint()
 
     def recalc_scene_rect(self):
         """Resize the scene rectangle so that it is always one view width
@@ -330,12 +329,12 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             if self.get_zoom_size(max) < 10000000:
                 self.scale(factor, factor)
             else:
-                logging.debug('Maximum zoom size reached')
+                logger.debug('Maximum zoom size reached')
         else:
             if self.get_zoom_size(min) > 50:
                 self.scale(1/factor, 1/factor)
             else:
-                logging.debug('Minimum zoom size reached')
+                logger.debug('Minimum zoom size reached')
         event.accept()
 
     def mouseMoveEvent(self, event):
@@ -378,7 +377,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         self.welcome_overlay.resize(self.size())
 
     def dragEnterEvent(self, event):
-        logging.debug('Received drag enter event')
+        logger.debug('Received drag enter event')
 
         # tbd: always empty???
         print(event.mimeData().formats())
@@ -386,12 +385,12 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         if event.mimeData().hasImage():
             event.acceptProposedAction()
         else:
-            logging.info('Attempted drop not an image')
+            logger.info('Attempted drop not an image')
 
     def dragMoveEvent(self, event):
         event.acceptProposedAction()
 
     def dropEvent(self, event):
-        logging.info('Handling file drop...')
+        logger.info('Handling file drop...')
         print(event.mimeData().formats())
         # tbd

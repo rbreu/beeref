@@ -3,13 +3,14 @@ import os.path
 from PyQt6 import QtGui, QtWidgets
 
 from beeref.items import BeePixmapItem
-from beeref.tests.base import BeeTestCase
+from .base import BeeTestCase
 
 
 class BeePixmapItemTestCase(BeeTestCase):
 
     def test_init(self):
-        filename = os.path.join('beeref', 'tests', 'assets', 'test3x3.png')
+        root = os.path.dirname(__file__)
+        filename = os.path.join(root, 'assets', 'test3x3.png')
         item = BeePixmapItem(QtGui.QImage(filename), filename)
         assert item.width == 3
         assert item.height == 3
@@ -52,7 +53,8 @@ class BeePixmapItemToBeeJsonTestCase(BeeTestCase):
         assert beejson['z'] == 3.0
 
     def test_pixmap(self):
-        filename = os.path.join('beeref', 'tests', 'assets', 'test3x3.png')
+        root = os.path.dirname(__file__)
+        filename = os.path.join(root, 'assets', 'test3x3.png')
         item = BeePixmapItem(QtGui.QImage(filename))
         beejson = item.to_bee_json()
         assert len(beejson['pixmap']) > 0

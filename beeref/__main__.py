@@ -15,10 +15,13 @@ logger = logging.getLogger('BeeRef')
 
 class BeeRefMainWindow(QtWidgets.QWidget):
 
-    def __init__(self, filename=None):
+    def __init__(self, app, filename=None):
         super().__init__()
         self.setWindowTitle('BeeRef')
-        self.setWindowIcon(QtGui.QIcon(os.path.join('assets', 'logo.png')))
+        root = os.path.dirname(__file__)
+        logo = os.path.join(root, 'assets', 'logo.png')
+        logger.debug(f'Loading icon {logo}')
+        self.setWindowIcon(QtGui.QIcon(logo))
         view = BeeGraphicsView(app, self, filename)
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
@@ -46,13 +49,13 @@ def handle_sigint(signum, frame):
     QtWidgets.QApplication.quit()
 
 
-if __name__ == '__main__':
+def main():
     logger = logging.getLogger('BeeRef')
     logging.basicConfig(level=logging.DEBUG)
     app = QtWidgets.QApplication(sys.argv)
 
     filename = sys.argv[1] if len(sys.argv) > 1 else None
-    bee = BeeRefMainWindow(filename)
+    bee = BeeRefMainWindow(app, filename)
 
     signal.signal(signal.SIGINT, handle_sigint)
     # Repeatedly run python-noop to give the interpreter time to
@@ -60,3 +63,7 @@ if __name__ == '__main__':
     safe_timer(50, lambda: None)
 
     app.exec()
+
+
+if __name__ == '__main__':
+    main()

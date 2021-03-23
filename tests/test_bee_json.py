@@ -5,13 +5,14 @@ from PyQt6 import QtGui
 from beeref import bee_json
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
-from beeref.tests.base import BeeTestCase
+from .base import BeeTestCase
 
 
 class BeeJsonTestCase(BeeTestCase):
 
     def test_dumps_loads(self):
-        filename = os.path.join('lib', 'tests', 'assets', 'test3x3.png')
+        root = os.path.dirname(__file__)
+        filename = os.path.join(root, 'assets', 'test3x3.png')
         item = BeePixmapItem(QtGui.QImage(filename), filename)
         item.setScale(2)
         item.setPos(100, 200)
