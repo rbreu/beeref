@@ -7,7 +7,7 @@ View your references while you art!
 Installation via Python & pip
 -----------------------------
 
-At the moment, you need to have a working Python 3 environment to install BeeRef.
+At the moment, you need to have a working Python 3 environment to install BeeRef. Run the following command to install the development version::
 
   pip install git+https://github.com/rbreu/beeref.git
 
@@ -19,20 +19,20 @@ Notes for developers
 
 BeeRef is written in Python and PyQt6.
 
-Clone the repository and install beeref and its dependencies:
+Clone the repository and install beeref and its dependencies::
 
   git clone https://github.com/rbreu/beeref.git
   pip install -e beeref
 
-Install additional development requirements:
+Install additional development requirements::
 
   cd beeref
   pip install -r requirements/dev.txt
 
-Run unittests with:
+Run unittests with::
 
   pytest .
 
-Run codechecks with:
+Run codechecks with::
 
   flake8 .
