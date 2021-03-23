@@ -202,8 +202,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
 
     def save_to_file(self, filename):
         logger.info(f'Saving to file {filename}')
+        dump = bee_json.dumps({'items': self.scene.items_for_export()})
         with open(filename, 'w') as f:
-            f.write(bee_json.dumps({'items': self.scene.items_for_export()}))
+            f.write(dump)
             self.filename = filename
 
     def open_from_file(self, filename):
