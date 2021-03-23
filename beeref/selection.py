@@ -34,9 +34,14 @@ class SelectionItem(QtWidgets.QGraphicsItem):
     def __init__(self, item):
         super().__init__(parent=item)
         self.single_select_mode = False
-
+        self.setAcceptHoverEvents(True)
+        self.setFlags(
+            QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsSelectable
+            | QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsMovable)
         bounds = self.parentItem().boundingRect()
         pos = bounds.bottomRight()
+
+        # The intercatable shape of the bottom right scale handle:
         self.bottom_right_scale_bounds = QtCore.QRectF(
             pos.x() - self.resize_size/2,
             pos.y() - self.resize_size/2,
@@ -53,7 +58,7 @@ class SelectionItem(QtWidgets.QGraphicsItem):
 
     def shape(self):
         path = QtGui.QPainterPath()
-        path.addRect(self.boundingRect())
+        path.addRect(self.bottom_right_scale_bounds)
         return path
 
     def draw_debug_rect(self, painter, rect):
@@ -71,17 +76,11 @@ class SelectionItem(QtWidgets.QGraphicsItem):
         bounds = self.parentItem().boundingRect()
         painter.drawRect(bounds)
 
-        self.single_select_mode = self.parentItem()\
-            .scene().has_single_selection()
-
-        self.setAcceptHoverEvents(self.single_select_mode)
-        self.setAcceptDrops(self.single_select_mode)
-
+        single_select_mode = self.parentItem().scene().has_single_selection()
+        self.setEnabled(single_select_mode)
 
         # If it's a single selection, draw the handles:
-        if self.single_select_mode:
-            self.setFlags(
-                QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsSelectable)
+        if single_select_mode:
             pos = bounds.bottomRight()
             painter.fillRect(pos.x() - self.handle_size/2,
                              pos.y() - self.handle_size/2,
@@ -94,14 +93,14 @@ class SelectionItem(QtWidgets.QGraphicsItem):
             self.draw_debug_rect(painter, self.bottom_right_scale_bounds)
 
     def hoverMoveEvent(self, event):
-        if not self.single_select_mode:
-            return
-
         # In bottomright scale area?
         if self.bottom_right_scale_bounds.contains(event.pos()):
             self.setCursor(Qt.CursorShape.SizeFDiagCursor)
         else:
             self.setCursor(Qt.CursorShape.ArrowCursor)
 
-    def dragEnterEvent(self, event):
-        print('OOOOOOOOOOOOOOOdrag enter')
+    def mousePressEvent(self, event):
+        print('********mousepress')
+
+    def mouseMoveEvent(self, event):
+        print('*******mousemove')

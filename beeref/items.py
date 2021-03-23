@@ -103,31 +103,21 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
 
         return item
 
-    def create_selection(self):
-        SelectionItem(self)
+    def activate_selection(self):
+        if self.childItems():
+            self.childItems()[0].setVisible(True)
+        else:
+            SelectionItem(self)
 
     def clear_selection(self):
-        for child in self.childItems():
-            logger.debug('Removing child item...')
-            self.scene().removeItem(child)
-            logger.debug('Child item removed')
+        self.childItems()[0].setVisible(False)
 
     def itemChange(self, change, value):
-        ret = super().itemChange(change, value)
-
         if change == self.GraphicsItemChange.ItemSelectedChange:
             if value:
-                logger.debug('Item selected')
-                self.create_selection()
+                logger.debug(f'Item selected {self.filename}')
+                self.activate_selection()
             else:
-                logger.debug('Item deselected')
+                logger.debug(f'Item deselected {self.filename}')
                 self.clear_selection()
-
-        return ret
-
-    def mousePressEvent(self, event):
-        print('????')
-
-    def sceneEvent(self, event):
-        print('********', event)
-        return super().sceneEvent(event)
+        return super().itemChange(change, value)

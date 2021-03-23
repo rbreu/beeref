@@ -290,8 +290,11 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             self.add_image(img, pos)
 
     def on_selection_changed(self):
+        logger.debug('Currently selected items: %s',
+                     len(self.scene.selectedItems()))
         for action in self.actions_active_when_selection:
             action.setEnabled(self.scene.has_selection())
+        self.viewport().repaint()
 
     def recalc_scene_rect(self):
         """Resize the scene rectangle so that it is always one view width
