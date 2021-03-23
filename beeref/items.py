@@ -13,6 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
+"""Classes for items that are added to the scene by the user (images,
+text).
+"""
+
 import base64
 import logging
 
@@ -25,6 +29,7 @@ logger = logging.getLogger('BeeRef')
 
 
 class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
+    """Class for images added by the user."""
 
     def __init__(self, image, filename=None):
         super().__init__(QtGui.QPixmap.fromImage(image))
@@ -57,6 +62,7 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         return self.pixmap().size().height()
 
     def pixmap_to_str(self):
+        """Convert the pixmap data to a base64-encoded PNG for saving."""
         barray = QtCore.QByteArray()
         buffer = QtCore.QBuffer(barray)
         buffer.open(QtCore.QIODevice.OpenMode.WriteOnly)
@@ -67,11 +73,13 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
 
     @classmethod
     def qimage_from_str(self, data):
+        """Read the image date from a base64-encoded PNG for loading."""
         img = QtGui.QImage()
         img.loadFromData(base64.b64decode(data))
         return img
 
     def to_bee_json(self):
+        """For saving the item to BeeRefs native file format."""
         return {
             'cls': self.__class__.__name__,
             'scale': self.scale_factor,
@@ -83,6 +91,7 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
 
     @classmethod
     def from_bee_json(cls, obj):
+        """For loading an item from BeeRefs native file format."""
         img = cls.qimage_from_str(obj['pixmap'])
         item = cls(img, filename=obj.get('filename'))
         if 'scale' in obj:

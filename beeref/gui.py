@@ -23,6 +23,7 @@ logger = logging.getLogger('BeeRef')
 
 
 class WelcomeOverlay(QtWidgets.QWidget):
+    """Some basic info to be displayed when the scene is empty."""
 
     txt = """<p>Paste or drop images here.</p>
              <p>Right-click for more options.</p>"""

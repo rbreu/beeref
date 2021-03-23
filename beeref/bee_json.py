@@ -13,12 +13,19 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
+"""BeeRef's native file handling.
+
+BeeRef files are JSON files with images embedded as base64-encoded PNG data.
+"""
+
 import json
 
 from beeref.items import BeePixmapItem
 
 
 class BeeJSONEncoder(json.JSONEncoder):
+    """If an object defines the method ``to_bee_json``, use it to
+    serialize the object to JSON."""
 
     def default(self, obj):
         if hasattr(obj, 'to_bee_json'):
@@ -31,6 +38,9 @@ def dumps(obj):
 
 
 class BeeJSONDecoder(json.JSONDecoder):
+    """If a dictionary in the JSON file defines the key ``cls``, we use
+    that class name and run the classmethod ``from_bee_json`` on it to
+    deserialize the object."""
 
     bee_classes = [BeePixmapItem]
 

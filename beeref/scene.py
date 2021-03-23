@@ -31,6 +31,12 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             self.removeItem(item)
 
     def normalize_width_or_height(self, mode):
+        """Scale the selected images to have the same width or height, as
+        specified by ``mode``.
+
+        :param mode: "width" or "height".
+        """
+
         values = [getattr(i, mode) for i in self.selectedItems()]
         if not values:
             return
@@ -43,12 +49,18 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             item.setScale(factor)
 
     def normalize_height(self):
+        """Scale selected images to the same height."""
         return self.normalize_width_or_height('height')
 
     def normalize_width(self):
+        """Scale selected images to the same width."""
         return self.normalize_width_or_height('width')
 
     def normalize_size(self):
+        """Scale selected images to the same size.
+
+        Size meaning the area = widh * height.
+        """
         sizes = [i.width * i.height for i in self.selectedItems()]
 
         if not sizes:
@@ -79,8 +91,12 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         super().mousePressEvent(event)
 
     def items_for_export(self):
-        """Returns the items that are to be exported."""
+        """Returns the items that are to be exported.
 
-        # self.items() holds items in reverse order of addition
+        Items to be exported are items that implement ``to_bee_json``.
+        """
+
+        # self.items() holds items in reverse order of addition, so we
+        # need to reverse it for export
         return list(filter(lambda i: hasattr(i, 'to_bee_json'),
                            reversed(self.items())))

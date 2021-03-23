@@ -316,15 +316,15 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             logger.info('Maximum scene size reached')
 
     def get_zoom_size(self, func):
-        """Calculates the size of the current items' bounding box
-        in the view's coordinates.
+        """Calculates the size of all items' bounding box in the view's
+        coordinates.
 
         This helps ensure that we never zoom out too much (scene
-        becomes so tiny that they become invisible) or zoom in too
+        becomes so tiny that items become invisible) or zoom in too
         much (causing overflow errors).
 
-        `func` is a function witch takes the width and height as
-        arguments and turns it into a number, for ex. `min` or `max`.
+        :param func: Function which takes the width and height as
+        arguments and turns it into a number, for ex. ``min`` or ``max``.
         """
 
         topleft = self.mapFromScene(
