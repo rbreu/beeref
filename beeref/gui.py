@@ -15,7 +15,7 @@
 
 import logging
 
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
 
 
@@ -34,7 +34,8 @@ class WelcomeOverlay(QtWidgets.QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         label = QtWidgets.QLabel(self)
         label.setText(self.txt)
-        label.setAlignment(Qt.Alignment.AlignVCenter | Qt.Alignment.AlignCenter)
+        label.setAlignment(Qt.Alignment.AlignVCenter
+                           | Qt.Alignment.AlignCenter)
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(label)
         self.setLayout(layout)

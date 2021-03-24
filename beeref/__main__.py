@@ -65,12 +65,11 @@ def handle_sigint(signum, frame):
 
 
 def main():
-    logger = logging.getLogger('BeeRef')
     logging.basicConfig(level=logging.DEBUG)
     app = QtWidgets.QApplication(sys.argv)
 
     filename = sys.argv[1] if len(sys.argv) > 1 else None
-    bee = BeeRefMainWindow(app, filename)
+    bee = BeeRefMainWindow(app, filename)  # NOQA:F841
 
     signal.signal(signal.SIGINT, handle_sigint)
     # Repeatedly run python-noop to give the interpreter time to

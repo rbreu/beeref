@@ -103,21 +103,12 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
 
         return item
 
-    def activate_selection(self):
-        if self.childItems():
-            self.childItems()[0].setVisible(True)
-        else:
-            SelectionItem(self)
-
-    def clear_selection(self):
-        self.childItems()[0].setVisible(False)
-
     def itemChange(self, change, value):
         if change == self.GraphicsItemChange.ItemSelectedChange:
             if value:
                 logger.debug(f'Item selected {self.filename}')
-                self.activate_selection()
+                SelectionItem.activate_selection(self)
             else:
                 logger.debug(f'Item deselected {self.filename}')
-                self.clear_selection()
+                SelectionItem.clear_selection(self)
         return super().itemChange(change, value)

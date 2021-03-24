@@ -16,7 +16,7 @@
 import logging
 import math
 
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
 
 

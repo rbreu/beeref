@@ -104,3 +104,20 @@ class SelectionItem(QtWidgets.QGraphicsItem):
 
     def mouseMoveEvent(self, event):
         print('*******mousemove')
+
+    @classmethod
+    def activate_selection(cls, item):
+        """Activates/creates the selection for a given item."""
+        if item.childItems():
+            item.childItems()[0].setVisible(True)
+        else:
+            cls(item)
+
+    @classmethod
+    def clear_selection(cls, item):
+        """Deactives the selection for a given item."""
+        # Is it a performance issue to keep the selection items and just
+        # hide them?
+        # Deleting them might have been the cause of segfaults when
+        # they are in the middle of receiving events...
+        item.childItems()[0].setVisible(False)

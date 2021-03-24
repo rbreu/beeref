@@ -17,7 +17,7 @@ setup(
             'beeref = beeref.__main__:main'
         ]
     },
-    package_data = {
+    package_data={
         'assets': ['*.png', '*.svg'],
     },
 )

@@ -1,9 +1,6 @@
 import math
 from unittest.mock import patch, MagicMock
 
-from PyQt6 import QtGui
-
-from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
 from .base import BeeTestCase
 

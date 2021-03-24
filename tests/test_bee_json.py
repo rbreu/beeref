@@ -4,7 +4,6 @@ from PyQt6 import QtGui
 
 from beeref import bee_json
 from beeref.items import BeePixmapItem
-from beeref.scene import BeeGraphicsScene
 from .base import BeeTestCase
 
 
