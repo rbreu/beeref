@@ -4,10 +4,13 @@ BeeRef — A Simple Reference Image Viewer
 View your references while you art!
 
 
-|github-ci-flake8|
+|github-ci-flake8| |github-ci-pytest|
 
 .. |github-ci-flake8| image:: https://github.com/rbreu/beeref/actions/workflows/flake8.yml/badge.svg
    :target: https://github.com/rbreu/beeref/actions/workflows/flake8.yml
+
+.. |github-ci-pytest| image:: https://github.com/rbreu/beeref/actions/workflows/pytest.yml/badge.svg
+   :target: https://github.com/rbreu/beeref/actions/workflows/pytest.yml
 
 
 Installation via Python & pip
