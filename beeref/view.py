@@ -19,6 +19,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
 from beeref import bee_json
+from beeref import commands
 from beeref.gui import WelcomeOverlay
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
@@ -62,6 +63,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         self.build_actions()
 
         self.welcome_overlay = WelcomeOverlay(self)
+        self.undo_stack = QtGui.QUndoStack(self)
+        self.undo_stack.setUndoLimit(100)
 
         # Load file given via command line
         if filename:
@@ -116,35 +119,45 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         ]
         add_to_menu(self.context_menu.addMenu('&File'), actions)
 
-        # Add menu
+        # Main menu
         actions = [
             {
-                'text': 'Images from &files...',
+                'text': '&Insert Images...',
                 'shortcuts': ['Ctrl+I'],
-                'callback': self.on_action_load_images,
-            },
-            {
-                'text': 'Image from &clipboard...',
-                'shortcuts': ['Ctrl+V'],
-                'callback': self.on_action_paste_images,
+                'callback': self.on_action_insert_images,
             },
 
         ]
-        add_to_menu(self.context_menu.addMenu('&Add'), actions)
+        add_to_menu(self.context_menu, actions)
 
         # Edit menu
         actions = [
             {
+                'text': '&Undo',
+                'shortcuts': ['Ctrl+Z'],
+                'callback': self.on_action_undo,
+            },
+            {
+                'text': '&Redo',
+                'shortcuts': ['Ctrl+Shift+Z'],
+                'callback': self.on_action_redo,
+            },
+            {
+                'text': '&Paste',
+                'shortcuts': ['Ctrl+V'],
+                'callback': self.on_action_paste,
+            },
+            {
                 'text': '&Delete',
                 'shortcuts': ['Del'],
-                'callback': self.on_action_delete_images,
+                'callback': self.on_action_delete_items,
                 'group': self.actions_active_when_selection,
                 'enabled': False,
             },
         ]
-        items_menu = self.context_menu.addMenu('&Items')
-        add_to_menu(items_menu, actions)
+        add_to_menu(self.context_menu.addMenu('&Edit'), actions)
 
+        items_menu = self.context_menu.addMenu('&Items')
         actions = [
             {
                 'text': '&Height',
@@ -182,8 +195,17 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         return QtCore.QPoint(self.size().width() / 2,
                              self.size().height() / 2)
 
-    def on_action_delete_images(self):
-        self.scene.delete_selected_items()
+    def on_action_undo(self):
+        logger.debug('Undo: %s' % self.undo_stack.undoText())
+        self.undo_stack.undo()
+
+    def on_action_redo(self):
+        logger.debug('Redo: %s' % self.undo_stack.redoText())
+        self.undo_stack.redo()
+
+    def on_action_delete_items(self):
+        logger.debug('Deleting items...')
+        self.undo_stack.push(commands.DeleteSelectedItems(self.scene))
 
     def on_action_normalize_height(self):
         self.scene.normalize_height()
@@ -194,11 +216,15 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
     def on_action_normalize_size(self):
         self.scene.normalize_size()
 
-    def add_image(self, img, pos, filename=None):
-        item = BeePixmapItem(img, filename)
-        item.set_pos_center(pos.x(), pos.y())
-        item.setSelected(True)
-        self.scene.addItem(item)
+    def add_images(self, images):
+        if isinstance(images, QtGui.QImage):
+            images = [images]
+        items = []
+        for img in images:
+            item = BeePixmapItem(img, getattr(img, 'filename', None))
+            item.set_pos_center(img.pos.x(), img.pos.y())
+            items.append(item)
+        self.undo_stack.push(commands.InsertImages(self.scene, items))
 
     def save_to_file(self, filename):
         logger.info(f'Saving to file {filename}')
@@ -244,27 +270,28 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         logger.info('User quit. Exiting...')
         self.app.quit()
 
-    def on_action_load_images(self):
+    def on_action_insert_images(self):
         formats = self.get_supported_image_formats(QtGui.QImageReader)
         filenames, f = QtWidgets.QFileDialog.getOpenFileNames(
             parent=self,
             caption='Select one ore more images to open',
             filter=f'Images ({formats})')
 
-        if filenames:
-            self.scene.clearSelection()
-
         pos = self.mapToScene(self.get_view_center())
         errors = []
+        images = []
         for filename in filenames:
             logger.info(f'Loading image from file {filename}')
             img = QtGui.QImage(filename)
             if img.isNull():
                 errors.append(filename)
                 continue
-            self.add_image(img, pos, filename)
+            img.pos = pos
+            img.filename = filename
+            images.append(img)
             pos.setX(pos.x() + 50)
             pos.setY(pos.y() + 50)
+        self.add_images(images)
 
         if errors:
             errornames = [
@@ -278,17 +305,17 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
                 'Problem loading images',
                 msg + errornames)
 
-    def on_action_paste_images(self):
-        logger.info('Pasting image from clipboard...')
+    def on_action_paste(self):
+        logger.info('Pasting from clipboard...')
         clipboard = QtWidgets.QApplication.clipboard()
         img = clipboard.image()
         if img.isNull():
             logger.info('No image data in clipboard')
         else:
             self.scene.clearSelection()
-            pos = self.mapToScene(
+            img.pos = self.mapToScene(
                 self.mapFromGlobal(self.cursor().pos()))
-            self.add_image(img, pos)
+            self.add_images(img)
 
     def on_selection_changed(self):
         logger.debug('Currently selected items: %s',

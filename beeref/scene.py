@@ -25,11 +25,6 @@ logger = logging.getLogger('BeeRef')
 
 class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
-    def delete_selected_items(self):
-        for item in self.selectedItems():
-            logger.debug('Deleting item...')
-            self.removeItem(item)
-
     def normalize_width_or_height(self, mode):
         """Scale the selected images to have the same width or height, as
         specified by ``mode``.
