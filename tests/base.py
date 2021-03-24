@@ -12,3 +12,4 @@ class BeeTestCase(TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.app.quit()
+        del cls.app
