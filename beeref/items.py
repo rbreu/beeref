@@ -43,6 +43,8 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
             | QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsSelectable)
 
     def setScale(self, factor):
+        if factor <= 0:
+            return
         self.scale_factor = factor
         logger.debug(f'Setting scale for image "{self.filename}" to {factor}')
         super().setScale(factor)

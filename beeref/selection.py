@@ -40,6 +40,7 @@ class SelectionItem(QtWidgets.QGraphicsItem):
             | QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsMovable)
         bounds = self.parentItem().boundingRect()
         pos = bounds.bottomRight()
+        self.scale_active = False
 
         # The intercatable shape of the bottom right scale handle:
         self.bottom_right_scale_bounds = QtCore.QRectF(
@@ -100,10 +101,21 @@ class SelectionItem(QtWidgets.QGraphicsItem):
             self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def mousePressEvent(self, event):
-        print('********mousepress')
+        if event.button() == Qt.MouseButtons.LeftButton:
+            self.scale_active = True
+            self.orig_scale_factor = self.parentItem().scale()
+            self.scale_start = event.scenePos()
 
     def mouseMoveEvent(self, event):
-        print('*******mousemove')
+        if self.scale_active:
+            imgsize = self.parentItem().width + self.parentItem().height
+            p = event.scenePos() - self.scale_start
+            mousemove = p.x() + p.y()
+            scale = self.orig_scale_factor + mousemove / imgsize
+            self.parentItem().setScale(scale)
+
+    def mouseReleaseEvent(self, event):
+        self.scale_active = False
 
     @classmethod
     def activate_selection(cls, item):
