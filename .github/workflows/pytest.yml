@@ -15,6 +15,7 @@ jobs:
         python-version: 3.8
     - name: Install dependencies
       run: |
+        sudo apt install libgl1-mesa-glx
         python -m pip install --upgrade pip
         pip install .
         pip install pytest
