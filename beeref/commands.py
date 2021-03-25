@@ -16,10 +16,10 @@
 from PyQt6 import QtGui
 
 
-class InsertImages(QtGui.QUndoCommand):
+class InsertItems(QtGui.QUndoCommand):
 
     def __init__(self, scene, items):
-        super().__init__('Insert images')
+        super().__init__('Insert items')
         self.scene = scene
         self.items = items
 
@@ -35,23 +35,26 @@ class InsertImages(QtGui.QUndoCommand):
             self.scene.removeItem(item)
 
 
-class DeleteSelectedItems(QtGui.QUndoCommand):
+class DeleteItems(QtGui.QUndoCommand):
 
-    def __init__(self, scene):
-        super().__init__('Delete images')
+    def __init__(self, scene, items):
+        super().__init__('Delete items')
         self.scene = scene
-        self.items = []
+        self.items = items
 
     def redo(self):
-        for item in self.scene.selectedItems():
-            self.items.append(item)
+        print(len(self.scene.items()))
+        for item in self.items:
             self.scene.removeItem(item)
+        print(len(self.scene.items()))
 
     def undo(self):
+        print(len(self.scene.items()))
         self.scene.clearSelection()
         for item in self.items:
             item.setSelected(True)
             self.scene.addItem(item)
+        print(len(self.scene.items()))
 
 
 class MoveItemsBy(QtGui.QUndoCommand):

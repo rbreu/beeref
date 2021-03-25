@@ -222,7 +222,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
 
     def on_action_delete_items(self):
         logger.debug('Deleting items...')
-        self.undo_stack.push(commands.DeleteSelectedItems(self.scene))
+        self.undo_stack.push(
+            commands.DeleteItems(self.scene, self.scene.selectedItems()))
 
     def on_action_normalize_height(self):
         self.scene.normalize_height()
@@ -241,7 +242,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             item = BeePixmapItem(img, getattr(img, 'filename', None))
             item.set_pos_center(img.pos.x(), img.pos.y())
             items.append(item)
-        self.undo_stack.push(commands.InsertImages(self.scene, items))
+        self.undo_stack.push(commands.InsertItems(self.scene, items))
 
     def save_to_file(self, filename):
         logger.info(f'Saving to file {filename}')

@@ -24,12 +24,6 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
         item1.setScale.assert_called_once_with(1.5)
         item2.setScale.assert_called_once_with(0.75)
 
-        item1.setScale.reset_mock()
-        item2.setScale.reset_mock()
-        self.undo_stack.undo()
-        item1.setScale.assert_called_once_with(1)
-        item2.setScale.assert_called_once_with(3)
-
     def test_normalize_width(self):
         item1 = MagicMock(width=100, scale_factor=1)
         item2 = MagicMock(width=200, scale_factor=3)
@@ -41,12 +35,6 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
         item1.setScale.assert_called_once_with(1.5)
         item2.setScale.assert_called_once_with(0.75)
 
-        item1.setScale.reset_mock()
-        item2.setScale.reset_mock()
-        self.undo_stack.undo()
-        item1.setScale.assert_called_once_with(1)
-        item2.setScale.assert_called_once_with(3)
-
     def test_normalize_size(self):
         item1 = MagicMock(width=100, height=200, scale_factor=1)
         item2 = MagicMock(width=400, height=100, scale_factor=3)
@@ -57,9 +45,3 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
 
         item1.setScale.assert_called_once_with(math.sqrt(1.5))
         item2.setScale.assert_called_once_with(math.sqrt(0.75))
-
-        item1.setScale.reset_mock()
-        item2.setScale.reset_mock()
-        self.undo_stack.undo()
-        item1.setScale.assert_called_once_with(1)
-        item2.setScale.assert_called_once_with(3)
