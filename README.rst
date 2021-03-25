@@ -3,6 +3,7 @@ BeeRef — A Simple Reference Image Viewer
 
 View your references while you art!
 
+.. image:: https://github.com/rbreu/beeref/blob/main/images/screenshot.jpg
 
 |github-ci-flake8| |github-ci-pytest|
 
