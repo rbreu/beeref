@@ -19,11 +19,17 @@ import math
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
 
+from beeref import commands
 
 logger = logging.getLogger('BeeRef')
 
 
 class BeeGraphicsScene(QtWidgets.QGraphicsScene):
+
+    def __init__(self, undo_stack):
+        super().__init__()
+        self.move_active = False
+        self.undo_stack = undo_stack
 
     def normalize_width_or_height(self, mode):
         """Scale the selected images to have the same width or height, as
@@ -39,9 +45,11 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         logger.debug(f'Calculated average {mode} {avg}')
 
+        scale_factors = []
         for item in self.selectedItems():
-            factor = avg / getattr(item, mode)
-            item.setScale(factor)
+            scale_factors.append(avg / getattr(item, mode))
+        self.undo_stack.push(
+            commands.NormalizeItems(self.selectedItems(), scale_factors))
 
     def normalize_height(self):
         """Scale selected images to the same height."""
@@ -64,9 +72,11 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         avg = sum(sizes) / len(sizes)
         logger.debug(f'Calculated average size {avg}')
 
+        scale_factors = []
         for item in self.selectedItems():
-            factor = math.sqrt(avg / item.width / item.height)
-            item.setScale(factor)
+            scale_factors.append(math.sqrt(avg / item.width / item.height))
+        self.undo_stack.push(
+            commands.NormalizeItems(self.selectedItems(), scale_factors))
 
     def has_selection(self):
         """Checks whether there are currently items selected."""
@@ -83,7 +93,24 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             # Right-click invokes the context menu on the
             # GraphicsView. We don't need it here.
             return
+
+        if event.button() == Qt.MouseButtons.LeftButton:
+            self.move_active = True
+            self.move_start = event.scenePos()
+
         super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+
+        if self.move_active and self.has_selection():
+            delta = event.scenePos() - self.move_start
+            if not delta.isNull():
+                self.undo_stack.push(
+                    commands.MoveItemsBy(self.selectedItems(),
+                                         delta.x(), delta.y(),
+                                         ignore_first_redo=True))
+            self.move_active = False
+        super().mouseReleaseEvent(event)
 
     def items_for_export(self):
         """Returns the items that are to be exported.

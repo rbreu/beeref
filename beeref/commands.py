@@ -52,3 +52,62 @@ class DeleteSelectedItems(QtGui.QUndoCommand):
         for item in self.items:
             item.setSelected(True)
             self.scene.addItem(item)
+
+
+class MoveItemsBy(QtGui.QUndoCommand):
+
+    def __init__(self, items, x, y, ignore_first_redo=False):
+        super().__init__('Move items')
+        self.items = items
+        self.delta_x = x
+        self.delta_y = y
+        self.ignore_first_redo = ignore_first_redo
+
+    def redo(self):
+        if self.ignore_first_redo:
+            self.ignore_first_redo = False
+            return
+        for item in self.items:
+            item.moveBy(self.delta_x, self.delta_y)
+
+    def undo(self):
+        for item in self.items:
+            item.moveBy(-self.delta_x, -self.delta_y)
+
+
+class ScaleItemsBy(QtGui.QUndoCommand):
+
+    def __init__(self, items, factor, ignore_first_redo=False):
+        super().__init__('Scale items')
+        self.items = items
+        self.factor = factor
+        self.ignore_first_redo = ignore_first_redo
+
+    def redo(self):
+        if self.ignore_first_redo:
+            self.ignore_first_redo = False
+            return
+        for item in self.items:
+            item.setScale(item.scale_factor + self.factor)
+
+    def undo(self):
+        for item in self.items:
+            item.setScale(item.scale_factor - self.factor)
+
+
+class NormalizeItems(QtGui.QUndoCommand):
+
+    def __init__(self, items, scale_factors):
+        super().__init__('Normalize items')
+        self.items = items
+        self.scale_factors = scale_factors
+
+    def redo(self):
+        self.old_scale_factors = []
+        for item, factor in zip(self.items, self.scale_factors):
+            self.old_scale_factors.append(item.scale_factor)
+            item.setScale(factor)
+
+    def undo(self):
+        for item, factor in zip(self.items, self.old_scale_factors):
+            item.setScale(factor)

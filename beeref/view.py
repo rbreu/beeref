@@ -34,7 +34,12 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         super().__init__(parent)
         self.app = app
 
-        self.scene = BeeGraphicsScene()
+        self.undo_stack = QtGui.QUndoStack(self)
+        self.undo_stack.setUndoLimit(10)
+        self.undo_stack.canRedoChanged.connect(self.on_can_redo_changed)
+        self.undo_stack.canUndoChanged.connect(self.on_can_undo_changed)
+
+        self.scene = BeeGraphicsScene(self.undo_stack)
         self.filename = None
 
         # TBD: make scrollbar configurable
@@ -63,8 +68,6 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         self.build_actions()
 
         self.welcome_overlay = WelcomeOverlay(self)
-        self.undo_stack = QtGui.QUndoStack(self)
-        self.undo_stack.setUndoLimit(100)
 
         # Load file given via command line
         if filename:
@@ -81,6 +84,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
     def build_actions(self):
 
         self.actions_active_when_selection = []
+        self.actions_active_when_can_undo = []
+        self.actions_active_when_can_redo = []
 
         def add_to_menu(menu, actions):
             for action in actions:
@@ -136,11 +141,15 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
                 'text': '&Undo',
                 'shortcuts': ['Ctrl+Z'],
                 'callback': self.on_action_undo,
+                'group': self.actions_active_when_can_undo,
+                'enabled': False,
             },
             {
                 'text': '&Redo',
                 'shortcuts': ['Ctrl+Shift+Z'],
                 'callback': self.on_action_redo,
+                'group': self.actions_active_when_can_redo,
+                'enabled': False,
             },
             {
                 'text': '&Paste',
@@ -182,6 +191,14 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             },
         ]
         add_to_menu(items_menu.addMenu('&Normalize'), actions)
+
+    def on_can_redo_changed(self, can_redo):
+        for action in self.actions_active_when_can_redo:
+            action.setEnabled(can_redo)
+
+    def on_can_undo_changed(self, can_undo):
+        for action in self.actions_active_when_can_undo:
+            action.setEnabled(can_undo)
 
     def on_context_menu(self, point):
         self.context_menu.exec(self.mapToGlobal(point))
@@ -238,6 +255,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         with open(filename, 'r') as f:
             items = bee_json.loads(f.read())['items']
             self.scene.clear()
+            self.undo_stack.clear()
             for item in items:
                 self.scene.addItem(item)
             self.filename = filename

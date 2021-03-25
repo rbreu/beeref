@@ -18,6 +18,8 @@ import logging
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
+from beeref import commands
+
 
 logger = logging.getLogger('BeeRef')
 
@@ -106,15 +108,21 @@ class SelectionItem(QtWidgets.QGraphicsItem):
             self.orig_scale_factor = self.parentItem().scale()
             self.scale_start = event.scenePos()
 
+    def get_scale_delta(self, event):
+        imgsize = self.parentItem().width + self.parentItem().height
+        p = event.scenePos() - self.scale_start
+        return (p.x() + p.y()) / imgsize
+
     def mouseMoveEvent(self, event):
         if self.scale_active:
-            imgsize = self.parentItem().width + self.parentItem().height
-            p = event.scenePos() - self.scale_start
-            mousemove = p.x() + p.y()
-            scale = self.orig_scale_factor + mousemove / imgsize
-            self.parentItem().setScale(scale)
+            delta = self.get_scale_delta(event)
+            self.parentItem().setScale(self.orig_scale_factor + delta)
 
     def mouseReleaseEvent(self, event):
+        self.parentItem().scene().undo_stack.push(
+            commands.ScaleItemsBy(self.scene().selectedItems(),
+                                  self.get_scale_delta(event),
+                                  ignore_first_redo=True))
         self.scale_active = False
 
     @classmethod
