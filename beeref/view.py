@@ -33,6 +33,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
     def __init__(self, app, parent=None, filename=None):
         super().__init__(parent)
         self.app = app
+        self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(60, 60, 60)))
 
         self.undo_stack = QtGui.QUndoStack(self)
         self.undo_stack.setUndoLimit(10)
@@ -250,6 +251,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         with open(filename, 'w') as f:
             f.write(dump)
             self.filename = filename
+        logger.debug('Saved!')
 
     def open_from_file(self, filename):
         logger.info(f'Opening file {filename}')

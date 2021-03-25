@@ -33,6 +33,7 @@ class WelcomeOverlay(QtWidgets.QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         label = QtWidgets.QLabel(self)
+        label.setStyleSheet("QLabel { color: #cccccc; }")
         label.setText(self.txt)
         label.setAlignment(Qt.Alignment.AlignVCenter
                            | Qt.Alignment.AlignCenter)
