@@ -21,7 +21,7 @@ Run codechecks with::
 
   flake8 .
 
-Run unittests with coverage report:
+Run unittests with coverage report::
 
   coverage run --source=beeref -m pytest;
   coverage html
