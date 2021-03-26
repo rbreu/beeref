@@ -259,6 +259,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             filter='BeeRef File (*.bee)')
         if filename:
             self.open_from_file(filename)
+            self.filename = filename
 
     def on_action_save_as(self):
         filename, f = QtWidgets.QFileDialog.getSaveFileName(

@@ -30,6 +30,7 @@ def load(filename, scene):
 
 def save(filename, scene, create_new=False):
     logger.info(f'Saving to file {filename}...')
+    logger.debug(f'Create new: {create_new}')
     io = SQLiteIO(filename, scene, create_new)
     io.write()
     logger.debug('Saved!')

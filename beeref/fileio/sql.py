@@ -94,11 +94,12 @@ class SQLiteIO:
 
     def read(self):
         rows = self.fetchall(
-            'SELECT pos_x, pos_y, scale, filename, imgdata.data '
+            'SELECT pos_x, pos_y, scale, filename, imgdata.data, items.id '
             'FROM items '
             'INNER JOIN imgdata on imgdata.item_id = items.id')
         for row in rows:
             item = BeePixmapItem(QtGui.QImage(), filename=row[3])
+            item.save_id = row[5]
             item.pixmap_from_bytes(row[4])
             item.setPos(row[0], row[1])
             item.setScale(row[2])

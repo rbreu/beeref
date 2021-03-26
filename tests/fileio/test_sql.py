@@ -148,6 +148,7 @@ class SQLiteIOLOadTestCase(BeeTestCase):
         self.io.read()
         assert len(self.scene.items()) == 1
         item = self.scene.items()[0]
+        assert item.save_id == 1
         assert item.pos().x() == 22.2
         assert item.pos().y() == 33.3
         assert item.scale_factor == 3.4
