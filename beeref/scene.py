@@ -112,13 +112,10 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             self.move_active = False
         super().mouseReleaseEvent(event)
 
-    def items_for_export(self):
-        """Returns the items that are to be exported.
+    def items_for_save(self):
+        """Returns the items that are to be saved.
 
-        Items to be exported are items that implement ``to_bee_json``.
+        Items to be saved are items that have an save_id attribute.
         """
 
-        # self.items() holds items in reverse order of addition, so we
-        # need to reverse it for export
-        return list(filter(lambda i: hasattr(i, 'to_bee_json'),
-                           reversed(self.items())))
+        return filter(lambda i: hasattr(i, 'save_id'), self.items())

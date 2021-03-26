@@ -18,8 +18,8 @@ import logging
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
-from beeref import bee_json
 from beeref import commands
+from beeref import fileio
 from beeref.gui import WelcomeOverlay
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
@@ -245,23 +245,12 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             items.append(item)
         self.undo_stack.push(commands.InsertItems(self.scene, items))
 
-    def save_to_file(self, filename):
-        logger.info(f'Saving to file {filename}')
-        dump = bee_json.dumps({'items': self.scene.items_for_export()})
-        with open(filename, 'w') as f:
-            f.write(dump)
-            self.filename = filename
-        logger.debug('Saved!')
-
     def open_from_file(self, filename):
         logger.info(f'Opening file {filename}')
-        with open(filename, 'r') as f:
-            items = bee_json.loads(f.read())['items']
-            self.scene.clear()
-            self.undo_stack.clear()
-            for item in items:
-                self.scene.addItem(item)
-            self.filename = filename
+        self.scene.clear()
+        self.undo_stack.clear()
+        fileio.load(filename, self.scene)
+        self.filename = filename
 
     def on_action_open(self):
         filename, f = QtWidgets.QFileDialog.getOpenFileName(
@@ -279,13 +268,14 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         if filename:
             if not filename.endswith('.bee'):
                 filename = f'{filename}.bee'
-            self.save_to_file(filename)
+            fileio.save(filename, self.scene, create_new=True)
+            self.filename = filename
 
     def on_action_save(self):
         if not self.filename:
             self.on_action_save_as()
         else:
-            self.save_to_file(self.filename)
+            fileio.save(self.filename, self.scene, create_new=False)
 
     def on_action_quit(self):
         logger.info('User quit. Exiting...')

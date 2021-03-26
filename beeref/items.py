@@ -17,7 +17,6 @@
 text).
 """
 
-import base64
 import logging
 
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -36,8 +35,10 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         logger.debug(f'Initialized image "{filename}" with dimensions: '
                      f'{self.width} x {self.height} at index {self.zValue()}')
 
+        self.save_id = None
         self.filename = filename
         self.scale_factor = 1
+
         self.setFlags(
             QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsMovable
             | QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsSelectable)
@@ -63,47 +64,20 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
     def height(self):
         return self.pixmap().size().height()
 
-    def pixmap_to_str(self):
-        """Convert the pixmap data to a base64-encoded PNG for saving."""
+    def pixmap_to_bytes(self):
+        """Convert the pixmap data to PNG bytestring."""
         barray = QtCore.QByteArray()
         buffer = QtCore.QBuffer(barray)
         buffer.open(QtCore.QIODevice.OpenMode.WriteOnly)
         img = self.pixmap().toImage()
         img.save(buffer, 'PNG')
-        data = base64.b64encode(barray.data())
-        return data.decode('ascii')
+        return barray.data()
 
-    @classmethod
-    def qimage_from_str(self, data):
-        """Read the image date from a base64-encoded PNG for loading."""
-        img = QtGui.QImage()
-        img.loadFromData(base64.b64decode(data))
-        return img
-
-    def to_bee_json(self):
-        """For saving the item to BeeRefs native file format."""
-        return {
-            'cls': self.__class__.__name__,
-            'scale': self.scale_factor,
-            'pixmap': self.pixmap_to_str(),
-            'pos': [self.pos().x(), self.pos().y()],
-            'z': self.zValue(),
-            'filename': self.filename,
-        }
-
-    @classmethod
-    def from_bee_json(cls, obj):
-        """For loading an item from BeeRefs native file format."""
-        img = cls.qimage_from_str(obj['pixmap'])
-        item = cls(img, filename=obj.get('filename'))
-        if 'scale' in obj:
-            item.setScale(obj['scale'])
-        if 'pos' in obj:
-            item.setPos(*obj['pos'])
-        if 'z' in obj:
-            item.setZValue(obj['z'])
-
-        return item
+    def pixmap_from_bytes(self, data):
+        """Set image pimap from a bytestring."""
+        pixmap = QtGui.QPixmap()
+        pixmap.loadFromData(data)
+        self.setPixmap(pixmap)
 
     def itemChange(self, change, value):
         if change == self.GraphicsItemChange.ItemSelectedChange:
