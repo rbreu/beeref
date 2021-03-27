@@ -249,8 +249,15 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         logger.info(f'Opening file {filename}')
         self.scene.clear()
         self.undo_stack.clear()
-        fileio.load(filename, self.scene)
-        self.filename = filename
+        try:
+            fileio.load(filename, self.scene)
+            self.filename = filename
+        except fileio.BeeFileIOError:
+            QtWidgets.QMessageBox.warning(
+                self,
+                'Problem loading file',
+                ('<p>Problem loading file %s</p>'
+                 '<p>Not accessible or not a proper bee file</p>') % filename)
 
     def on_action_open(self):
         filename, f = QtWidgets.QFileDialog.getOpenFileName(
@@ -269,8 +276,15 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         if filename:
             if not filename.endswith('.bee'):
                 filename = f'{filename}.bee'
-            fileio.save(filename, self.scene, create_new=True)
-            self.filename = filename
+            try:
+                fileio.save(filename, self.scene, create_new=True)
+                self.filename = filename
+            except fileio.BeeFileIOError:
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    'Problem saving file',
+                    ('<p>Problem saving file %s</p>'
+                     '<p>File/directory not accessible</p>') % filename)
 
     def on_action_save(self):
         if not self.filename:

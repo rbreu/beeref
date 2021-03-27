@@ -1,8 +1,11 @@
 import os.path
+import tempfile
 from unittest.mock import MagicMock, patch
 
 from PyQt6 import QtGui
+import pytest
 
+from beeref.fileio.errors import BeeFileIOError
 from beeref.fileio.sql import SQLiteIO
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
@@ -43,6 +46,21 @@ class SQLiteIOTestCase(BeeTestCase):
             'SELECT COUNT(*) FROM sqlite_master '
             'WHERE type="table" AND name NOT LIKE "sqlite_%"')
         assert result[0] == 0
+
+    def test_readonly_doesnt_allow_write(self):
+        scene = BeeGraphicsScene(None)
+        with tempfile.TemporaryDirectory() as dirname:
+            fname = os.path.join(dirname, 'test.bee')
+            with open(fname, 'w') as f:
+                f.write('foobar')
+            io = SQLiteIO(fname, scene, readonly=True)
+
+            with pytest.raises(BeeFileIOError) as exinfo:
+                io.write()
+
+            assert exinfo.value.filename == fname
+            with open(fname, 'r') as f:
+                f.read() == 'foobar'
 
 
 class SQLiteIOWriteTestCase(BeeTestCase):
@@ -126,32 +144,74 @@ class SQLiteIOWriteTestCase(BeeTestCase):
         assert self.io.fetchone('SELECT COUNT(*) from items') == (0,)
         assert self.io.fetchone('SELECT COUNT(*) from sqlar') == (0,)
 
+    def test_update_recovers_from_borked_file(self):
+        item = BeePixmapItem(QtGui.QImage(), filename='bee.png')
+        self.scene.addItem(item)
 
-class SQLiteIOLOadTestCase(BeeTestCase):
+        with tempfile.TemporaryDirectory() as dirname:
+            fname = os.path.join(dirname, 'test.bee')
+            with open(fname, 'w') as f:
+                f.write('foobar')
+
+            io = SQLiteIO(fname, self.scene, create_new=False)
+            io.write()
+            result = io.fetchone('SELECT COUNT(*) FROM items')
+            assert result[0] == 1
+
+
+class SQLiteIOReadTestCase(BeeTestCase):
 
     def setUp(self):
         self.scene = BeeGraphicsScene(None)
-        self.io = SQLiteIO(':memory:', self.scene, create_new=True)
 
-    def test_loads(self):
+    def test_reads_readonly(self):
         root = os.path.dirname(__file__)
-        filename = os.path.join(root, '..', 'assets', 'test3x3.png')
-        with open(filename, 'rb') as f:
+        imgfilename = os.path.join(root, '..', 'assets', 'test3x3.png')
+        with open(imgfilename, 'rb') as f:
             imgdata = f.read()
-        self.io.create_schema_on_new()
-        self.io.ex(
-            'INSERT INTO items (type, pos_x, pos_y, scale, filename) '
-            'VALUES (?, ?, ?, ?, ?) ',
-            ('pixmap', 22.2, 33.3, 3.4, 'bee.png'))
-        self.io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)',
-                   (1, imgdata))
-        self.io.read()
-        assert len(self.scene.items()) == 1
-        item = self.scene.items()[0]
-        assert item.save_id == 1
-        assert item.pos().x() == 22.2
-        assert item.pos().y() == 33.3
-        assert item.scale_factor == 3.4
-        assert item.filename == 'bee.png'
-        assert item.width == 3
-        assert item.height == 3
+
+        with tempfile.TemporaryDirectory() as dirname:
+            fname = os.path.join(dirname, 'test.bee')
+            io = SQLiteIO(fname, self.scene, create_new=True)
+            io.create_schema_on_new()
+            io.ex('INSERT INTO items (type, pos_x, pos_y, scale, filename) '
+                  'VALUES (?, ?, ?, ?, ?) ',
+                  ('pixmap', 22.2, 33.3, 3.4, 'bee.png'))
+            io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)',
+                  (1, imgdata))
+            io.connection.commit()
+            del(io)
+
+            io = SQLiteIO(fname, self.scene, readonly=True)
+            io.read()
+            assert len(self.scene.items()) == 1
+            item = self.scene.items()[0]
+            assert item.save_id == 1
+            assert item.pos().x() == 22.2
+            assert item.pos().y() == 33.3
+            assert item.scale_factor == 3.4
+            assert item.filename == 'bee.png'
+            assert item.width == 3
+            assert item.height == 3
+
+    def test_raises_error_when_file_borked(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            fname = os.path.join(dirname, 'test.bee')
+            with open(fname, 'w') as f:
+                f.write('foobar')
+
+            io = SQLiteIO(fname, self.scene, readonly=True)
+            with pytest.raises(BeeFileIOError) as exinfo:
+                io.read()
+            assert exinfo.value.filename == fname
+
+    def test_reads_raises_error_when_file_empty(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            fname = os.path.join(dirname, 'test.bee')
+            io = SQLiteIO(fname, self.scene, readonly=True)
+            with pytest.raises(BeeFileIOError) as exinfo:
+                io.read()
+            assert exinfo.value.filename == fname
+
+            # should not create a file on reading!
+            assert os.path.isfile(fname) is False

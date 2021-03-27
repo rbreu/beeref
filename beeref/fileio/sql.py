@@ -23,28 +23,75 @@ https://www.sqlite.org/appfileformat.html
 https://www.sqlite.org/sqlar.html
 """
 
+import logging
 import os
 import sqlite3
 
 from PyQt6 import QtGui
 
 from beeref.items import BeePixmapItem
+from .errors import BeeFileIOError
 from .schema import SCHEMA
+
+
+logger = logging.getLogger('BeeRef')
+
+
+def handle_sqlite_errors(func):
+    def wrapper(self, *args, **kwargs):
+        try:
+            func(self, *args, **kwargs)
+        except sqlite3.Error as e:
+            logger.exception(f'Error while reading/writing {self.filename}')
+            raise BeeFileIOError(msg=str(e), filename=self.filename) from e
+
+    return wrapper
 
 
 class SQLiteIO:
     USER_VERSION = 1
     APPLICATION_ID = 2060242126
 
-    def __init__(self, filename, scene, create_new=False):
+    def __init__(self, filename, scene, create_new=False, readonly=False):
         self.scene = scene
-        self.filename = filename
         self.create_new = create_new
-        # TBD: error handling (different for existing files/new files...)
-        if self.create_new and os.path.exists(self.filename):
+        self.filename = filename
+        self.readonly = readonly
+
+    def __del__(self):
+        self._close_connection()
+
+    def _close_connection(self):
+        if hasattr(self, '_connection'):
+            self._connection.close()
+            delattr(self, '_connection')
+        if hasattr(self, '_cursor'):
+            delattr(self, '_cursor')
+
+    def _establish_connection(self):
+        if (self.create_new
+                and not self.readonly
+                and os.path.exists(self.filename)):
             os.remove(self.filename)
-        self.connection = sqlite3.connect(self.filename)
-        self.cursor = self.connection.cursor()
+
+        if self.readonly:
+            self._connection = sqlite3.connect(
+                f'file:{self.filename}?mode=ro')
+        else:
+            self._connection = sqlite3.connect(self.filename)
+        self._cursor = self.connection.cursor()
+
+    @property
+    def connection(self):
+        if not hasattr(self, '_connection'):
+            self._establish_connection()
+        return self._connection
+
+    @property
+    def cursor(self):
+        if not hasattr(self, '_cursor'):
+            self._establish_connection()
+        return self._cursor
 
     def ex(self, *args, **kwargs):
         return self.cursor.execute(*args, **kwargs)
@@ -70,6 +117,7 @@ class SQLiteIO:
             for schema in SCHEMA:
                 self.ex(schema)
 
+    @handle_sqlite_errors
     def read(self):
         rows = self.fetchall(
             'SELECT pos_x, pos_y, scale, filename, sqlar.data, items.id '
@@ -83,10 +131,23 @@ class SQLiteIO:
             item.setScale(row[2])
             self.scene.addItem(item)
 
+    @handle_sqlite_errors
     def write(self):
-        self.write_meta()
-        self.create_schema_on_new()
+        try:
+            self.write_meta()
+            self.create_schema_on_new()
+            self.write_data()
+        except sqlite3.Error:
+            if self.create_new:
+                # If writing to a new file fails, we can't recover
+                raise
+            else:
+                # Updating a file failed; try creating it from scratch instead
+                self.create_new = True
+                self._close_connection()
+                self.write()
 
+    def write_data(self):
         to_delete = self.fetchall('SELECT id from ITEMS')
         for item in self.scene.items_for_save():
             if item.save_id and not self.create_new:

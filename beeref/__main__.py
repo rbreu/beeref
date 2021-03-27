@@ -37,13 +37,13 @@ class BeeRefMainWindow(QtWidgets.QWidget):
         logo = os.path.join(root, 'assets', 'logo.png')
         logger.debug(f'Loading icon {logo}')
         self.setWindowIcon(QtGui.QIcon(logo))
-        view = BeeGraphicsView(app, self, filename)
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
-        layout.addWidget(view)
         self.setLayout(layout)
         self.resize(500, 300)
         self.show()
+        view = BeeGraphicsView(app, self, filename)
+        layout.addWidget(view)
 
 
 def safe_timer(timeout, func, *args, **kwargs):
