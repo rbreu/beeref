@@ -75,9 +75,9 @@ class SQLiteIOWriteTestCase(BeeTestCase):
 
         assert item.save_id == 1
         result = self.io.fetchone(
-            'SELECT pos_x, pos_y, scale, filename, imgdata.data, type '
+            'SELECT pos_x, pos_y, scale, filename, sqlar.data, type '
             'FROM items '
-            'INNER JOIN imgdata on imgdata.item_id = items.id')
+            'INNER JOIN sqlar on sqlar.item_id = items.id')
         assert result[0] == 44.0
         assert result[1] == 55.0
         assert result[2] == 1.3
@@ -103,9 +103,9 @@ class SQLiteIOWriteTestCase(BeeTestCase):
 
         assert self.io.fetchone('SELECT COUNT(*) from items') == (1,)
         result = self.io.fetchone(
-            'SELECT pos_x, pos_y, scale, filename, imgdata.data '
+            'SELECT pos_x, pos_y, scale, filename, sqlar.data '
             'FROM items '
-            'INNER JOIN imgdata on imgdata.item_id = items.id')
+            'INNER JOIN sqlar on sqlar.item_id = items.id')
         assert result[0] == 20
         assert result[1] == 30
         assert result[2] == 0.7
@@ -124,7 +124,7 @@ class SQLiteIOWriteTestCase(BeeTestCase):
         self.io.write()
 
         assert self.io.fetchone('SELECT COUNT(*) from items') == (0,)
-        assert self.io.fetchone('SELECT COUNT(*) from imgdata') == (0,)
+        assert self.io.fetchone('SELECT COUNT(*) from sqlar') == (0,)
 
 
 class SQLiteIOLOadTestCase(BeeTestCase):
@@ -143,7 +143,7 @@ class SQLiteIOLOadTestCase(BeeTestCase):
             'INSERT INTO items (type, pos_x, pos_y, scale, filename) '
             'VALUES (?, ?, ?, ?, ?) ',
             ('pixmap', 22.2, 33.3, 3.4, 'bee.png'))
-        self.io.ex('INSERT INTO imgdata (item_id, data) VALUES (?, ?)',
+        self.io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)',
                    (1, imgdata))
         self.io.read()
         assert len(self.scene.items()) == 1

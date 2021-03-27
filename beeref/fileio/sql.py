@@ -13,9 +13,14 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
-"""BeeRef's native file format is using SQLite. For more info, see:
+"""BeeRef's native file format is using SQLite. Embedded files are
+stored in an sqlar table so that they can be extracted using sqlite's
+archive command line option.
+
+For more info, see:
 
 https://www.sqlite.org/appfileformat.html
+https://www.sqlite.org/sqlar.html
 """
 
 import os
@@ -24,34 +29,7 @@ import sqlite3
 from PyQt6 import QtGui
 
 from beeref.items import BeePixmapItem
-
-
-SCHEMA = [
-    """
-    CREATE TABLE items (
-        id INTEGER PRIMARY KEY,
-        type TEXT NOT NULL,
-        pos_x REAL DEFAULT 0,
-        pos_y REAL DEFAULT 0,
-        scale REAL DEFAULT 1,
-        rotation REAL DEFAULT 0,
-        flip_h INTEGER DEFAULT 0,
-        flip_v INTEGER DEFAULT 0,
-        filename TEXT
-    )
-    """,
-    """
-    CREATE TABLE imgdata (
-        id INTEGER PRIMARY KEY,
-        item_id INTEGER NOT NULL,
-        data BLOB,
-        FOREIGN KEY (item_id)
-          REFERENCES items (id)
-             ON DELETE CASCADE
-             ON UPDATE NO ACTION
-    )
-    """,
-]
+from .schema import SCHEMA
 
 
 class SQLiteIO:
@@ -94,9 +72,9 @@ class SQLiteIO:
 
     def read(self):
         rows = self.fetchall(
-            'SELECT pos_x, pos_y, scale, filename, imgdata.data, items.id '
+            'SELECT pos_x, pos_y, scale, filename, sqlar.data, items.id '
             'FROM items '
-            'INNER JOIN imgdata on imgdata.item_id = items.id')
+            'INNER JOIN sqlar on sqlar.item_id = items.id')
         for row in rows:
             item = BeePixmapItem(QtGui.QImage(), filename=row[3])
             item.save_id = row[5]
@@ -130,8 +108,12 @@ class SQLiteIO:
             ('pixmap', item.pos().x(), item.pos().y(), item.scale_factor,
              item.filename))
         item.save_id = self.cursor.lastrowid
-        self.ex('INSERT INTO imgdata (item_id, data) VALUES (?, ?)',
-                (item.save_id, item.pixmap_to_bytes()))
+        pixmap = item.pixmap_to_bytes()
+        name = '%04d.png' % item.save_id
+        self.ex(
+            'INSERT INTO sqlar (item_id, name, mode, sz, data) '
+            'VALUES (?, ?, 644, ?, ?)',
+            (item.save_id, name, len(pixmap), pixmap))
         self.connection.commit()
 
     def update_item(self, item):
