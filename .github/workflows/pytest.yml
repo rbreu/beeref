@@ -9,13 +9,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.7
+    - name: Set up Python 3.9
       uses: actions/setup-python@v1
       with:
-        python-version: 3.7
+        python-version: 3.8
     - name: Install dependencies
       run: |
-        sudo apt install libgl1-mesa-glx libegl1
+        sudo apt install libgl1-mesa-glx libegl1 xvfb
         python -m pip install --upgrade pip
         pip install .
         pip install pytest
