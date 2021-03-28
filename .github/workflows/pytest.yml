@@ -16,7 +16,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt install libgl1-mesa-glx libegl1 libglib2.0-0 libxcb-image0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1-dev xserver-xephyr libfontconfig1 libxkbcommon-dev libdbus-1-3
-	apt install xvfb
+        apt install xvfb
         python -m pip install --upgrade pip
         pip install .
         pip install pytest
