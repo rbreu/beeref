@@ -1,7 +1,5 @@
 from unittest.mock import patch, PropertyMock
 
-import os.path
-
 from PyQt6 import QtGui, QtWidgets
 
 from beeref.items import BeePixmapItem
@@ -11,16 +9,15 @@ from .base import BeeTestCase
 class BeePixmapItemTestCase(BeeTestCase):
 
     def test_init(self):
-        root = os.path.dirname(__file__)
-        filename = os.path.join(root, 'assets', 'test3x3.png')
-        item = BeePixmapItem(QtGui.QImage(filename), filename)
+        item = BeePixmapItem(
+            QtGui.QImage(self.imgfilename3x3), self.imgfilename3x3)
         assert item.width == 3
         assert item.height == 3
         assert item.scale_factor == 1
         assert item.flags() == (
             QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsMovable
             | QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsSelectable)
-        assert item.filename == filename
+        assert item.filename == self.imgfilename3x3
 
     def test_set_scale(self):
         item = BeePixmapItem(QtGui.QImage())

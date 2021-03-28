@@ -84,7 +84,7 @@ class SQLiteIOWriteTestCase(BeeTestCase):
                     metamock.assert_called_once()
 
     def test_inserts_new_item(self):
-        item = BeePixmapItem(QtGui.QImage(), filename='bee.png')
+        item = BeePixmapItem(QtGui.QImage(), filename='bee.jpg')
         item.setScale(1.3)
         item.setPos(44, 55)
         item.pixmap_to_bytes = MagicMock(return_value=b'abc')
@@ -93,15 +93,29 @@ class SQLiteIOWriteTestCase(BeeTestCase):
 
         assert item.save_id == 1
         result = self.io.fetchone(
-            'SELECT pos_x, pos_y, scale, filename, sqlar.data, type '
+            'SELECT pos_x, pos_y, scale, filename, type, '
+            'sqlar.data, sqlar.name '
             'FROM items '
             'INNER JOIN sqlar on sqlar.item_id = items.id')
         assert result[0] == 44.0
         assert result[1] == 55.0
         assert result[2] == 1.3
-        assert result[3] == 'bee.png'
-        assert result[4] == b'abc'
-        assert result[5] == 'pixmap'
+        assert result[3] == 'bee.jpg'
+        assert result[4] == 'pixmap'
+        assert result[5] == b'abc'
+        assert result[6] == '0001-bee.png'
+
+    def test_inserts_new_item_without_filename(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        self.io.write()
+
+        assert item.save_id == 1
+        result = self.io.fetchone(
+            'SELECT filename, sqlar.name FROM items '
+            'INNER JOIN sqlar on sqlar.item_id = items.id')
+        assert result[0] is None
+        assert result[1] == '0001.png'
 
     def test_updates_existing_item(self):
         item = BeePixmapItem(QtGui.QImage(), filename='bee.png')
@@ -165,11 +179,6 @@ class SQLiteIOReadTestCase(BeeTestCase):
         self.scene = BeeGraphicsScene(None)
 
     def test_reads_readonly(self):
-        root = os.path.dirname(__file__)
-        imgfilename = os.path.join(root, '..', 'assets', 'test3x3.png')
-        with open(imgfilename, 'rb') as f:
-            imgdata = f.read()
-
         with tempfile.TemporaryDirectory() as dirname:
             fname = os.path.join(dirname, 'test.bee')
             io = SQLiteIO(fname, self.scene, create_new=True)
@@ -178,7 +187,7 @@ class SQLiteIOReadTestCase(BeeTestCase):
                   'VALUES (?, ?, ?, ?, ?) ',
                   ('pixmap', 22.2, 33.3, 3.4, 'bee.png'))
             io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)',
-                  (1, imgdata))
+                  (1, self.imgdata3x3))
             io.connection.commit()
             del(io)
 

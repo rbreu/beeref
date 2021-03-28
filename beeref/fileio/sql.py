@@ -170,7 +170,13 @@ class SQLiteIO:
              item.filename))
         item.save_id = self.cursor.lastrowid
         pixmap = item.pixmap_to_bytes()
-        name = '%04d.png' % item.save_id
+
+        if item.filename:
+            basename = os.path.splitext(os.path.basename(item.filename))[0]
+            name = '%04d-%s.png' % (item.save_id, basename)
+        else:
+            name = '%04d.png' % item.save_id
+
         self.ex(
             'INSERT INTO sqlar (item_id, name, mode, sz, data) '
             'VALUES (?, ?, 644, ?, ?)',

@@ -24,6 +24,9 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
         item1.setScale.assert_called_once_with(1.5)
         item2.setScale.assert_called_once_with(0.75)
 
+    def test_normalize_height_when_no_items(self):
+        self.scene.normalize_height()
+
     def test_normalize_width(self):
         item1 = MagicMock(width=100, scale_factor=1)
         item2 = MagicMock(width=200, scale_factor=3)
@@ -35,6 +38,9 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
         item1.setScale.assert_called_once_with(1.5)
         item2.setScale.assert_called_once_with(0.75)
 
+    def test_normalize_width_when_no_items(self):
+        self.scene.normalize_width()
+
     def test_normalize_size(self):
         item1 = MagicMock(width=100, height=200, scale_factor=1)
         item2 = MagicMock(width=400, height=100, scale_factor=3)
@@ -45,3 +51,6 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
 
         item1.setScale.assert_called_once_with(math.sqrt(1.5))
         item2.setScale.assert_called_once_with(math.sqrt(0.75))
+
+    def test_normalize_size_when_no_items(self):
+        self.scene.normalize_size()
