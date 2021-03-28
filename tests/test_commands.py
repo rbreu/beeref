@@ -95,42 +95,42 @@ class ScaleItemsByTestCase(BeeTestCase):
 
     def test_redo_undo(self):
         item1 = BeePixmapItem(QtGui.QImage())
-        item1.scale_factor = 1
+        item1.setScale(1)
         item2 = BeePixmapItem(QtGui.QImage())
-        item2.scale_factor = 3
+        item2.setScale(3)
         command = commands.ScaleItemsBy([item1, item2], 2)
         command.redo()
-        assert item1.scale_factor == 3
-        assert item2.scale_factor == 5
+        assert item1.scale() == 3
+        assert item2.scale() == 5
         command.undo()
-        assert item1.scale_factor == 1
-        assert item2.scale_factor == 3
+        assert item1.scale() == 1
+        assert item2.scale() == 3
 
     def test_ignore_first_redo(self):
         item1 = BeePixmapItem(QtGui.QImage())
-        item1.scale_factor = 1
+        item1.setScale(1)
         item2 = BeePixmapItem(QtGui.QImage())
-        item2.scale_factor = 3
+        item2.setScale(3)
         command = commands.ScaleItemsBy([item1, item2], 2, True)
         command.redo()
-        assert item1.scale_factor == 1
-        assert item2.scale_factor == 3
+        assert item1.scale() == 1
+        assert item2.scale() == 3
         command.redo()
-        assert item1.scale_factor == 3
-        assert item2.scale_factor == 5
+        assert item1.scale() == 3
+        assert item2.scale() == 5
 
 
 class NormalizeItemsTestCase(BeeTestCase):
 
     def test_redo_undo(self):
         item1 = BeePixmapItem(QtGui.QImage())
-        item1.scale_factor = 1
+        item1.setScale(1)
         item2 = BeePixmapItem(QtGui.QImage())
-        item2.scale_factor = 3
+        item2.setScale(3)
         command = commands.NormalizeItems([item1, item2], [2, 0.5])
         command.redo()
-        assert item1.scale_factor == 2
-        assert item2.scale_factor == 0.5
+        assert item1.scale() == 2
+        assert item2.scale() == 0.5
         command.undo()
-        assert item1.scale_factor == 1
-        assert item2.scale_factor == 3
+        assert item1.scale() == 1
+        assert item2.scale() == 3

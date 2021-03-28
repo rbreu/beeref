@@ -91,11 +91,11 @@ class ScaleItemsBy(QtGui.QUndoCommand):
             self.ignore_first_redo = False
             return
         for item in self.items:
-            item.setScale(item.scale_factor + self.factor)
+            item.setScale(item.scale() + self.factor)
 
     def undo(self):
         for item in self.items:
-            item.setScale(item.scale_factor - self.factor)
+            item.setScale(item.scale() - self.factor)
 
 
 class NormalizeItems(QtGui.QUndoCommand):
@@ -108,7 +108,7 @@ class NormalizeItems(QtGui.QUndoCommand):
     def redo(self):
         self.old_scale_factors = []
         for item, factor in zip(self.items, self.scale_factors):
-            self.old_scale_factors.append(item.scale_factor)
+            self.old_scale_factors.append(item.scale())
             item.setScale(factor)
 
     def undo(self):

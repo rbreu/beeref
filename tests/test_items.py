@@ -14,7 +14,7 @@ class BeePixmapItemTestCase(BeeTestCase):
         assert item.save_id is None
         assert item.width == 3
         assert item.height == 3
-        assert item.scale_factor == 1
+        assert item.scale() == 1
         assert item.flags() == (
             QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsMovable
             | QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsSelectable)
@@ -23,17 +23,17 @@ class BeePixmapItemTestCase(BeeTestCase):
     def test_set_scale(self):
         item = BeePixmapItem(QtGui.QImage())
         item.setScale(3)
-        assert item.scale_factor == 3
+        assert item.scale() == 3
 
     def test_set_scale_ignores_zero(self):
         item = BeePixmapItem(QtGui.QImage())
         item.setScale(0)
-        assert item.scale_factor == 1
+        assert item.scale() == 1
 
     def test_set_scale_ignores_negative(self):
         item = BeePixmapItem(QtGui.QImage())
         item.setScale(-0.1)
-        assert item.scale_factor == 1
+        assert item.scale() == 1
 
     def test_set_pos_center(self):
         item = BeePixmapItem(QtGui.QImage())

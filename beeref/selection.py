@@ -59,7 +59,7 @@ class SelectionItem(QtWidgets.QGraphicsItem):
         factor of the view."""
 
         scale = self.parentItem().scene().views()[0].get_scale()
-        return value / scale / self.parentItem().scale_factor
+        return value / scale / self.parentItem().scale()
 
     def boundingRect(self):
         bounds = self.parentItem().boundingRect()

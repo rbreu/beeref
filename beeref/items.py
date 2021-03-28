@@ -34,7 +34,6 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         super().__init__(QtGui.QPixmap.fromImage(image))
         self.save_id = None
         self.filename = filename
-        self.scale_factor = 1
         logger.debug(f'Initialized {self}')
 
         self.setFlags(
@@ -48,15 +47,15 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
     def setScale(self, factor):
         if factor <= 0:
             return
-        self.scale_factor = factor
+
         logger.debug(f'Setting scale for image "{self.filename}" to {factor}')
         super().setScale(factor)
 
     def set_pos_center(self, x, y):
         """Sets the position using the item's center as the origin point."""
 
-        self.setPos(x - self.width * self.scale_factor / 2,
-                    y - self.height * self.scale_factor / 2)
+        self.setPos(x - self.width * self.scale() / 2,
+                    y - self.height * self.scale() / 2)
 
     @property
     def width(self):

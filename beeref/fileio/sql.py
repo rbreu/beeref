@@ -186,7 +186,7 @@ class SQLiteIO:
         self.ex(
             'INSERT INTO items (type, pos_x, pos_y, scale, filename) '
             'VALUES (?, ?, ?, ?, ?) ',
-            ('pixmap', item.pos().x(), item.pos().y(), item.scale_factor,
+            ('pixmap', item.pos().x(), item.pos().y(), item.scale(),
              item.filename))
         item.save_id = self.cursor.lastrowid
         pixmap = item.pixmap_to_bytes()
@@ -212,6 +212,6 @@ class SQLiteIO:
         self.ex(
             'UPDATE items SET pos_x=?, pos_y=?, scale=?, filename=? '
             'WHERE id=?',
-            (item.pos().x(), item.pos().y(), item.scale_factor,
+            (item.pos().x(), item.pos().y(), item.scale(),
              item.filename, item.save_id))
         self.connection.commit()

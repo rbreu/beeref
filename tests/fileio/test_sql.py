@@ -211,7 +211,7 @@ class SQLiteIOReadTestCase(BeeTestCase):
             assert item.save_id == 1
             assert item.pos().x() == 22.2
             assert item.pos().y() == 33.3
-            assert item.scale_factor == 3.4
+            assert item.scale() == 3.4
             assert item.filename == 'bee.png'
             assert item.width == 3
             assert item.height == 3
