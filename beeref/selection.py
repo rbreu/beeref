@@ -27,9 +27,9 @@ logger = logging.getLogger('BeeRef')
 class SelectionItem(QtWidgets.QGraphicsItem):
 
     color = QtGui.QColor(116, 234, 231, 255)
-    handle_size = 30  # scaling handles
-    resize_size = 50  # area for scaling hover events
-    margin = 200  # margin for bounding box etc
+    LINE_WIDTH = 3
+    HANDLE_SIZE = 10  # scaling handles
+    RESIZE_SIZE = 30  # area for scaling hover events
 
     debug = False
 
@@ -40,24 +40,46 @@ class SelectionItem(QtWidgets.QGraphicsItem):
         self.setFlags(
             QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsSelectable
             | QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsMovable)
-        bounds = self.parentItem().boundingRect()
-        pos = bounds.bottomRight()
         self.scale_active = False
 
-        # The intercatable shape of the bottom right scale handle:
-        self.bottom_right_scale_bounds = QtCore.QRectF(
+    @property
+    def bottom_right_scale_bounds(self):
+        """The intercatable shape of the bottom right scale handle"""
+        bounds = self.parentItem().boundingRect()
+        pos = bounds.bottomRight()
+        return QtCore.QRectF(
             pos.x() - self.resize_size/2,
             pos.y() - self.resize_size/2,
             self.resize_size,
             self.resize_size)
 
+    def scale_with_view(self, value):
+        """The handles and line thickness should always stay the same size on
+        the screen so we need to adjust the values according to the scale
+        factor of the view."""
+
+        scale = self.parentItem().scene().views()[0].get_scale()
+        return value / scale / self.parentItem().scale_factor
+
     def boundingRect(self):
         bounds = self.parentItem().boundingRect()
         return QtCore.QRectF(
-            bounds.topLeft().x() - self.margin,
-            bounds.topLeft().y() - self.margin,
-            bounds.bottomRight().x() + self.margin * 2,
-            bounds.bottomRight().y() + self.margin * 2)
+            bounds.topLeft().x() - self.resize_size / 2,
+            bounds.topLeft().y() - self.resize_size / 2,
+            bounds.bottomRight().x() + self.resize_size,
+            bounds.bottomRight().y() + self.resize_size)
+
+    @property
+    def handle_size(self):
+        return self.scale_with_view(self.HANDLE_SIZE)
+
+    @property
+    def resize_size(self):
+        return self.scale_with_view(self.RESIZE_SIZE)
+
+    @property
+    def line_width(self):
+        return self.scale_with_view(self.LINE_WIDTH)
 
     def shape(self):
         path = QtGui.QPainterPath()
@@ -66,13 +88,13 @@ class SelectionItem(QtWidgets.QGraphicsItem):
 
     def draw_debug_rect(self, painter, rect):
         pen = QtGui.QPen(QtGui.QColor('red'))
-        pen.setWidth(3)
+        pen.setWidth(self.line_width / 2)
         painter.setPen(pen)
         painter.drawRect(rect)
 
     def paint(self, painter, option, widget):
         pen = QtGui.QPen(self.color)
-        pen.setWidth(10)
+        pen.setWidth(self.line_width)
         painter.setPen(pen)
 
         # Draw the main selection rectangle

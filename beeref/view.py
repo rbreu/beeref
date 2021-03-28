@@ -307,8 +307,12 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         pos = self.mapToScene(self.get_view_center())
         errors = []
         items = []
-        progress = BeeProgressDialog(
-            'Loading images...', len(filenames), parent=self)
+
+        if len(filenames) > 1:
+            progress = BeeProgressDialog(
+                'Loading images...', len(filenames), parent=self)
+        else:
+            progress = None
 
         for i, filename in enumerate(filenames):
             logger.info(f'Loading image from file {filename}')
@@ -321,9 +325,10 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             items.append(item)
             pos.setX(pos.x() + 50)
             pos.setY(pos.y() + 50)
-            progress.setValue(i)
-            if progress.wasCanceled():
-                break
+            if progress:
+                progress.setValue(i)
+                if progress.wasCanceled():
+                    break
 
         self.undo_stack.push(commands.InsertItems(self.scene, items))
 
@@ -403,6 +408,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
     def scale(self, *args, **kwargs):
         super().scale(*args, **kwargs)
         self.recalc_scene_rect()
+
+    def get_scale(self):
+        return self.transform().m11()
 
     def wheelEvent(self, event):
         factor = 1.2
