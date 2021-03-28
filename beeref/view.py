@@ -240,7 +240,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         self.scene.clear()
         self.undo_stack.clear()
         try:
-            progress = BeeProgressDialog('Save file...', parent=self)
+            progress = BeeProgressDialog(
+                'Loading %s' % filename,
+                parent=self)
             fileio.load(filename, self.scene, progress)
             self.filename = filename
         except fileio.BeeFileIOError:
@@ -268,7 +270,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             if not filename.endswith('.bee'):
                 filename = f'{filename}.bee'
             try:
-                progress = BeeProgressDialog('Save file...', parent=self)
+                progress = BeeProgressDialog(
+                    'Saving %s' % filename,
+                    parent=self)
                 fileio.save(filename, self.scene, create_new=True,
                             progress=progress)
                 self.filename = filename
@@ -283,7 +287,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         if not self.filename:
             self.on_action_save_as()
         else:
-            progress = BeeProgressDialog('Save file...', parent=self)
+            progress = BeeProgressDialog(
+                'Saving %s' % self.filename,
+                parent=self)
             fileio.save(self.filename, self.scene, create_new=False,
                         progress=progress)
 
