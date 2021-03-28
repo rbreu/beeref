@@ -23,6 +23,12 @@ At the moment, you need to have a working Python 3 environment to install BeeRef
 
 Then run ``beeref`` or ``beeref filename.bee``.
 
+If there are issues starting the applictaion, run it with the environment varibale ``QT_DEBUG_PLUGINS`` set to 1, for example from a Linux shell::
+
+  QT_DEBUG_PLUGINS=1 beeref
+
+This should tell you whether you need to install any additional libraries, most likely regarding opengl.
+
 
 Regarding the bee file format
 -----------------------------
