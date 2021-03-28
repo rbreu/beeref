@@ -1,8 +1,9 @@
 import math
 from unittest.mock import patch, MagicMock
 
-from PyQt6 import QtGui
+from PyQt6 import QtGui, QtWidgets
 
+from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
 from .base import BeeTestCase
 
@@ -54,3 +55,16 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
 
     def test_normalize_size_when_no_items(self):
         self.scene.normalize_size()
+
+    def test_clear_save_ids(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        item1.save_id = 5
+        self.scene.addItem(item1)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item3 = QtWidgets.QGraphicsRectItem()
+        self.scene.clear_save_ids()
+        self.scene.addItem(item3)
+        assert item1.save_id is None
+        assert item2.save_id is None
+        assert hasattr(item3, 'save_id') is False

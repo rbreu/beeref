@@ -40,3 +40,14 @@ class WelcomeOverlay(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(label)
         self.setLayout(layout)
+
+
+class BeeProgressDialog(QtWidgets.QProgressDialog):
+
+    def __init__(self, label, maximum=100, parent=None):
+        super().__init__(label, 'Cancel', 0, maximum - 1, parent=parent)
+        self.setMinimumDuration(2)
+        self.setWindowModality(Qt.WindowModality.WindowModal)
+
+    def setMaximum(self, maximum):
+        super().setMaximum(maximum - 1)

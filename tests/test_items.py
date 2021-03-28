@@ -11,6 +11,7 @@ class BeePixmapItemTestCase(BeeTestCase):
     def test_init(self):
         item = BeePixmapItem(
             QtGui.QImage(self.imgfilename3x3), self.imgfilename3x3)
+        assert item.save_id is None
         assert item.width == 3
         assert item.height == 3
         assert item.scale_factor == 1

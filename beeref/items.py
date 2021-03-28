@@ -32,16 +32,18 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
 
     def __init__(self, image, filename=None):
         super().__init__(QtGui.QPixmap.fromImage(image))
-        logger.debug(f'Initialized image "{filename}" with dimensions: '
-                     f'{self.width} x {self.height} at index {self.zValue()}')
-
         self.save_id = None
         self.filename = filename
         self.scale_factor = 1
+        logger.debug(f'Initialized {self}')
 
         self.setFlags(
             QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsMovable
             | QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsSelectable)
+
+    def __str__(self):
+        return (f'Image "{self.filename}" '
+                f'with dimensions {self.width} x {self.height}')
 
     def setScale(self, factor):
         if factor <= 0:

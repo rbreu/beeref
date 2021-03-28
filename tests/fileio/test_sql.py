@@ -15,7 +15,8 @@ from ..base import BeeTestCase
 class SQLiteIOTestCase(BeeTestCase):
 
     def setUp(self):
-        self.io = SQLiteIO(':memory:', None, create_new=True)
+        self.scene_mock = MagicMock()
+        self.io = SQLiteIO(':memory:', self.scene_mock, create_new=True)
 
     def test_ẁrite_meta_application_id(self):
         self.io.write_meta()
@@ -38,6 +39,7 @@ class SQLiteIOTestCase(BeeTestCase):
             'SELECT COUNT(*) FROM sqlite_master '
             'WHERE type="table" AND name NOT LIKE "sqlite_%"')
         assert result[0] == 2
+        self.scene_mock.clear_save_ids.assert_called_once()
 
     def test_create_schema_on_new_when_not_create_new(self):
         self.io.create_new = False
@@ -46,6 +48,7 @@ class SQLiteIOTestCase(BeeTestCase):
             'SELECT COUNT(*) FROM sqlite_master '
             'WHERE type="table" AND name NOT LIKE "sqlite_%"')
         assert result[0] == 0
+        self.scene_mock.clear_save_ids.assert_not_called()
 
     def test_readonly_doesnt_allow_write(self):
         scene = BeeGraphicsScene(None)
@@ -172,6 +175,16 @@ class SQLiteIOWriteTestCase(BeeTestCase):
             result = io.fetchone('SELECT COUNT(*) FROM items')
             assert result[0] == 1
 
+    def test_updates_progress(self):
+        progress = MagicMock()
+        io = SQLiteIO(':memory:', self.scene, create_new=True,
+                      progress=progress)
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        io.write()
+        progress.setMaximum.assert_called_once_with(1)
+        progress.setValue.assert_called_once_with(0)
+
 
 class SQLiteIOReadTestCase(BeeTestCase):
 
@@ -202,6 +215,21 @@ class SQLiteIOReadTestCase(BeeTestCase):
             assert item.filename == 'bee.png'
             assert item.width == 3
             assert item.height == 3
+
+    def test_updates_progress(self):
+        progress = MagicMock()
+        io = SQLiteIO(':memory:', self.scene, create_new=True,
+                      progress=progress)
+
+        io.create_schema_on_new()
+        io.ex('INSERT INTO items (type, pos_x, pos_y, scale, filename) '
+              'VALUES (?, ?, ?, ?, ?) ',
+              ('pixmap', 0, 0, 1, 'bee.png'))
+        io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)', (1, b''))
+        io.connection.commit()
+        io.read()
+        progress.setMaximum.assert_called_once_with(1)
+        progress.setValue.assert_called_once_with(0)
 
     def test_raises_error_when_file_borked(self):
         with tempfile.TemporaryDirectory() as dirname:

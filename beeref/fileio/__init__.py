@@ -23,15 +23,15 @@ __all__ = ['load', 'save', 'BeeFileIOError']
 logger = logging.getLogger('BeeRef')
 
 
-def load(filename, scene):
+def load(filename, scene, progress=None):
     logger.info(f'Loading from file {filename}...')
-    io = SQLiteIO(filename, scene, readonly=True)
+    io = SQLiteIO(filename, scene, readonly=True, progress=progress)
     return io.read()
 
 
-def save(filename, scene, create_new=False):
+def save(filename, scene, create_new=False, progress=None):
     logger.info(f'Saving to file {filename}...')
     logger.debug(f'Create new: {create_new}')
-    io = SQLiteIO(filename, scene, create_new)
+    io = SQLiteIO(filename, scene, create_new, progress=progress)
     io.write()
     logger.debug('Saved!')

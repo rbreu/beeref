@@ -119,3 +119,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         """
 
         return filter(lambda i: hasattr(i, 'save_id'), self.items())
+
+    def clear_save_ids(self):
+        for item in self.items_for_save():
+            item.save_id = None

@@ -52,11 +52,13 @@ class SQLiteIO:
     USER_VERSION = 1
     APPLICATION_ID = 2060242126
 
-    def __init__(self, filename, scene, create_new=False, readonly=False):
+    def __init__(self, filename, scene, create_new=False, readonly=False,
+                 progress=None):
         self.scene = scene
         self.create_new = create_new
         self.filename = filename
         self.readonly = readonly
+        self.progress = progress
 
     def __del__(self):
         self._close_connection()
@@ -73,6 +75,9 @@ class SQLiteIO:
                 and not self.readonly
                 and os.path.exists(self.filename)):
             os.remove(self.filename)
+
+        if self.create_new:
+            self.scene.clear_save_ids()
 
         if self.readonly:
             self._connection = sqlite3.connect(
@@ -123,13 +128,20 @@ class SQLiteIO:
             'SELECT pos_x, pos_y, scale, filename, sqlar.data, items.id '
             'FROM items '
             'INNER JOIN sqlar on sqlar.item_id = items.id')
-        for row in rows:
+        if self.progress:
+            self.progress.setMaximum(len(rows))
+
+        for i, row in enumerate(rows):
             item = BeePixmapItem(QtGui.QImage(), filename=row[3])
             item.save_id = row[5]
             item.pixmap_from_bytes(row[4])
             item.setPos(row[0], row[1])
             item.setScale(row[2])
             self.scene.addItem(item)
+            if self.progress:
+                self.progress.setValue(i)
+                if self.progress.wasCanceled():
+                    break
 
     @handle_sqlite_errors
     def write(self):
@@ -149,12 +161,20 @@ class SQLiteIO:
 
     def write_data(self):
         to_delete = self.fetchall('SELECT id from ITEMS')
-        for item in self.scene.items_for_save():
-            if item.save_id and not self.create_new:
+        to_save = list(self.scene.items_for_save())
+        if self.progress:
+            self.progress.setMaximum(len(to_save))
+        for i, item in enumerate(to_save):
+            logger.debug(f'Saving {item} with id {item.save_id}')
+            if item.save_id:
                 self.update_item(item)
                 to_delete.remove((item.save_id,))
             else:
                 self.insert_item(item)
+            if self.progress:
+                self.progress.setValue(i)
+                if self.progress.wasCanceled():
+                    break
         self.delete_items(to_delete)
         self.connection.commit()
 

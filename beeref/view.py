@@ -20,7 +20,7 @@ from PyQt6.QtCore import Qt
 
 from beeref import commands
 from beeref import fileio
-from beeref.gui import WelcomeOverlay
+from beeref.gui import BeeProgressDialog, WelcomeOverlay
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
 
@@ -235,22 +235,13 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
     def on_action_normalize_size(self):
         self.scene.normalize_size()
 
-    def add_images(self, images):
-        if isinstance(images, QtGui.QImage):
-            images = [images]
-        items = []
-        for img in images:
-            item = BeePixmapItem(img, getattr(img, 'filename', None))
-            item.set_pos_center(img.pos.x(), img.pos.y())
-            items.append(item)
-        self.undo_stack.push(commands.InsertItems(self.scene, items))
-
     def open_from_file(self, filename):
         logger.info(f'Opening file {filename}')
         self.scene.clear()
         self.undo_stack.clear()
         try:
-            fileio.load(filename, self.scene)
+            progress = BeeProgressDialog('Save file...', parent=self)
+            fileio.load(filename, self.scene, progress)
             self.filename = filename
         except fileio.BeeFileIOError:
             QtWidgets.QMessageBox.warning(
@@ -277,7 +268,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             if not filename.endswith('.bee'):
                 filename = f'{filename}.bee'
             try:
-                fileio.save(filename, self.scene, create_new=True)
+                progress = BeeProgressDialog('Save file...', parent=self)
+                fileio.save(filename, self.scene, create_new=True,
+                            progress=progress)
                 self.filename = filename
             except fileio.BeeFileIOError:
                 QtWidgets.QMessageBox.warning(
@@ -290,7 +283,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         if not self.filename:
             self.on_action_save_as()
         else:
-            fileio.save(self.filename, self.scene, create_new=False)
+            progress = BeeProgressDialog('Save file...', parent=self)
+            fileio.save(self.filename, self.scene, create_new=False,
+                        progress=progress)
 
     def on_action_quit(self):
         logger.info('User quit. Exiting...')
@@ -305,19 +300,26 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
 
         pos = self.mapToScene(self.get_view_center())
         errors = []
-        images = []
-        for filename in filenames:
+        items = []
+        progress = BeeProgressDialog(
+            'Loading images...', len(filenames), parent=self)
+
+        for i, filename in enumerate(filenames):
             logger.info(f'Loading image from file {filename}')
             img = QtGui.QImage(filename)
             if img.isNull():
                 errors.append(filename)
                 continue
-            img.pos = pos
-            img.filename = filename
-            images.append(img)
+            item = BeePixmapItem(img, filename)
+            item.set_pos_center(pos.x(), pos.y())
+            items.append(item)
             pos.setX(pos.x() + 50)
             pos.setY(pos.y() + 50)
-        self.add_images(images)
+            progress.setValue(i)
+            if progress.wasCanceled():
+                break
+
+        self.undo_stack.push(commands.InsertItems(self.scene, items))
 
         if errors:
             errornames = [
@@ -339,9 +341,10 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             logger.info('No image data in clipboard')
         else:
             self.scene.clearSelection()
-            img.pos = self.mapToScene(
-                self.mapFromGlobal(self.cursor().pos()))
-            self.add_images(img)
+            item = BeePixmapItem(img)
+            pos = self.mapToScene(self.mapFromGlobal(self.cursor().pos()))
+            item.set_pos_center(pos.x(), pos.y())
+            self.undo_stack.push(commands.InsertItems(self.scene, [item]))
 
     def on_selection_changed(self):
         logger.debug('Currently selected items: %s',
