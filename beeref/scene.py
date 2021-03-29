@@ -118,7 +118,8 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         Items to be saved are items that have an save_id attribute.
         """
 
-        return filter(lambda i: hasattr(i, 'save_id'), self.items())
+        return filter(lambda i: hasattr(i, 'save_id'),
+                      self.items(order=Qt.SortOrder.AscendingOrder))
 
     def clear_save_ids(self):
         for item in self.items_for_save():

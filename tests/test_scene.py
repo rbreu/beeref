@@ -63,8 +63,20 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
         item2 = BeePixmapItem(QtGui.QImage())
         self.scene.addItem(item2)
         item3 = QtWidgets.QGraphicsRectItem()
-        self.scene.clear_save_ids()
         self.scene.addItem(item3)
+
+        self.scene.clear_save_ids()
         assert item1.save_id is None
         assert item2.save_id is None
         assert hasattr(item3, 'save_id') is False
+
+    def test_items_for_save(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item3 = QtWidgets.QGraphicsRectItem()
+        self.scene.addItem(item3)
+
+        items = list(self.scene.items_for_save())
+        assert items == [item1, item2]

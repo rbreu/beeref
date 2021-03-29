@@ -50,6 +50,7 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
 
         logger.debug(f'Setting scale for image "{self.filename}" to {factor}')
         super().setScale(factor)
+        SelectionItem.update_selection(self)
 
     def set_pos_center(self, x, y):
         """Sets the position using the item's center as the origin point."""

@@ -23,7 +23,7 @@ from beeref import fileio
 from beeref.gui import BeeProgressDialog, WelcomeOverlay
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
-
+from beeref import selection
 
 logger = logging.getLogger('BeeRef')
 
@@ -317,6 +317,10 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         for i, filename in enumerate(filenames):
             logger.info(f'Loading image from file {filename}')
             img = QtGui.QImage(filename)
+            if progress:
+                progress.setValue(i)
+                if progress.wasCanceled():
+                    break
             if img.isNull():
                 errors.append(filename)
                 continue
@@ -325,10 +329,6 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             items.append(item)
             pos.setX(pos.x() + 50)
             pos.setY(pos.y() + 50)
-            if progress:
-                progress.setValue(i)
-                if progress.wasCanceled():
-                    break
 
         self.undo_stack.push(commands.InsertItems(self.scene, items))
 
@@ -362,7 +362,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
                      len(self.scene.selectedItems()))
         for action in self.actions_active_when_selection:
             action.setEnabled(self.scene.has_selection())
-        self.viewport().repaint()
+        selection.SelectionItem.update_selection(self.scene.selectedItems())
 
     def recalc_scene_rect(self):
         """Resize the scene rectangle so that it is always one view width
@@ -408,6 +408,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
     def scale(self, *args, **kwargs):
         super().scale(*args, **kwargs)
         self.recalc_scene_rect()
+        selection.SelectionItem.update_selection(self.scene.selectedItems())
 
     def get_scale(self):
         return self.transform().m11()

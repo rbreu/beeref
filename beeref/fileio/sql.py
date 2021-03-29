@@ -43,6 +43,8 @@ def handle_sqlite_errors(func):
             func(self, *args, **kwargs)
         except sqlite3.Error as e:
             logger.exception(f'Error while reading/writing {self.filename}')
+            if self.progress:
+                self.progress.setValue(self.progress.maximum())
             raise BeeFileIOError(msg=str(e), filename=self.filename) from e
 
     return wrapper
