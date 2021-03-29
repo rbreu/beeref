@@ -44,6 +44,7 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         self.filename = filename
         logger.debug(f'Initialized {self}')
 
+        self.setAcceptHoverEvents(True)
         self.setFlags(
             QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsMovable
             | QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsSelectable)
@@ -92,11 +93,6 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         pixmap = QtGui.QPixmap()
         pixmap.loadFromData(data)
         self.setPixmap(pixmap)
-
-    def itemChange(self, change, value):
-        if change == self.GraphicsItemChange.ItemSelectedChange:
-            self.setAcceptHoverEvents(value)
-        return super().itemChange(change, value)
 
     def fixed_length_for_viewport(self, value):
         """The interactable areas need to stay the same size on the
@@ -189,11 +185,17 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
             self.viewport_scale = new_scale
 
     def hoverMoveEvent(self, event):
+        if not self.isSelected():
+            return
         if self.bottom_right_scale_bounds.contains(event.pos()):
             self.setCursor(Qt.CursorShape.SizeFDiagCursor)
         elif self.bottom_right_rotate_bounds.contains(event.pos()):
             self.setCursor(Qt.CursorShape.ForbiddenCursor)
         else:
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+
+    def hoverEnterEvent(self, event):
+        if not self.isSelected():
             self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def mousePressEvent(self, event):
