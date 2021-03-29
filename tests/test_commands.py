@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 from PyQt6 import QtGui
 
 from beeref import commands
@@ -14,6 +16,7 @@ class InsertItemsTestCase(BeeTestCase):
                                scene.items()))
 
         scene = BeeGraphicsScene(None)
+        scene.update_selection = MagicMock()
         item1 = BeePixmapItem(QtGui.QImage())
         scene.addItem(item1)
         item2 = BeePixmapItem(QtGui.QImage())
@@ -37,6 +40,7 @@ class DeleteItemsTestCase(BeeTestCase):
                                scene.items()))
 
         scene = BeeGraphicsScene(None)
+        scene.update_selection = MagicMock()
         item1 = BeePixmapItem(QtGui.QImage())
         scene.addItem(item1)
         item2 = BeePixmapItem(QtGui.QImage())

@@ -20,8 +20,9 @@ text).
 import logging
 
 from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtCore import Qt
 
-from beeref.selection import SelectionItem
+from beeref import commands
 
 
 logger = logging.getLogger('BeeRef')
@@ -29,6 +30,13 @@ logger = logging.getLogger('BeeRef')
 
 class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
     """Class for images added by the user."""
+
+    select_color = QtGui.QColor(116, 234, 231, 255)
+    SELECT_LINE_WIDTH = 4  # line width for the selection box
+    SELECT_HANDLE_SIZE = 15  # size of selection handles for scaling
+    SELECT_RESIZE_SIZE = 30  # size of hover area for scaling
+    SELECT_ROTATE_SIZE = 30  # size of hover area for rotating
+    select_debug = False  # Draw debug shapes
 
     def __init__(self, image, filename=None):
         super().__init__(QtGui.QPixmap.fromImage(image))
@@ -40,6 +48,10 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
             QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsMovable
             | QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsSelectable)
 
+        self.single_select_mode = False
+        self.scale_active = False
+        self.viewport_scale = None
+
     def __str__(self):
         return (f'Image "{self.filename}" '
                 f'with dimensions {self.width} x {self.height}')
@@ -49,8 +61,8 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
             return
 
         logger.debug(f'Setting scale for image "{self.filename}" to {factor}')
+        self.prepareGeometryChange()
         super().setScale(factor)
-        SelectionItem.update_selection(self)
 
     def set_pos_center(self, x, y):
         """Sets the position using the item's center as the origin point."""
@@ -83,10 +95,138 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
 
     def itemChange(self, change, value):
         if change == self.GraphicsItemChange.ItemSelectedChange:
-            if value:
-                logger.debug(f'Item selected {self.filename}')
-                SelectionItem.activate_selection(self)
-            else:
-                logger.debug(f'Item deselected {self.filename}')
-                SelectionItem.clear_selection(self)
+            self.setAcceptHoverEvents(value)
         return super().itemChange(change, value)
+
+    def fixed_length_for_viewport(self, value):
+        """The interactable areas need to stay the same size on the
+        screen so we need to adjust the values according to the scale
+        factor sof the view and the item."""
+
+        scale = self.scene().views()[0].get_scale()
+        return value / scale / self.scale()
+
+    @property
+    def select_resize_size(self):
+        return self.fixed_length_for_viewport(self.SELECT_RESIZE_SIZE)
+
+    @property
+    def select_rotate_size(self):
+        return self.fixed_length_for_viewport(self.SELECT_ROTATE_SIZE)
+
+    def draw_debug_shape(self, painter, shape, r, g, b):
+        color = QtGui.QColor(r, g, b, 20)
+        if isinstance(shape, QtCore.QRectF):
+            painter.fillRect(shape, color)
+        else:
+            painter.fillPath(shape, color)
+
+    def paint(self, painter, option, widget):
+        painter.drawPixmap(0, 0, self.pixmap())
+
+        if not self.isSelected():
+            return
+
+        pen = QtGui.QPen(self.select_color)
+        pen.setWidth(self.SELECT_LINE_WIDTH)
+        pen.setCosmetic(True)
+        painter.setPen(pen)
+
+        # Draw the main selection rectangle
+        painter.drawRect(0, 0, self.width, self.height)
+
+        single_select_mode = self.scene().has_single_selection()
+
+        # If it's a single selection, draw the handles:
+        if single_select_mode:
+            pen.setWidth(self.SELECT_HANDLE_SIZE)
+            painter.setPen(pen)
+            painter.drawPoint(self.width, self.height)
+
+        if self.select_debug:
+            self.draw_debug_shape(painter, self.boundingRect(), 0, 255, 0)
+            self.draw_debug_shape(painter, self.shape(), 255, 0, 0)
+
+    @property
+    def bottom_right_scale_bounds(self):
+        """The interactable shape of the bottom right scale handle"""
+        return QtCore.QRectF(
+            self.width - self.select_resize_size/2,
+            self.height - self.select_resize_size/2,
+            self.select_resize_size,
+            self.select_resize_size)
+
+    @property
+    def bottom_right_rotate_bounds(self):
+        """The interactable shape of the bottom right rotate handle"""
+        return QtCore.QRectF(
+            self.width + self.select_resize_size / 2,
+            self.height + self.select_resize_size / 2,
+            self.select_rotate_size, self.select_rotate_size)
+
+    def boundingRect(self):
+        bounds = super().boundingRect()
+        if not self.isSelected():
+            return bounds
+        margin = self.select_resize_size / 2 + self.select_rotate_size
+        return QtCore.QRectF(
+            bounds.topLeft().x() - margin,
+            bounds.topLeft().y() - margin,
+            bounds.bottomRight().x() + 2 * margin,
+            bounds.bottomRight().y() + 2 * margin)
+
+    def shape(self):
+        path = QtGui.QPainterPath()
+        path.addRect(self.bottom_right_scale_bounds)
+        path.addRect(self.bottom_right_rotate_bounds)
+        return path + super().shape()
+
+    def update_selection(self):
+        new_scale = self.fixed_length_for_viewport(1)
+        if new_scale != self.viewport_scale:
+            logger.debug('Selection geometry changed')
+            self.prepareGeometryChange()
+            self.viewport_scale = new_scale
+
+    def hoverMoveEvent(self, event):
+        if self.bottom_right_scale_bounds.contains(event.pos()):
+            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+        elif self.bottom_right_rotate_bounds.contains(event.pos()):
+            self.setCursor(Qt.CursorShape.ForbiddenCursor)
+        else:
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+
+    def mousePressEvent(self, event):
+        if (event.button() == Qt.MouseButtons.LeftButton
+                and self.bottom_right_scale_bounds.contains(event.pos())
+                and self.isSelected()):
+            self.scale_active = True
+            self.orig_scale_factor = self.scale()
+            self.scale_start = event.scenePos()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
+    def get_scale_delta(self, event):
+        imgsize = self.width + self.height
+        p = event.scenePos() - self.scale_start
+        return (p.x() + p.y()) / imgsize
+
+    def mouseMoveEvent(self, event):
+        if self.scale_active:
+            delta = self.get_scale_delta(event)
+            self.setScale(self.orig_scale_factor + delta)
+            event.accept()
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if self.scale_active:
+            self.scene().undo_stack.push(
+                commands.ScaleItemsBy([self],
+                                      self.get_scale_delta(event),
+                                      ignore_first_redo=True))
+            self.scale_active = False
+            event.accept()
+        else:
+            super().mouseReleaseEvent(event)

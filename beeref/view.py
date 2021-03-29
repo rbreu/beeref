@@ -23,7 +23,6 @@ from beeref import fileio
 from beeref.gui import BeeProgressDialog, WelcomeOverlay
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
-from beeref import selection
 
 logger = logging.getLogger('BeeRef')
 
@@ -362,7 +361,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
                      len(self.scene.selectedItems()))
         for action in self.actions_active_when_selection:
             action.setEnabled(self.scene.has_selection())
-        selection.SelectionItem.update_selection(self.scene.selectedItems())
+        self.viewport().repaint()
 
     def recalc_scene_rect(self):
         """Resize the scene rectangle so that it is always one view width
@@ -408,7 +407,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
     def scale(self, *args, **kwargs):
         super().scale(*args, **kwargs)
         self.recalc_scene_rect()
-        selection.SelectionItem.update_selection(self.scene.selectedItems())
+        self.scene.update_selection()
 
     def get_scale(self):
         return self.transform().m11()

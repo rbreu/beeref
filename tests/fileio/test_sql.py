@@ -128,7 +128,6 @@ class SQLiteIOWriteTestCase(BeeTestCase):
         self.scene.addItem(item)
         item.pixmap_to_bytes = MagicMock(return_value=b'abc')
         self.io.write()
-
         item.setScale(0.7)
         item.setPos(20, 30)
         item.filename = 'new.png'
