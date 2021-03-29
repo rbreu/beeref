@@ -45,9 +45,9 @@ class WelcomeOverlay(QtWidgets.QWidget):
 class BeeProgressDialog(QtWidgets.QProgressDialog):
 
     def __init__(self, label, maximum=100, parent=None):
-        super().__init__(label, 'Cancel', 0, maximum - 1, parent=parent)
+        super().__init__(label, 'Cancel', 0, maximum, parent=parent)
         self.setMinimumDuration(2)
         self.setWindowModality(Qt.WindowModality.WindowModal)
 
-    def setMaximum(self, maximum):
-        super().setMaximum(maximum - 1)
+    def setValue(self, value):
+        super().setValue(value + 1)

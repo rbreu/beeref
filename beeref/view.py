@@ -307,19 +307,15 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         errors = []
         items = []
 
-        if len(filenames) > 1:
-            progress = BeeProgressDialog(
-                'Loading images...', len(filenames), parent=self)
-        else:
-            progress = None
+        progress = BeeProgressDialog(
+            'Loading images...', len(filenames), parent=self)
 
         for i, filename in enumerate(filenames):
             logger.info(f'Loading image from file {filename}')
             img = QtGui.QImage(filename)
-            if progress:
-                progress.setValue(i)
-                if progress.wasCanceled():
-                    break
+            progress.setValue(i)
+            if progress.wasCanceled():
+                break
             if img.isNull():
                 errors.append(filename)
                 continue
