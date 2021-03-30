@@ -21,6 +21,7 @@ import logging
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QGraphicsItem
 
 from beeref import commands
 
@@ -65,6 +66,13 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         self.prepareGeometryChange()
         super().setScale(factor)
 
+    def setZValue(self, value):
+        super().setZValue(value)
+        self.scene().max_z = max(self.scene().max_z, value)
+
+    def bring_to_front(self):
+        self.setZValue(self.scene().max_z + 0.001)
+
     def set_pos_center(self, x, y):
         """Sets the position using the item's center as the origin point."""
 
@@ -78,6 +86,14 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
     @property
     def height(self):
         return self.pixmap().size().height()
+
+    def itemChange(self, change, value):
+        if (change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange
+                and value
+                and self.scene()
+                and not self.scene().has_selection()):
+            self.bring_to_front()
+        return super().itemChange(change, value)
 
     def pixmap_to_bytes(self):
         """Convert the pixmap data to PNG bytestring."""

@@ -31,6 +31,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.move_active = False
         self.undo_stack = undo_stack
         self.selectionChanged.connect(self.on_selection_changed)
+        self.max_z = 0
 
     def normalize_width_or_height(self, mode):
         """Scale the selected images to have the same width or height, as

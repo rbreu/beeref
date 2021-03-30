@@ -9,6 +9,9 @@ from .base import BeeTestCase
 
 class BeePixmapItemTestCase(BeeTestCase):
 
+    def setUp(self):
+        self.scene = BeeGraphicsScene(None)
+
     def test_init(self):
         item = BeePixmapItem(
             QtGui.QImage(self.imgfilename3x3), self.imgfilename3x3)
@@ -47,6 +50,31 @@ class BeePixmapItemTestCase(BeeTestCase):
                 item.set_pos_center(0, 0)
                 assert item.pos().x() == -100
                 assert item.pos().y() == -50
+
+    def test_set_zvalue_sets_new_max(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        item.setZValue(1.1)
+        assert item.zValue() == 1.1
+        assert self.scene.max_z == 1.1
+
+    def test_set_zvalue_keeps_old_max(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        self.scene.max_z = 3.3
+        item.setZValue(1.1)
+        assert item.zValue() == 1.1
+        assert self.scene.max_z == 3.3
+
+    def test_bring_to_front(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setZValue(3.3)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.bring_to_front()
+        assert item2.zValue() > item1.zValue()
+        assert item2.zValue() == self.scene.max_z
 
 
 class BeePixmapItemPaintstuffTestCase(BeeTestCase):

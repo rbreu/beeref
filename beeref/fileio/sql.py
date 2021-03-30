@@ -127,19 +127,20 @@ class SQLiteIO:
     @handle_sqlite_errors
     def read(self):
         rows = self.fetchall(
-            'SELECT pos_x, pos_y, scale, filename, sqlar.data, items.id '
+            'SELECT items.id, x, y, z, scale, filename, sqlar.data '
             'FROM items '
             'INNER JOIN sqlar on sqlar.item_id = items.id')
         if self.progress:
             self.progress.setMaximum(len(rows))
 
         for i, row in enumerate(rows):
-            item = BeePixmapItem(QtGui.QImage(), filename=row[3])
-            item.save_id = row[5]
-            item.pixmap_from_bytes(row[4])
-            item.setPos(row[0], row[1])
-            item.setScale(row[2])
+            item = BeePixmapItem(QtGui.QImage(), filename=row[5])
+            item.save_id = row[0]
+            item.pixmap_from_bytes(row[6])
+            item.setPos(row[1], row[2])
             self.scene.addItem(item)
+            item.setZValue(row[3])
+            item.setScale(row[4])
             if self.progress:
                 self.progress.setValue(i)
                 if self.progress.wasCanceled():
@@ -186,10 +187,10 @@ class SQLiteIO:
 
     def insert_item(self, item):
         self.ex(
-            'INSERT INTO items (type, pos_x, pos_y, scale, filename) '
-            'VALUES (?, ?, ?, ?, ?) ',
-            ('pixmap', item.pos().x(), item.pos().y(), item.scale(),
-             item.filename))
+            'INSERT INTO items (type, x, y, z, scale, filename) '
+            'VALUES (?, ?, ?, ?, ?, ?) ',
+            ('pixmap', item.pos().x(), item.pos().y(), item.zValue(),
+             item.scale(), item.filename))
         item.save_id = self.cursor.lastrowid
         pixmap = item.pixmap_to_bytes()
 
@@ -212,8 +213,8 @@ class SQLiteIO:
         data never changes and is also time-consuming to save.
         """
         self.ex(
-            'UPDATE items SET pos_x=?, pos_y=?, scale=?, filename=? '
+            'UPDATE items SET x=?, y=?, z=?, scale=?, filename=? '
             'WHERE id=?',
-            (item.pos().x(), item.pos().y(), item.scale(),
+            (item.pos().x(), item.pos().y(), item.zValue(), item.scale(),
              item.filename, item.save_id))
         self.connection.commit()
