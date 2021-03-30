@@ -111,7 +111,7 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         return self.fixed_length_for_viewport(self.SELECT_ROTATE_SIZE)
 
     def draw_debug_shape(self, painter, shape, r, g, b):
-        color = QtGui.QColor(r, g, b, 20)
+        color = QtGui.QColor(r, g, b, 50)
         if isinstance(shape, QtCore.QRectF):
             painter.fillRect(shape, color)
         else:
@@ -119,6 +119,10 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
 
     def paint(self, painter, option, widget):
         painter.drawPixmap(0, 0, self.pixmap())
+
+        if self.select_debug:
+            self.draw_debug_shape(painter, self.boundingRect(), 0, 255, 0)
+            self.draw_debug_shape(painter, self.shape(), 255, 0, 0)
 
         if not self.isSelected():
             return
@@ -138,10 +142,6 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
             pen.setWidth(self.SELECT_HANDLE_SIZE)
             painter.setPen(pen)
             painter.drawPoint(self.width, self.height)
-
-        if self.select_debug:
-            self.draw_debug_shape(painter, self.boundingRect(), 0, 255, 0)
-            self.draw_debug_shape(painter, self.shape(), 255, 0, 0)
 
     @property
     def bottom_right_scale_bounds(self):
@@ -172,10 +172,13 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
             bounds.bottomRight().y() + 2 * margin)
 
     def shape(self):
-        path = QtGui.QPainterPath()
-        path.addRect(self.bottom_right_scale_bounds)
-        path.addRect(self.bottom_right_rotate_bounds)
-        return path + super().shape()
+        shape_ = super().shape()
+        if self.isSelected():
+            path = QtGui.QPainterPath()
+            path.addRect(self.bottom_right_scale_bounds)
+            path.addRect(self.bottom_right_rotate_bounds)
+            shape_ = shape_ + path
+        return shape_
 
     def update_selection(self):
         new_scale = self.fixed_length_for_viewport(1)

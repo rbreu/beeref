@@ -43,18 +43,14 @@ class DeleteItems(QtGui.QUndoCommand):
         self.items = items
 
     def redo(self):
-        print(len(self.scene.items()))
         for item in self.items:
             self.scene.removeItem(item)
-        print(len(self.scene.items()))
 
     def undo(self):
-        print(len(self.scene.items()))
         self.scene.clearSelection()
         for item in self.items:
             item.setSelected(True)
             self.scene.addItem(item)
-        print(len(self.scene.items()))
 
 
 class MoveItemsBy(QtGui.QUndoCommand):
