@@ -67,6 +67,7 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         super().setScale(factor)
 
     def setZValue(self, value):
+        logger.debug(f'Setting z-value for image "{self.filename}" to {value}')
         super().setZValue(value)
         self.scene().max_z = max(self.scene().max_z, value)
 
