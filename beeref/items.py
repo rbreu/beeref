@@ -89,11 +89,10 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         return self.pixmap().size().height()
 
     def itemChange(self, change, value):
-        if (change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange
-                and value
-                and self.scene()
-                and not self.scene().has_selection()):
-            self.bring_to_front()
+        if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
+            self.prepareGeometryChange()
+            if(value and self.scene() and not self.scene().has_selection()):
+                self.bring_to_front()
         return super().itemChange(change, value)
 
     def pixmap_to_bytes(self):
@@ -118,12 +117,12 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
 
         if self.scene():
             scale = self.scene().views()[0].get_scale()
-            return value / scale / self.scale()
-        else:
-            # This can happen when the item is already removed from
-            # the scene but its boundingRect is still needed. Use the
-            # last known scaling factor instead
-            return value * self.viewport_scale
+            self._view_scale = scale
+
+        # It can happen that the item is already removed from
+        # the scene but its boundingRect is still needed. Keep the
+        # last known scaling factor for that case
+        return value / getattr(self, '_view_scale', 1) / self.scale()
 
     @property
     def select_resize_size(self):
@@ -203,15 +202,8 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
             shape_ = shape_ + path
         return shape_
 
-    def update_selection(self):
-        new_scale = self.fixed_length_for_viewport(1)
-        if new_scale != self.viewport_scale:
-            logger.debug('Selection geometry changed')
-            self.prepareGeometryChange()
-            self.viewport_scale = new_scale
-
     def hoverMoveEvent(self, event):
-        if not self.isSelected():
+        if not self.isSelected() or not self.scene().has_single_selection():
             return
         if self.bottom_right_scale_bounds.contains(event.pos()):
             self.setCursor(Qt.CursorShape.SizeFDiagCursor)
@@ -221,7 +213,7 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
             self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def hoverEnterEvent(self, event):
-        if not self.isSelected():
+        if not self.isSelected() or not self.scene().has_single_selection():
             self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def mousePressEvent(self, event):
@@ -258,3 +250,6 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
             event.accept()
         else:
             super().mouseReleaseEvent(event)
+
+    def on_view_scale_change(self):
+        self.prepareGeometryChange()

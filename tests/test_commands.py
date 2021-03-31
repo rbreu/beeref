@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from PyQt6 import QtGui
 
@@ -10,8 +10,11 @@ from .base import BeeTestCase
 
 class InsertItemsTestCase(BeeTestCase):
 
-    def test_redo_undo(self):
+    @patch('beeref.scene.BeeGraphicsScene.views')
+    def test_redo_undo(self, views_mock):
         scene = BeeGraphicsScene(None)
+        view = MagicMock(get_scale=MagicMock(return_value=1))
+        views_mock.return_value = [view]
         scene.update_selection = MagicMock()
         scene.max_z = 5
         item1 = BeePixmapItem(QtGui.QImage())

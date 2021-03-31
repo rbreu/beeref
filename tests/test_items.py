@@ -92,20 +92,23 @@ class BeePixmapItemPaintstuffTestCase(BeeTestCase):
     def test_fixed_length_for_viewport_when_default_scales(self):
         self.view.get_scale = MagicMock(return_value=1)
         assert self.item.fixed_length_for_viewport(100) == 100
+        assert self.item._view_scale == 1
 
     def test_fixed_length_for_viewport_when_viewport_scaled(self):
         self.view.get_scale = MagicMock(return_value=2)
         assert self.item.fixed_length_for_viewport(100) == 50
+        assert self.item._view_scale == 2
 
     def test_fixed_length_for_viewport_when_item_scaled(self):
         self.view.get_scale = MagicMock(return_value=1)
         self.item.setScale(5)
         assert self.item.fixed_length_for_viewport(100) == 20
+        assert self.item._view_scale == 1
 
     def test_fixed_length_for_viewport_when_no_scene(self):
         item = BeePixmapItem(QtGui.QImage())
-        item.viewport_scale = 0.5
-        assert item.fixed_length_for_viewport(100) == 50
+        item._view_scale = 0.5
+        assert item.fixed_length_for_viewport(100) == 200
 
     def test_resize_size_when_scaled(self):
         self.view.get_scale = MagicMock(return_value=2)

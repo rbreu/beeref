@@ -402,8 +402,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
 
     def scale(self, *args, **kwargs):
         super().scale(*args, **kwargs)
+        self.scene.on_view_scale_change()
         self.recalc_scene_rect()
-        self.scene.update_selection()
 
     def get_scale(self):
         return self.transform().m11()
