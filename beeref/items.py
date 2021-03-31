@@ -52,7 +52,7 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
 
         self.single_select_mode = False
         self.scale_active = False
-        self.viewport_scale = None
+        self.viewport_scale = 1
 
     def __str__(self):
         return (f'Image "{self.filename}" '
@@ -115,8 +115,14 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         screen so we need to adjust the values according to the scale
         factor sof the view and the item."""
 
-        scale = self.scene().views()[0].get_scale()
-        return value / scale / self.scale()
+        if self.scene():
+            scale = self.scene().views()[0].get_scale()
+            return value / scale / self.scale()
+        else:
+            # This can happen when the item is already removed from
+            # the scene but its boundingRect is still needed. Use the
+            # last known scaling factor instead
+            return value * self.viewport_scale
 
     @property
     def select_resize_size(self):

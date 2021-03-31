@@ -11,34 +11,26 @@ from .base import BeeTestCase
 class InsertItemsTestCase(BeeTestCase):
 
     def test_redo_undo(self):
-        def get_images():
-            return list(filter(lambda i: isinstance(i, BeePixmapItem),
-                               scene.items()))
-
         scene = BeeGraphicsScene(None)
         scene.update_selection = MagicMock()
+        scene.max_z = 5
         item1 = BeePixmapItem(QtGui.QImage())
         scene.addItem(item1)
         item2 = BeePixmapItem(QtGui.QImage())
         command = commands.InsertItems(scene, [item2])
         command.redo()
-        assert len(get_images()) == 2
-        assert item1 in scene.items()
+        assert list(scene.items_for_save()) == [item1, item2]
         assert item1.isSelected() is False
-        assert item2 in scene.items()
         assert item2.isSelected() is True
+        item2.zValue() > 5
         command.undo()
-        assert get_images() == [item1]
+        assert list(scene.items_for_save()) == [item1]
         assert item1.isSelected() is False
 
 
 class DeleteItemsTestCase(BeeTestCase):
 
     def test_redo_undo(self):
-        def get_images():
-            return list(filter(lambda i: isinstance(i, BeePixmapItem),
-                               scene.items()))
-
         scene = BeeGraphicsScene(None)
         scene.update_selection = MagicMock()
         item1 = BeePixmapItem(QtGui.QImage())
@@ -48,12 +40,10 @@ class DeleteItemsTestCase(BeeTestCase):
         item2.setSelected(True)
         command = commands.DeleteItems(scene, [item2])
         command.redo()
-        assert get_images() == [item1]
+        assert list(scene.items_for_save()) == [item1]
         command.undo()
-        assert len(get_images()) == 2
-        assert item1 in scene.items()
+        assert list(scene.items_for_save()) == [item1, item2]
         assert item1.isSelected() is False
-        assert item2 in scene.items()
         assert item2.isSelected() is True
 
 

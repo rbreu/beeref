@@ -26,8 +26,8 @@ class InsertItems(QtGui.QUndoCommand):
     def redo(self):
         self.scene.clearSelection()
         for item in self.items:
-            item.setSelected(True)
             self.scene.addItem(item)
+            item.setSelected(True)
 
     def undo(self):
         self.scene.clearSelection()
