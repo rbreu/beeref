@@ -42,8 +42,11 @@ class BeeRefMainWindow(QtWidgets.QWidget):
         self.setLayout(layout)
         self.resize(500, 300)
         self.show()
-        view = BeeGraphicsView(app, self, filename)
-        layout.addWidget(view)
+        self.view = BeeGraphicsView(app, self, filename)
+        layout.addWidget(self.view)
+
+    def __del__(self):
+        del self.view
 
 
 def safe_timer(timeout, func, *args, **kwargs):
@@ -77,6 +80,8 @@ def main():
     safe_timer(50, lambda: None)
 
     app.exec()
+    del bee
+    del app
 
 
 if __name__ == '__main__':
