@@ -8,8 +8,10 @@ class BeeGraphicsViewTestCase(BeeTestCase):
 
     @patch('beeref.view.BeeGraphicsView.open_from_file')
     def test_init_without_filename(self, open_file_mock):
-        BeeGraphicsView(self.app)
-        open_file_mock.assert_not_called()
+        with patch('beeref.view.commandline_args') as args_mock:
+            args_mock.filename = None
+            BeeGraphicsView(self.app)
+            open_file_mock.assert_not_called()
 
     @patch('beeref.view.BeeGraphicsView.open_from_file')
     def test_init_with_filename(self, open_file_mock):
