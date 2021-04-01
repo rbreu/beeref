@@ -145,7 +145,8 @@ class BeePixmapItemPaintstuffTestCase(BeePixmapItemWithViewBaseTestCase):
         self.item.SELECT_ROTATE_SIZE = 100
         assert self.item.select_rotate_size == 25
 
-    def test_paint_when_not_selected(self):
+    @patch('beeref.items.BeePixmapItem.draw_debug_shape')
+    def test_paint_when_not_selected(self, debug_mock):
         painter = MagicMock()
         self.item.setSelected(False)
         self.item.pixmap = MagicMock(return_value='pixmap')
@@ -153,6 +154,7 @@ class BeePixmapItemPaintstuffTestCase(BeePixmapItemWithViewBaseTestCase):
         painter.drawPixmap.assert_called_once_with(0, 0, 'pixmap')
         painter.drawRect.assert_not_called()
         painter.drawPoint.assert_not_called()
+        debug_mock.assert_not_called()
 
     def test_paint_when_selected_single_selection(self):
         painter = MagicMock()
@@ -160,7 +162,7 @@ class BeePixmapItemPaintstuffTestCase(BeePixmapItemWithViewBaseTestCase):
         self.item.paint(painter, None, None)
         painter.drawPixmap.assert_called_once()
         painter.drawRect.assert_called_once()
-        painter.drawPoint.assert_called()
+        assert painter.drawPoint.call_count == 4
 
     def test_paint_when_selected_multi_selection(self):
         item2 = BeePixmapItem(QtGui.QImage())
@@ -172,6 +174,14 @@ class BeePixmapItemPaintstuffTestCase(BeePixmapItemWithViewBaseTestCase):
         painter.drawPixmap.assert_called_once()
         painter.drawRect.assert_called_once()
         painter.drawPoint.assert_not_called()
+
+    def test_paint_when_draw_debug_shapes(self):
+        with patch('beeref.items.commandline_args') as args_mock:
+            with patch('beeref.items.BeePixmapItem.draw_debug_shape') as m:
+                args_mock.draw_debug_shapes = True
+                item = BeePixmapItem(QtGui.QImage())
+                item.paint(MagicMock(), None, None)
+                m.assert_called()
 
     def test_corners(self):
         assert set(self.item.corners) == set((

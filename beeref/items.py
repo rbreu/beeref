@@ -24,6 +24,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QGraphicsItem
 
 from beeref import commands
+from beeref.config import commandline_args
 
 
 logger = logging.getLogger('BeeRef')
@@ -37,7 +38,6 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
     SELECT_HANDLE_SIZE = 15  # size of selection handles for scaling
     SELECT_RESIZE_SIZE = 20  # size of hover area for scaling
     SELECT_ROTATE_SIZE = 20  # size of hover area for rotating
-    select_debug = False  # Draw debug shapes
 
     def __init__(self, image, filename=None):
         super().__init__(QtGui.QPixmap.fromImage(image))
@@ -52,6 +52,7 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
 
         self.scale_active_corner = None
         self.viewport_scale = 1
+        self.conf_debug_shapes = commandline_args.draw_debug_shapes
 
     def __str__(self):
         return (f'Image "{self.filename}" '
@@ -141,7 +142,7 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
     def paint(self, painter, option, widget):
         painter.drawPixmap(0, 0, self.pixmap())
 
-        if self.select_debug:
+        if self.conf_debug_shapes:
             self.draw_debug_shape(painter, self.boundingRect(), 0, 255, 0)
             self.draw_debug_shape(painter, self.shape(), 255, 0, 0)
 

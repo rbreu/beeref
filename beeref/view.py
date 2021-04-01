@@ -19,6 +19,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
 from beeref import commands
+from beeref.config import commandline_args
 from beeref import fileio
 from beeref.gui import BeeProgressDialog, WelcomeOverlay
 from beeref.items import BeePixmapItem
@@ -29,7 +30,7 @@ logger = logging.getLogger('BeeRef')
 
 class BeeGraphicsView(QtWidgets.QGraphicsView):
 
-    def __init__(self, app, parent=None, filename=None):
+    def __init__(self, app, parent=None):
         super().__init__(parent)
         self.app = app
         self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(60, 60, 60)))
@@ -70,8 +71,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         self.welcome_overlay = WelcomeOverlay(self)
 
         # Load file given via command line
-        if filename:
-            self.open_from_file(filename)
+        if commandline_args.filename:
+            self.open_from_file(commandline_args.filename)
 
     def on_scene_changed(self, region):
         if not self.scene.items():

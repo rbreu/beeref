@@ -22,6 +22,7 @@ import sys
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
+from beeref.config import commandline_args
 from beeref.view import BeeGraphicsView
 
 
@@ -42,7 +43,7 @@ class BeeRefMainWindow(QtWidgets.QWidget):
         self.setLayout(layout)
         self.resize(500, 300)
         self.show()
-        self.view = BeeGraphicsView(app, self, filename)
+        self.view = BeeGraphicsView(app, self)
         layout.addWidget(self.view)
 
     def __del__(self):
@@ -68,11 +69,9 @@ def handle_sigint(signum, frame):
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=getattr(logging, commandline_args.loglevel))
     app = QtWidgets.QApplication(sys.argv)
-
-    filename = sys.argv[1] if len(sys.argv) > 1 else None
-    bee = BeeRefMainWindow(app, filename)  # NOQA:F841
+    bee = BeeRefMainWindow(app)  # NOQA:F841
 
     signal.signal(signal.SIGINT, handle_sigint)
     # Repeatedly run python-noop to give the interpreter time to

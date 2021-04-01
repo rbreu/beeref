@@ -29,3 +29,7 @@ Run unittests with coverage report::
 If your browser doesn't open automatically, view ``htmlcov/index.html``.
 
 Beeref files are sqlite databases, so they can be inspected with any sqlite browser.
+
+For debugging options, run::
+
+  beeref --help
