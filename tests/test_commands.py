@@ -95,26 +95,39 @@ class ScaleItemsByTestCase(BeeTestCase):
         item1.setScale(1)
         item2 = BeePixmapItem(QtGui.QImage())
         item2.setScale(3)
-        command = commands.ScaleItemsBy([item1, item2], 2)
+        command = commands.ScaleItemsByDelta([item1, item2], 2, (100, 100))
         command.redo()
         assert item1.scale() == 3
+        assert item1.pos().x() == -200
+        assert item1.pos().y() == -200
         assert item2.scale() == 5
+        assert item2.pos().x() == -200
+        assert item2.pos().y() == -200
         command.undo()
         assert item1.scale() == 1
+        assert item1.pos().x() == 0
+        assert item1.pos().y() == 0
         assert item2.scale() == 3
+        assert item2.pos().x() == 0
+        assert item2.pos().y() == 0
 
     def test_ignore_first_redo(self):
         item1 = BeePixmapItem(QtGui.QImage())
         item1.setScale(1)
         item2 = BeePixmapItem(QtGui.QImage())
         item2.setScale(3)
-        command = commands.ScaleItemsBy([item1, item2], 2, True)
+        command = commands.ScaleItemsByDelta([item1, item2], 2, (100, 100),
+                                             ignore_first_redo=True)
         command.redo()
         assert item1.scale() == 1
         assert item2.scale() == 3
+        assert item1.pos().x() == 0
+        assert item1.pos().y() == 0
         command.redo()
         assert item1.scale() == 3
         assert item2.scale() == 5
+        assert item1.pos().x() == -200
+        assert item1.pos().y() == -200
 
 
 class NormalizeItemsTestCase(BeeTestCase):

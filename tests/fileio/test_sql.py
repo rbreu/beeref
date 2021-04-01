@@ -93,7 +93,6 @@ class SQLiteIOWriteTestCase(BeeTestCase):
         item.setPos(44, 55)
         item.setZValue(0.22)
         item.pixmap_to_bytes = MagicMock(return_value=b'abc')
-        self.scene.addItem(item)
         self.io.write()
 
         assert item.save_id == 1
@@ -130,7 +129,6 @@ class SQLiteIOWriteTestCase(BeeTestCase):
         item.setPos(44, 55)
         item.setZValue(0.22)
         item.save_id = 1
-        self.scene.addItem(item)
         item.pixmap_to_bytes = MagicMock(return_value=b'abc')
         self.io.write()
         item.setScale(0.7)

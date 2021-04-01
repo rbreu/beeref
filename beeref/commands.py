@@ -74,12 +74,15 @@ class MoveItemsBy(QtGui.QUndoCommand):
             item.moveBy(-self.delta_x, -self.delta_y)
 
 
-class ScaleItemsBy(QtGui.QUndoCommand):
+class ScaleItemsByDelta(QtGui.QUndoCommand):
+    """Scale Items by a given delta around the given anchor point.
+    Delta will be *added* to the current scale factor."""
 
-    def __init__(self, items, factor, ignore_first_redo=False):
+    def __init__(self, items, delta, anchor, ignore_first_redo=False):
         super().__init__('Scale items')
         self.items = items
-        self.factor = factor
+        self.delta = delta
+        self.anchor = anchor
         self.ignore_first_redo = ignore_first_redo
 
     def redo(self):
@@ -87,11 +90,15 @@ class ScaleItemsBy(QtGui.QUndoCommand):
             self.ignore_first_redo = False
             return
         for item in self.items:
-            item.setScale(item.scale() + self.factor)
+            item.setScale(item.scale() + self.delta)
+            item.translate_for_scale_anchor(
+                item.pos(), self.delta, self.anchor)
 
     def undo(self):
         for item in self.items:
-            item.setScale(item.scale() - self.factor)
+            item.setScale(item.scale() - self.delta)
+            item.translate_for_scale_anchor(
+                item.pos(), -self.delta, self.anchor)
 
 
 class NormalizeItems(QtGui.QUndoCommand):

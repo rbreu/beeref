@@ -35,8 +35,8 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
     select_color = QtGui.QColor(116, 234, 231, 255)
     SELECT_LINE_WIDTH = 4  # line width for the selection box
     SELECT_HANDLE_SIZE = 15  # size of selection handles for scaling
-    SELECT_RESIZE_SIZE = 30  # size of hover area for scaling
-    SELECT_ROTATE_SIZE = 30  # size of hover area for rotating
+    SELECT_RESIZE_SIZE = 20  # size of hover area for scaling
+    SELECT_ROTATE_SIZE = 20  # size of hover area for rotating
     select_debug = False  # Draw debug shapes
 
     def __init__(self, image, filename=None):
@@ -50,8 +50,7 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
             QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsMovable
             | QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsSelectable)
 
-        self.single_select_mode = False
-        self.scale_active = False
+        self.scale_active_corner = None
         self.viewport_scale = 1
 
     def __str__(self):
@@ -163,14 +162,22 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         if single_select_mode:
             pen.setWidth(self.SELECT_HANDLE_SIZE)
             painter.setPen(pen)
-            painter.drawPoint(self.width, self.height)
+            for corner in self.corners:
+                painter.drawPoint(*corner)
 
     @property
-    def bottom_right_scale_bounds(self):
-        """The interactable shape of the bottom right scale handle"""
+    def corners(self):
+        """The corners of the items. Used for scale and rotate handles."""
+        return ((0, 0),
+                (0, self.height),
+                (self.width, 0),
+                (self.width, self.height))
+
+    def get_scale_bounds(self, center):
+        """The interactable shape of the scale handles."""
         return QtCore.QRectF(
-            self.width - self.select_resize_size/2,
-            self.height - self.select_resize_size/2,
+            center[0] - self.select_resize_size/2,
+            center[1] - self.select_resize_size/2,
             self.select_resize_size,
             self.select_resize_size)
 
@@ -186,6 +193,8 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         bounds = super().boundingRect()
         if not self.isSelected():
             return bounds
+
+        # Add extra space for scale and rotate interactive areas
         margin = self.select_resize_size / 2 + self.select_rotate_size
         return QtCore.QRectF(
             bounds.topLeft().x() - margin,
@@ -196,8 +205,10 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
     def shape(self):
         shape_ = super().shape()
         if self.isSelected():
+            # Add extra space for scale and rotate interactive areas
             path = QtGui.QPainterPath()
-            path.addRect(self.bottom_right_scale_bounds)
+            for corner in self.corners:
+                path.addRect(self.get_scale_bounds(corner))
             path.addRect(self.bottom_right_rotate_bounds)
             shape_ = shape_ + path
         return shape_
@@ -205,48 +216,92 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
     def hoverMoveEvent(self, event):
         if not self.isSelected() or not self.scene().has_single_selection():
             return
-        if self.bottom_right_scale_bounds.contains(event.pos()):
-            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
-        elif self.bottom_right_rotate_bounds.contains(event.pos()):
+
+        for corner in self.corners:
+            # See if we need to change the cursor for scale areas
+            if self.get_scale_bounds(corner).contains(event.pos()):
+                direction = self.get_scale_direction(corner)
+                if direction[0] == direction[1]:
+                    self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+                else:
+                    self.setCursor(Qt.CursorShape.SizeBDiagCursor)
+                return
+
+        if self.bottom_right_rotate_bounds.contains(event.pos()):
             self.setCursor(Qt.CursorShape.ForbiddenCursor)
-        else:
-            self.setCursor(Qt.CursorShape.ArrowCursor)
+            return
+
+        self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def hoverEnterEvent(self, event):
+        # Always return regular cursor when item isn't selected
         if not self.isSelected() or not self.scene().has_single_selection():
             self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def mousePressEvent(self, event):
         if (event.button() == Qt.MouseButtons.LeftButton
-                and self.bottom_right_scale_bounds.contains(event.pos())
-                and self.isSelected()):
-            self.scale_active = True
-            self.orig_scale_factor = self.scale()
-            self.scale_start = event.scenePos()
-            event.accept()
-        else:
-            super().mousePressEvent(event)
+                and self.isSelected() and self.scene().has_single_selection()):
+            for corner in self.corners:
+                # Check if we are in one of the corner's scale areas
+                if self.get_scale_bounds(corner).contains(event.pos()):
+                    # Start scale action for this corner
+                    self.scale_active_corner = corner
+                    self.scale_start = event.scenePos()
+                    self.scale_orig_factor = self.scale()
+                    self.scale_orig_pos = self.pos()
+                    event.accept()
+                    return
 
-    def get_scale_delta(self, event):
+        super().mousePressEvent(event)
+
+    def get_scale_delta(self, event, corner):
         imgsize = self.width + self.height
         p = event.scenePos() - self.scale_start
-        return (p.x() + p.y()) / imgsize
+        direction = self.get_scale_direction(corner)
+        return (direction[0] * p.x() + direction[1] * p.y()) / imgsize
+
+    def get_scale_anchor(self, corner):
+        """Get the anchor around which the scale for this corner operates."""
+        return(self.width - corner[0], self.height - corner[1])
+
+    def get_scale_direction(self, corner):
+        """Get the direction in which the scale for this corner increases"""
+        x = 1 if corner[0] > 0 else -1
+        y = 1 if corner[1] > 0 else -1
+        return (x, y)
+
+    def translate_for_scale_anchor(self, orig_pos, scale_delta, anchor):
+        """Adjust the item's position so that a scale with the given scale
+        delta appears to operate around the given anchor. ``setScale`` needs
+        to be called separately with delta *added* to the current item's scale
+        factor."""
+
+        self.setPos(
+            orig_pos.x() - anchor[0] * scale_delta,
+            orig_pos.y() - anchor[1] * scale_delta,
+        )
 
     def mouseMoveEvent(self, event):
-        if self.scale_active:
-            delta = self.get_scale_delta(event)
-            self.setScale(self.orig_scale_factor + delta)
+        if self.scale_active_corner:
+            delta = self.get_scale_delta(event, self.scale_active_corner)
+            self.setScale(self.scale_orig_factor + delta)
+            self.translate_for_scale_anchor(
+                self.scale_orig_pos,
+                delta,
+                self.get_scale_anchor(self.scale_active_corner))
             event.accept()
         else:
             super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        if self.scale_active:
+        if self.scale_active_corner:
             self.scene().undo_stack.push(
-                commands.ScaleItemsBy([self],
-                                      self.get_scale_delta(event),
-                                      ignore_first_redo=True))
-            self.scale_active = False
+                commands.ScaleItemsByDelta(
+                    [self],
+                    self.get_scale_delta(event, self.scale_active_corner),
+                    self.get_scale_anchor(self.scale_active_corner),
+                    ignore_first_redo=True))
+            self.scale_active_corner = None
             event.accept()
         else:
             super().mouseReleaseEvent(event)
