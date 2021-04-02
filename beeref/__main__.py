@@ -22,9 +22,8 @@ import sys
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-from beeref.config import commandline_args
+from beeref.config import CommandlineArgs
 from beeref.view import BeeGraphicsView
-
 
 logger = logging.getLogger('BeeRef')
 
@@ -69,6 +68,7 @@ def handle_sigint(signum, frame):
 
 
 def main():
+    commandline_args = CommandlineArgs(with_check=True)
     logging.basicConfig(level=getattr(logging, commandline_args.loglevel))
     app = QtWidgets.QApplication(sys.argv)
     bee = BeeRefMainWindow(app)  # NOQA:F841

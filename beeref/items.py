@@ -24,9 +24,10 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QGraphicsItem
 
 from beeref import commands
-from beeref.config import commandline_args
+from beeref.config import CommandlineArgs
 
 
+commandline_args = CommandlineArgs()
 logger = logging.getLogger('BeeRef')
 
 

@@ -19,12 +19,14 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
 from beeref import commands
-from beeref.config import commandline_args
+from beeref.config import CommandlineArgs
 from beeref import fileio
 from beeref.gui import BeeProgressDialog, WelcomeOverlay
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
 
+
+commandline_args = CommandlineArgs()
 logger = logging.getLogger('BeeRef')
 
 
