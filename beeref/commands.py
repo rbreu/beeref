@@ -74,31 +74,34 @@ class MoveItemsBy(QtGui.QUndoCommand):
             item.moveBy(-self.delta_x, -self.delta_y)
 
 
-class ScaleItemsByDelta(QtGui.QUndoCommand):
-    """Scale Items by a given delta around the given anchor point.
-    Delta will be *added* to the current scale factor."""
+class ScaleItemsBy(QtGui.QUndoCommand):
+    """Scale items by a given factor around the given anchor point."""
 
-    def __init__(self, items, delta, anchor, ignore_first_redo=False):
+    def __init__(self, items, factor, ignore_first_redo=False):
         super().__init__('Scale items')
-        self.items = items
-        self.delta = delta
-        self.anchor = anchor
         self.ignore_first_redo = ignore_first_redo
+        self.items = items
+        self.factor = factor
+        self.item_data = [
+            {'anchor': item.scale_anchor,
+             'orig_factor': item.scale_orig_factor,
+             'orig_pos': item.scale_orig_pos} for item in items]
 
     def redo(self):
         if self.ignore_first_redo:
             self.ignore_first_redo = False
             return
-        for item in self.items:
-            item.setScale(item.scale() + self.delta)
-            item.translate_for_scale_anchor(
-                item.pos(), self.delta, self.anchor)
+        for item, data in zip(self.items, self.item_data):
+            item.scale_orig_factors = data['orig_factor']
+            item.scale_orig_pos = data['orig_pos']
+            item.scale_anchor = data['anchor']
+            item.setScale(item.scale() * self.factor)
+            item.translate_for_scale_anchor(self.factor)
 
     def undo(self):
-        for item in self.items:
-            item.setScale(item.scale() - self.delta)
-            item.translate_for_scale_anchor(
-                item.pos(), -self.delta, self.anchor)
+        for item, data in zip(self.items, self.item_data):
+            item.setScale(item.scale() / self.factor)
+            item.setPos(data['orig_pos'])
 
 
 class NormalizeItems(QtGui.QUndoCommand):

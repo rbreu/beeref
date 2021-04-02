@@ -16,10 +16,12 @@
 import logging
 import math
 
-from PyQt6 import QtWidgets
+from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
 
 from beeref import commands
+from beeref.items import MultiSelectItem
+
 
 logger = logging.getLogger('BeeRef')
 
@@ -31,6 +33,8 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.move_active = False
         self.undo_stack = undo_stack
         self.max_z = 0
+        self.multi_select_item = MultiSelectItem()
+        self.selectionChanged.connect(self.on_selection_change)
 
     def normalize_width_or_height(self, mode):
         """Scale the selected images to have the same width or height, as
@@ -89,6 +93,11 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         return len(self.selectedItems()) == 1
 
+    def has_multi_selection(self):
+        """Checks whether there are currently more than one items selected."""
+
+        return len(self.selectedItems()) > 1
+
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButtons.RightButton:
             # Right-click invokes the context menu on the
@@ -129,3 +138,34 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
     def on_view_scale_change(self):
         for item in self.selectedItems():
             item.on_view_scale_change()
+
+    def get_selection_rect(self):
+        """Returns the bounding rect of the currently selected items."""
+
+        items = list(filter(lambda i: hasattr(i, 'save_id'),
+                            self.selectedItems()))
+
+        topleft = items[0].pos()
+        bottomright = items[0].scene_bottomright
+
+        for item in items[1:]:
+            tl = item.pos()
+            br = item.scene_bottomright
+            topleft.setX(min(topleft.x(), tl.x(), br.x()))
+            topleft.setY(min(topleft.y(), tl.y(), br.y()))
+            bottomright.setX(max(bottomright.x(), tl.x(), br.x()))
+            bottomright.setY(max(bottomright.y(), tl.y(), br.y()))
+
+        return QtCore.QRectF(topleft, bottomright)
+
+    def on_selection_change(self):
+        if self.has_multi_selection():
+            self.multi_select_item.fit_selection_area(
+                self.get_selection_rect())
+        if self.has_multi_selection() and not self.multi_select_item.scene():
+            logger.debug('Adding multi select outline')
+            self.addItem(self.multi_select_item)
+            self.multi_select_item.bring_to_front()
+        if not self.has_multi_selection() and self.multi_select_item.scene():
+            logger.debug('Removing multi select outline')
+            self.removeItem(self.multi_select_item)

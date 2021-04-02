@@ -266,29 +266,41 @@ class BeePixmapItemPaintstuffTestCase(BeePixmapItemWithViewBaseTestCase):
 
 class BeePixmapItemScalingTestCase(BeePixmapItemWithViewBaseTestCase):
 
-    def test_get_scale_delta_bottomright(self):
+    def test_get_scale_factor_bottomright(self):
         self.item.scale_start = QtCore.QPoint(10, 10)
+        self.item.scale_direction = (1, 1)
+        self.item.scale_orig_factor = 1
         event = MagicMock()
         event.scenePos = MagicMock(return_value=QtCore.QPoint(20, 90))
-        assert self.item.get_scale_delta(event, (100, 80)) == 0.5
+        assert self.item.get_scale_factor(event) == 1.5
 
     def test_get_scale_delta_topleft(self):
         self.item.scale_start = QtCore.QPoint(10, 10)
+        self.item.scale_direction = (-1, -1)
+        self.item.scale_orig_factor = 0.5
         event = MagicMock()
         event.scenePos = MagicMock(return_value=QtCore.QPoint(-10, -60))
-        assert self.item.get_scale_delta(event, (0, 0)) == 0.5
+        assert self.item.get_scale_factor(event) == 2
 
     def test_get_scale_anchor_topleft(self):
-        assert self.item.get_scale_anchor((0, 0)) == (100, 80)
+        anchor = self.item.get_scale_anchor(self.item, (0, 0))
+        assert anchor.x() == 100
+        assert anchor.y() == 80
 
     def test_get_scale_anchor_bottomright(self):
-        assert self.item.get_scale_anchor((100, 80)) == (0, 0)
+        anchor = self.item.get_scale_anchor(self.item, (100, 80))
+        assert anchor.x() == 0
+        assert anchor.y() == 0
 
     def test_get_scale_anchor_topright(self):
-        assert self.item.get_scale_anchor((100, 0)) == (0, 80)
+        anchor = self.item.get_scale_anchor(self.item, (100, 0))
+        assert anchor.x() == 0
+        assert anchor.y() == 80
 
     def test_get_scale_anchor_bottomleft(self):
-        assert self.item.get_scale_anchor((0, 80)) == (100, 0)
+        anchor = self.item.get_scale_anchor(self.item, (0, 80))
+        assert anchor.x() == 100
+        assert anchor.y() == 0
 
     def test_get_scale_direction_topleft(self):
         assert self.item.get_scale_direction((0, 0)) == (-1, -1)
@@ -303,8 +315,10 @@ class BeePixmapItemScalingTestCase(BeePixmapItemWithViewBaseTestCase):
         assert self.item.get_scale_direction((0, 80)) == (-1, 1)
 
     def test_translate_for_scale_anchor(self):
-        pos = QtCore.QPoint(50, 70)
-        self.item.translate_for_scale_anchor(pos, 2, (100, 80))
+        self.item.scale_orig_pos = QtCore.QPoint(50, 70)
+        self.item.scale_anchor = QtCore.QPoint(100, 80)
+        self.item.scale_orig_factor = 1
+        self.item.translate_for_scale_anchor(3)
         assert self.item.pos().x() == -150
         assert self.item.pos().y() == -90
 
@@ -367,8 +381,9 @@ class BeePixmapItemEventsstuffTestCase(BeePixmapItemWithViewBaseTestCase):
         self.event.button = MagicMock(
             return_value=Qt.MouseButtons.LeftButton)
         self.item.mousePressEvent(self.event)
-        assert self.item.scale_active_corner == (0, 0)
+        assert self.item.scale_active is True
         assert self.item.scale_start == QtCore.QPointF(66, 99)
+        assert self.item.scale_direction == (-1, -1)
         assert self.item.scale_orig_factor == 1
         assert self.item.scale_orig_pos == QtCore.QPointF(0, 0)
 
@@ -379,7 +394,8 @@ class BeePixmapItemEventsstuffTestCase(BeePixmapItemWithViewBaseTestCase):
         self.event.button = MagicMock(
             return_value=Qt.MouseButtons.LeftButton)
         self.item.mousePressEvent(self.event)
-        assert self.item.scale_active_corner == (100, 80)
+        assert self.item.scale_active is True
+        assert self.item.scale_direction == (1, 1)
         assert self.item.scale_start == QtCore.QPointF(66, 99)
         assert self.item.scale_orig_factor == 1
         assert self.item.scale_orig_pos == QtCore.QPointF(0, 0)
@@ -389,7 +405,7 @@ class BeePixmapItemEventsstuffTestCase(BeePixmapItemWithViewBaseTestCase):
         with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent') as m:
             self.item.mousePressEvent(self.event)
             m.assert_called_once_with(self.event)
-            assert self.item.scale_active_corner is None
+            assert self.item.scale_active is False
 
     def test_mouse_press_not_in_handles(self):
         self.item.setSelected(True)
@@ -399,7 +415,7 @@ class BeePixmapItemEventsstuffTestCase(BeePixmapItemWithViewBaseTestCase):
         with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent') as m:
             self.item.mousePressEvent(self.event)
             m.assert_called_once_with(self.event)
-            assert self.item.scale_active_corner is None
+            assert self.item.scale_active is False
 
     def test_mouse_move_event_when_no_action(self):
         with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mouseMoveEvent') as m:
@@ -408,7 +424,9 @@ class BeePixmapItemEventsstuffTestCase(BeePixmapItemWithViewBaseTestCase):
 
     def test_move_event_when_scale_action(self):
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(20, 90))
-        self.item.scale_active_corner = (100, 80)
+        self.item.scale_active = True
+        self.item.scale_direction = (1, 1)
+        self.item.scale_anchor = QtCore.QPointF(100, 80)
         self.item.scale_start = QtCore.QPointF(10, 10)
         self.item.scale_orig_factor = 1
         self.item.scale_orig_pos = QtCore.QPointF(0, 0)
@@ -424,7 +442,9 @@ class BeePixmapItemEventsstuffTestCase(BeePixmapItemWithViewBaseTestCase):
 
     def test_mouse_release_event_when_scale_action(self):
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(20, 90))
-        self.item.scale_active_corner = (100, 80)
+        self.item.scale_active = True
+        self.item.scale_direction = (1, 1)
+        self.item.scale_anchor = QtCore.QPointF(100, 80)
         self.item.scale_start = QtCore.QPointF(10, 10)
         self.item.scale_orig_factor = 1
         self.item.scale_orig_pos = QtCore.QPointF(0, 0)
@@ -436,7 +456,10 @@ class BeePixmapItemEventsstuffTestCase(BeePixmapItemWithViewBaseTestCase):
         args = self.scene.undo_stack.push.call_args_list[0][0]
         cmd = args[0]
         assert cmd.items == [self.item]
-        assert cmd.delta == 0.5
-        assert cmd.anchor == (0, 0)
+        assert cmd.factor == 1.5
+        assert cmd.item_data == [{
+            'anchor': QtCore.QPointF(100, 80),
+            'orig_factor': 1,
+            'orig_pos': QtCore.QPointF(0, 0)}]
         assert cmd.ignore_first_redo is True
-        assert self.item.scale_active_corner is None
+        assert self.item.scale_active is False

@@ -31,8 +31,8 @@ commandline_args = CommandlineArgs()
 logger = logging.getLogger('BeeRef')
 
 
-class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
-    """Class for images added by the user."""
+class SelectableMixin:
+    """Common code for selectable items: Selection outline, handles etc."""
 
     select_color = QtGui.QColor(116, 234, 231, 255)
     SELECT_LINE_WIDTH = 4  # line width for the selection box
@@ -40,76 +40,18 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
     SELECT_RESIZE_SIZE = 20  # size of hover area for scaling
     SELECT_ROTATE_SIZE = 20  # size of hover area for rotating
 
-    def __init__(self, image, filename=None):
-        super().__init__(QtGui.QPixmap.fromImage(image))
-        self.save_id = None
-        self.filename = filename
-        logger.debug(f'Initialized {self}')
-
+    def init_selectable(self):
         self.setAcceptHoverEvents(True)
         self.setFlags(
             QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsMovable
             | QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsSelectable)
 
-        self.scale_active_corner = None
+        self.scale_active = False
         self.viewport_scale = 1
         self.conf_debug_shapes = commandline_args.draw_debug_shapes
 
-    def __str__(self):
-        return (f'Image "{self.filename}" '
-                f'with dimensions {self.width} x {self.height}')
-
-    def setScale(self, factor):
-        if factor <= 0:
-            return
-
-        logger.debug(f'Setting scale for image "{self.filename}" to {factor}')
-        self.prepareGeometryChange()
-        super().setScale(factor)
-
-    def setZValue(self, value):
-        logger.debug(f'Setting z-value for image "{self.filename}" to {value}')
-        super().setZValue(value)
-        self.scene().max_z = max(self.scene().max_z, value)
-
     def bring_to_front(self):
         self.setZValue(self.scene().max_z + 0.001)
-
-    def set_pos_center(self, x, y):
-        """Sets the position using the item's center as the origin point."""
-
-        self.setPos(x - self.width * self.scale() / 2,
-                    y - self.height * self.scale() / 2)
-
-    @property
-    def width(self):
-        return self.pixmap().size().width()
-
-    @property
-    def height(self):
-        return self.pixmap().size().height()
-
-    def itemChange(self, change, value):
-        if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
-            self.prepareGeometryChange()
-            if(value and self.scene() and not self.scene().has_selection()):
-                self.bring_to_front()
-        return super().itemChange(change, value)
-
-    def pixmap_to_bytes(self):
-        """Convert the pixmap data to PNG bytestring."""
-        barray = QtCore.QByteArray()
-        buffer = QtCore.QBuffer(barray)
-        buffer.open(QtCore.QIODevice.OpenMode.WriteOnly)
-        img = self.pixmap().toImage()
-        img.save(buffer, 'PNG')
-        return barray.data()
-
-    def pixmap_from_bytes(self, data):
-        """Set image pimap from a bytestring."""
-        pixmap = QtGui.QPixmap()
-        pixmap.loadFromData(data)
-        self.setPixmap(pixmap)
 
     def fixed_length_for_viewport(self, value):
         """The interactable areas need to stay the same size on the
@@ -140,14 +82,12 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         else:
             painter.fillPath(shape, color)
 
-    def paint(self, painter, option, widget):
-        painter.drawPixmap(0, 0, self.pixmap())
-
+    def paint_selectable(self, painter, option, widget):
         if self.conf_debug_shapes:
             self.draw_debug_shape(painter, self.boundingRect(), 0, 255, 0)
             self.draw_debug_shape(painter, self.shape(), 255, 0, 0)
 
-        if not self.isSelected():
+        if not self.has_selection_outline():
             return
 
         pen = QtGui.QPen(self.select_color)
@@ -158,10 +98,8 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         # Draw the main selection rectangle
         painter.drawRect(0, 0, self.width, self.height)
 
-        single_select_mode = self.scene().has_single_selection()
-
         # If it's a single selection, draw the handles:
-        if single_select_mode:
+        if self.has_selection_handles():
             pen.setWidth(self.SELECT_HANDLE_SIZE)
             painter.setPen(pen)
             for corner in self.corners:
@@ -193,7 +131,7 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
 
     def boundingRect(self):
         bounds = super().boundingRect()
-        if not self.isSelected():
+        if not self.has_selection_outline():
             return bounds
 
         # Add extra space for scale and rotate interactive areas
@@ -206,7 +144,7 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
 
     def shape(self):
         shape_ = super().shape()
-        if self.isSelected():
+        if self.has_selection_outline():
             # Add extra space for scale and rotate interactive areas
             path = QtGui.QPainterPath()
             for corner in self.corners:
@@ -216,7 +154,7 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         return shape_
 
     def hoverMoveEvent(self, event):
-        if not self.isSelected() or not self.scene().has_single_selection():
+        if not self.has_selection_handles():
             return
 
         for corner in self.corners:
@@ -236,35 +174,40 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def hoverEnterEvent(self, event):
-        # Always return regular cursor when item isn't selected
-        if not self.isSelected() or not self.scene().has_single_selection():
+        # Always return regular cursor when there aren't any selection handles
+        if not self.has_selection_handles():
             self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def mousePressEvent(self, event):
         if (event.button() == Qt.MouseButtons.LeftButton
-                and self.isSelected() and self.scene().has_single_selection()):
+                and self.has_selection_handles()):
             for corner in self.corners:
                 # Check if we are in one of the corner's scale areas
                 if self.get_scale_bounds(corner).contains(event.pos()):
                     # Start scale action for this corner
-                    self.scale_active_corner = corner
+                    self.scale_active = True
                     self.scale_start = event.scenePos()
-                    self.scale_orig_factor = self.scale()
-                    self.scale_orig_pos = self.pos()
+                    self.scale_direction = self.get_scale_direction(corner)
+                    for item in self.selection_action_items():
+                        item.scale_anchor = self.get_scale_anchor(item, corner)
+                        item.scale_orig_factor = item.scale()
+                        item.scale_orig_pos = item.pos()
                     event.accept()
                     return
 
         super().mousePressEvent(event)
 
-    def get_scale_delta(self, event, corner):
+    def get_scale_factor(self, event):
         imgsize = self.width + self.height
         p = event.scenePos() - self.scale_start
-        direction = self.get_scale_direction(corner)
-        return (direction[0] * p.x() + direction[1] * p.y()) / imgsize
+        direction = self.scale_direction
+        delta = (direction[0] * p.x() + direction[1] * p.y()) / imgsize
+        return (self.scale_orig_factor + delta) / self.scale_orig_factor
 
-    def get_scale_anchor(self, corner):
+    def get_scale_anchor(self, item, corner):
         """Get the anchor around which the scale for this corner operates."""
-        return(self.width - corner[0], self.height - corner[1])
+        return item.mapFromScene(
+            self.mapToScene(self.width - corner[0], self.height - corner[1]))
 
     def get_scale_direction(self, corner):
         """Get the direction in which the scale for this corner increases"""
@@ -272,41 +215,183 @@ class BeePixmapItem(QtWidgets.QGraphicsPixmapItem):
         y = 1 if corner[1] > 0 else -1
         return (x, y)
 
-    def translate_for_scale_anchor(self, orig_pos, scale_delta, anchor):
+    def translate_for_scale_anchor(self, scale_factor):
         """Adjust the item's position so that a scale with the given scale
-        delta appears to operate around the given anchor. ``setScale`` needs
-        to be called separately with delta *added* to the current item's scale
-        factor."""
+        factor appears to operate around the scale anchor. ``setScale``
+        needs to be called separately with ``scale_factor`` multiplied by
+        the item's current scale factor.
+        """
 
+        factor = self.scale_orig_factor * (scale_factor - 1)
         self.setPos(
-            orig_pos.x() - anchor[0] * scale_delta,
-            orig_pos.y() - anchor[1] * scale_delta,
+            self.scale_orig_pos.x() - self.scale_anchor.x() * factor,
+            self.scale_orig_pos.y() - self.scale_anchor.y() * factor,
         )
 
     def mouseMoveEvent(self, event):
-        if self.scale_active_corner:
-            delta = self.get_scale_delta(event, self.scale_active_corner)
-            self.setScale(self.scale_orig_factor + delta)
-            self.translate_for_scale_anchor(
-                self.scale_orig_pos,
-                delta,
-                self.get_scale_anchor(self.scale_active_corner))
+        if self.scale_active:
+            factor = self.get_scale_factor(event)
+            for item in self.selection_action_items():
+                item.setScale(item.scale_orig_factor * factor)
+                item.translate_for_scale_anchor(factor)
             event.accept()
         else:
             super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        if self.scale_active_corner:
+        if self.scale_active:
             self.scene().undo_stack.push(
-                commands.ScaleItemsByDelta(
-                    [self],
-                    self.get_scale_delta(event, self.scale_active_corner),
-                    self.get_scale_anchor(self.scale_active_corner),
+                commands.ScaleItemsBy(
+                    self.selection_action_items(),
+                    self.get_scale_factor(event),
                     ignore_first_redo=True))
-            self.scale_active_corner = None
+            self.scale_active = False
             event.accept()
         else:
             super().mouseReleaseEvent(event)
 
     def on_view_scale_change(self):
         self.prepareGeometryChange()
+
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
+            self.prepareGeometryChange()
+            if hasattr(self, 'on_selected_change'):
+                self.on_selected_change(value)
+        return super().itemChange(change, value)
+
+
+class BeePixmapItem(SelectableMixin, QtWidgets.QGraphicsPixmapItem):
+    """Class for images added by the user."""
+
+    def __init__(self, image, filename=None):
+        super().__init__(QtGui.QPixmap.fromImage(image))
+        self.save_id = None
+        self.filename = filename
+        logger.debug(f'Initialized {self}')
+        self.init_selectable()
+
+    def __str__(self):
+        return (f'Image "{self.filename}" '
+                f'with dimensions {self.width} x {self.height}')
+
+    def setScale(self, factor):
+        if factor <= 0:
+            return
+
+        logger.debug(f'Setting scale for image "{self.filename}" to {factor}')
+        self.prepareGeometryChange()
+        super().setScale(factor)
+
+    def setZValue(self, value):
+        logger.debug(f'Setting z-value for image "{self.filename}" to {value}')
+        super().setZValue(value)
+        self.scene().max_z = max(self.scene().max_z, value)
+
+    def set_pos_center(self, x, y):
+        """Sets the position using the item's center as the origin point."""
+
+        self.setPos(x - self.width * self.scale() / 2,
+                    y - self.height * self.scale() / 2)
+
+    @property
+    def width(self):
+        return self.pixmap().size().width()
+
+    @property
+    def height(self):
+        return self.pixmap().size().height()
+
+    @property
+    def scene_bottomright(self):
+        """The bottom right corner in scene coordinates."""
+        return self.mapToScene(QtCore.QPointF(self.width, self.height))
+
+    def pixmap_to_bytes(self):
+        """Convert the pixmap data to PNG bytestring."""
+        barray = QtCore.QByteArray()
+        buffer = QtCore.QBuffer(barray)
+        buffer.open(QtCore.QIODevice.OpenMode.WriteOnly)
+        img = self.pixmap().toImage()
+        img.save(buffer, 'PNG')
+        return barray.data()
+
+    def pixmap_from_bytes(self, data):
+        """Set image pimap from a bytestring."""
+        pixmap = QtGui.QPixmap()
+        pixmap.loadFromData(data)
+        self.setPixmap(pixmap)
+
+    def paint(self, painter, option, widget):
+        painter.drawPixmap(0, 0, self.pixmap())
+        self.paint_selectable(painter, option, widget)
+
+    def has_selection_outline(self):
+        return self.isSelected()
+
+    def has_selection_handles(self):
+        return self.isSelected() and self.scene().has_single_selection()
+
+    def selection_action_items(self):
+        """The items affected by selection actions like scaling and rotating.
+        """
+        return [self]
+
+    def on_selected_change(self, value):
+        if(value and self.scene() and not self.scene().has_selection()):
+            self.bring_to_front()
+
+
+class MultiSelectItem(SelectableMixin, QtWidgets.QGraphicsRectItem):
+    """Class for images added by the user."""
+
+    def __init__(self):
+        super().__init__()
+        self.init_selectable()
+
+    def __str__(self):
+        return (f'MultiSelectItem '
+                f'with dimensions {self.width} x {self.height}')
+
+    @property
+    def width(self):
+        return self.rect().width()
+
+    @property
+    def height(self):
+        return self.rect().height()
+
+    def paint(self, painter, option, widget):
+        self.paint_selectable(painter, option, widget)
+
+    def has_selection_outline(self):
+        return True
+
+    def has_selection_handles(self):
+        return True
+
+    def selection_action_items(self):
+        """The items affected by selection actions like scaling and rotating.
+        """
+        return list(self.scene().selectedItems())
+
+    def fit_selection_area(self, rect):
+        """Updates itself to fit the given selection area."""
+
+        logging.debug(f'Fit selection area to {rect}')
+        self.setRect(0, 0, rect.width(), rect.height())
+        self.setPos(rect.topLeft())
+        self.setScale(1)
+        self.setRotation(0)
+        self.setSelected(True)
+
+    def mousePressEvent(self, event):
+        if (event.button() == Qt.MouseButtons.LeftButton
+                and event.modifiers() == Qt.KeyboardModifiers.ControlModifier):
+            # We still need to be able to select additional images
+            # within/"under" the multi select rectangle, so let ctrl+click
+            # events pass through
+            event.ignore()
+            return
+
+        super().mousePressEvent(event)

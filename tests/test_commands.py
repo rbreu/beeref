@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from PyQt6 import QtGui
+from PyQt6 import QtCore, QtGui
 
 from beeref import commands
 from beeref.items import BeePixmapItem
@@ -93,41 +93,59 @@ class ScaleItemsByTestCase(BeeTestCase):
     def test_redo_undo(self):
         item1 = BeePixmapItem(QtGui.QImage())
         item1.setScale(1)
+        item1.scale_orig_factor = 1
+        item1.scale_anchor = QtCore.QPointF(100, 100)
+        item1.scale_orig_pos = QtCore.QPointF(0, 0)
         item2 = BeePixmapItem(QtGui.QImage())
         item2.setScale(3)
-        command = commands.ScaleItemsByDelta([item1, item2], 2, (100, 100))
+        item2.scale_orig_factor = 3
+        item2.scale_anchor = QtCore.QPointF(0, 0)
+        item2.setPos(100, 100)
+        item2.scale_orig_pos = QtCore.QPointF(100, 100)
+        command = commands.ScaleItemsBy([item1, item2], 2)
         command.redo()
-        assert item1.scale() == 3
-        assert item1.pos().x() == -200
-        assert item1.pos().y() == -200
-        assert item2.scale() == 5
-        assert item2.pos().x() == -200
-        assert item2.pos().y() == -200
+        assert item1.scale() == 2
+        assert item1.pos().x() == -100
+        assert item1.pos().y() == -100
+        assert item2.scale() == 6
+        assert item2.pos().x() == 100
+        assert item2.pos().y() == 100
         command.undo()
         assert item1.scale() == 1
         assert item1.pos().x() == 0
         assert item1.pos().y() == 0
         assert item2.scale() == 3
-        assert item2.pos().x() == 0
-        assert item2.pos().y() == 0
+        assert item2.pos().x() == 100
+        assert item2.pos().y() == 100
 
     def test_ignore_first_redo(self):
         item1 = BeePixmapItem(QtGui.QImage())
         item1.setScale(1)
+        item1.scale_orig_factor = 1
+        item1.scale_anchor = QtCore.QPointF(100, 100)
+        item1.scale_orig_pos = QtCore.QPointF(0, 0)
         item2 = BeePixmapItem(QtGui.QImage())
         item2.setScale(3)
-        command = commands.ScaleItemsByDelta([item1, item2], 2, (100, 100),
-                                             ignore_first_redo=True)
+        item2.scale_orig_factor = 3
+        item2.scale_anchor = QtCore.QPointF(0, 0)
+        item2.setPos(100, 100)
+        item2.scale_orig_pos = QtCore.QPointF(100, 100)
+        command = commands.ScaleItemsBy([item1, item2], 2,
+                                        ignore_first_redo=True)
         command.redo()
         assert item1.scale() == 1
         assert item2.scale() == 3
         assert item1.pos().x() == 0
         assert item1.pos().y() == 0
+        assert item2.pos().x() == 100
+        assert item2.pos().y() == 100
         command.redo()
-        assert item1.scale() == 3
-        assert item2.scale() == 5
-        assert item1.pos().x() == -200
-        assert item1.pos().y() == -200
+        assert item1.scale() == 2
+        assert item1.pos().x() == -100
+        assert item1.pos().y() == -100
+        assert item2.scale() == 6
+        assert item2.pos().x() == 100
+        assert item2.pos().y() == 100
 
 
 class NormalizeItemsTestCase(BeeTestCase):
