@@ -19,7 +19,10 @@ jobs:
         sudo apt install xvfb
         python -m pip install --upgrade pip
         pip install .
-        pip install pytest
+        pip install -r requirements/dev.txt
     - name: Run Unittests with pytest
       run: |
-        xvfb-run pytest -v -s .
+        xvfb-run coverage run --source=beeref -m pytest -v -s
+    - name: Upload Coverage report to Codecov
+      uses: codecov/codecov-action@v1
+      with:
