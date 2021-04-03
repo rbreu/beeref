@@ -25,4 +25,3 @@ jobs:
         xvfb-run coverage run --source=beeref -m pytest -v -s
     - name: Upload Coverage report to Codecov
       uses: codecov/codecov-action@v1
-      with:
