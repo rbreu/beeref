@@ -1,9 +1,9 @@
 BeeRef — A Simple Reference Image Viewer
 ========================================
 
-.. image:: https://raw.githubusercontent.com/rbreu/beeref/main/beeref/assets/logo.png
-     :align: left
-     :width: 100px
+.. raw:: html
+
+   <img align="left" width="100" height="100" src="https://raw.githubusercontent.com/rbreu/beeref/main/beeref/assets/logo.png">
 
 BeeRef lets you quickly arrange your reference images and view them while you create. Its minimal interface is designed not to get in the way of your creative process.
 
