@@ -3,10 +3,9 @@ BeeRef — A Simple Reference Image Viewer
 
 View your references while you art!
 
-.. image:: https://github.com/rbreu/beeref/blob/main/images/screenshot.jpg
-
 |python-version| |github-ci-flake8| |github-ci-pytest| |codecov|
 
+.. image:: https://github.com/rbreu/beeref/blob/main/images/screenshot.jpg
 
 .. |python-version| image:: https://github.com/rbreu/beeref/blob/main/images/python_version_badge.svg
 
