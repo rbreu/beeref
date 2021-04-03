@@ -117,7 +117,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             if not delta.isNull():
                 self.undo_stack.push(
                     commands.MoveItemsBy(self.selectedItems(),
-                                         delta.x(), delta.y(),
+                                         delta,
                                          ignore_first_redo=True))
         self.move_active = False
         super().mouseReleaseEvent(event)

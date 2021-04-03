@@ -55,11 +55,10 @@ class DeleteItems(QtGui.QUndoCommand):
 
 class MoveItemsBy(QtGui.QUndoCommand):
 
-    def __init__(self, items, x, y, ignore_first_redo=False):
+    def __init__(self, items, delta, ignore_first_redo=False):
         super().__init__('Move items')
         self.items = items
-        self.delta_x = x
-        self.delta_y = y
+        self.delta = delta
         self.ignore_first_redo = ignore_first_redo
 
     def redo(self):
@@ -67,11 +66,11 @@ class MoveItemsBy(QtGui.QUndoCommand):
             self.ignore_first_redo = False
             return
         for item in self.items:
-            item.moveBy(self.delta_x, self.delta_y)
+            item.moveBy(self.delta.x(), self.delta.y())
 
     def undo(self):
         for item in self.items:
-            item.moveBy(-self.delta_x, -self.delta_y)
+            item.moveBy(-self.delta.x(), -self.delta.y())
 
 
 class ScaleItemsBy(QtGui.QUndoCommand):

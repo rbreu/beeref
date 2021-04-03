@@ -57,7 +57,7 @@ class MoveItemsByTestCase(BeeTestCase):
         item1.setPos(0, 0)
         item2 = BeePixmapItem(QtGui.QImage())
         item2.setPos(30, 40)
-        command = commands.MoveItemsBy([item1, item2], 50, 100)
+        command = commands.MoveItemsBy([item1, item2], QtCore.QPointF(50, 100))
         command.redo()
         assert item1.pos().x() == 50
         assert item1.pos().y() == 100
@@ -75,7 +75,9 @@ class MoveItemsByTestCase(BeeTestCase):
         item1.setPos(0, 0)
         item2 = BeePixmapItem(QtGui.QImage())
         item2.setPos(30, 40)
-        command = commands.MoveItemsBy([item1, item2], 50, 100, True)
+        command = commands.MoveItemsBy([item1, item2],
+                                       QtCore.QPointF(50, 100),
+                                       ignore_first_redo=True)
         command.redo()
         assert item1.pos().x() == 0
         assert item1.pos().y() == 0

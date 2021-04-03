@@ -155,8 +155,8 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
         cmd = args[0]
         assert cmd.items == [item]
         assert cmd.ignore_first_redo is True
-        assert cmd.delta_x == 10
-        assert cmd.delta_y == 20
+        assert cmd.delta.x() == 10
+        assert cmd.delta.y() == 20
         mouse_mock.assert_called_once_with(event)
         assert self.scene.move_active is False
 

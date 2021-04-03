@@ -258,19 +258,19 @@ class SelectableMixinTestCase(SelectableMixinBaseTestCase):
 class SelectableMixinScalingTestCase(SelectableMixinBaseTestCase):
 
     def test_get_scale_factor_bottomright(self):
-        self.item.scale_start = QtCore.QPoint(10, 10)
-        self.item.scale_direction = (1, 1)
+        self.item.scale_start = QtCore.QPointF(10, 10)
+        self.item.scale_direction = QtCore.QPointF(1, 1)
         self.item.scale_orig_factor = 1
         event = MagicMock()
-        event.scenePos = MagicMock(return_value=QtCore.QPoint(20, 90))
+        event.scenePos = MagicMock(return_value=QtCore.QPointF(20, 90))
         assert self.item.get_scale_factor(event) == 1.5
 
     def test_get_scale_factor_topleft(self):
-        self.item.scale_start = QtCore.QPoint(10, 10)
-        self.item.scale_direction = (-1, -1)
+        self.item.scale_start = QtCore.QPointF(10, 10)
+        self.item.scale_direction = QtCore.QPointF(-1, -1)
         self.item.scale_orig_factor = 0.5
         event = MagicMock()
-        event.scenePos = MagicMock(return_value=QtCore.QPoint(-10, -60))
+        event.scenePos = MagicMock(return_value=QtCore.QPointF(-10, -60))
         assert self.item.get_scale_factor(event) == 2
 
     def test_get_scale_anchor_topleft(self):
@@ -301,16 +301,20 @@ class SelectableMixinScalingTestCase(SelectableMixinBaseTestCase):
         assert anchor.y() == 47
 
     def test_get_scale_direction_topleft(self):
-        assert self.item.get_scale_direction(QtCore.QPointF(0, 0)) == (-1, -1)
+        assert self.item.get_scale_direction(
+            QtCore.QPointF(0, 0)) == QtCore.QPointF(-1, -1)
 
     def test_get_scale_direction_bottomright(self):
-        assert self.item.get_scale_direction(QtCore.QPointF(100, 80)) == (1, 1)
+        assert self.item.get_scale_direction(
+            QtCore.QPointF(100, 80)) == QtCore.QPointF(1, 1)
 
     def test_get_scale_direction_topright(self):
-        assert self.item.get_scale_direction(QtCore.QPointF(100, 0)) == (1, -1)
+        assert self.item.get_scale_direction(
+            QtCore.QPointF(100, 0)) == QtCore.QPointF(1, -1)
 
     def test_get_scale_direction_bottomleft(self):
-        assert self.item.get_scale_direction(QtCore.QPointF(0, 80)) == (-1, 1)
+        assert self.item.get_scale_direction(
+            QtCore.QPointF(0, 80)) == QtCore.QPointF(-1, 1)
 
     def test_translate_for_scale_anchor(self):
         self.item.scale_orig_pos = QtCore.QPoint(50, 70)
@@ -381,7 +385,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.mousePressEvent(self.event)
         assert self.item.scale_active is True
         assert self.item.scale_start == QtCore.QPointF(66, 99)
-        assert self.item.scale_direction == (-1, -1)
+        assert self.item.scale_direction == QtCore.QPointF(-1, -1)
         assert self.item.scale_orig_factor == 1
         assert self.item.scale_orig_pos == QtCore.QPointF(0, 0)
 
@@ -393,7 +397,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
             return_value=Qt.MouseButtons.LeftButton)
         self.item.mousePressEvent(self.event)
         assert self.item.scale_active is True
-        assert self.item.scale_direction == (1, 1)
+        assert self.item.scale_direction == QtCore.QPointF(1, 1)
         assert self.item.scale_start == QtCore.QPointF(66, 99)
         assert self.item.scale_orig_factor == 1
         assert self.item.scale_orig_pos == QtCore.QPointF(0, 0)
@@ -423,7 +427,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
     def test_move_event_when_scale_action(self):
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(20, 90))
         self.item.scale_active = True
-        self.item.scale_direction = (1, 1)
+        self.item.scale_direction = QtCore.QPointF(1, 1)
         self.item.scale_anchor = QtCore.QPointF(100, 80)
         self.item.scale_start = QtCore.QPointF(10, 10)
         self.item.scale_orig_factor = 1
@@ -441,7 +445,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
     def test_mouse_release_event_when_scale_action(self):
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(20, 90))
         self.item.scale_active = True
-        self.item.scale_direction = (1, 1)
+        self.item.scale_direction = QtCore.QPointF(1, 1)
         self.item.scale_anchor = QtCore.QPointF(100, 80)
         self.item.scale_start = QtCore.QPointF(10, 10)
         self.item.scale_orig_factor = 1

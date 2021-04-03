@@ -178,7 +178,7 @@ class SelectableMixin:
             # See if we need to change the cursor for scale areas
             if self.get_scale_bounds(corner).contains(event.pos()):
                 direction = self.get_scale_direction(corner)
-                if direction[0] == direction[1]:
+                if direction.x() == direction.y():
                     self.setCursor(Qt.CursorShape.SizeFDiagCursor)
                 else:
                     self.setCursor(Qt.CursorShape.SizeBDiagCursor)
@@ -218,7 +218,7 @@ class SelectableMixin:
         imgsize = self.width + self.height
         p = event.scenePos() - self.scale_start
         direction = self.scale_direction
-        delta = (direction[0] * p.x() + direction[1] * p.y()) / imgsize
+        delta = QtCore.QPointF.dotProduct(direction, p) / imgsize
         return (self.scale_orig_factor + delta) / self.scale_orig_factor
 
     def get_scale_anchor(self, item, corner):
@@ -228,9 +228,8 @@ class SelectableMixin:
 
     def get_scale_direction(self, corner):
         """Get the direction in which the scale for this corner increases"""
-        x = 1 if corner.x() > 0 else -1
-        y = 1 if corner.y() > 0 else -1
-        return (x, y)
+        return QtCore.QPointF(1 if corner.x() > 0 else -1,
+                              1 if corner.y() > 0 else -1)
 
     def translate_for_scale_anchor(self, scale_factor):
         """Adjust the item's position so that a scale with the given scale
