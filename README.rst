@@ -1,7 +1,7 @@
 BeeRef — A Simple Reference Image Viewer
 ========================================
 
-.. image:: /home/rbreu/code/python/beeref/git/beeref/assets/logo.png
+.. image:: https://raw.githubusercontent.com/rbreu/beeref/main/beeref/assets/logo.png
      :align: left
      :width: 100px
 
