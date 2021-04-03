@@ -1,7 +1,10 @@
 import math
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, PropertyMock
 
-from PyQt6 import QtGui, QtWidgets
+from pytest import approx
+
+from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtCore import Qt
 
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
@@ -13,6 +16,10 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
     def setUp(self):
         self.undo_stack = QtGui.QUndoStack()
         self.scene = BeeGraphicsScene(self.undo_stack)
+        self.view = MagicMock(get_scale=MagicMock(return_value=1))
+        views_patcher = patch('beeref.scene.BeeGraphicsScene.views',
+                              return_value=[self.view])
+        views_patcher.start()
 
     def test_normalize_height(self):
         item1 = MagicMock(height=100, scale_factor=1)
@@ -56,6 +63,144 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
     def test_normalize_size_when_no_items(self):
         self.scene.normalize_size()
 
+    def test_has_selection_when_no_selection(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        assert self.scene.has_selection() is False
+
+    def test_has_selection_when_selection(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        item.setSelected(True)
+        assert self.scene.has_selection() is True
+
+    def test_has_single_selection_when_no_selection(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        assert self.scene.has_single_selection() is False
+
+    def test_has_single_selection_when_single_selection(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        assert self.scene.has_single_selection() is True
+
+    def test_has_single_selection_when_multi_selection(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        assert self.scene.has_single_selection() is False
+
+    def test_has_multi_selection_when_no_selection(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        assert self.scene.has_multi_selection() is False
+
+    def test_has_multi_selection_when_single_selection(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        assert self.scene.has_multi_selection() is False
+
+    def test_has_multi_selection_when_multi_selection(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        assert self.scene.has_multi_selection() is True
+
+    @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
+    def test_mouse_press_event_when_right_click(self, mouse_mock):
+        event = MagicMock(
+            button=MagicMock(return_value=Qt.MouseButtons.RightButton))
+        self.scene.mousePressEvent(event)
+        event.accept.assert_not_called()
+        mouse_mock.assert_not_called()
+
+    @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
+    def test_mouse_press_event_when_left_click(self, mouse_mock):
+        event = MagicMock(
+            button=MagicMock(return_value=Qt.MouseButtons.LeftButton),
+            scenePos=MagicMock(return_value=QtCore.QPoint(10, 20)),
+        )
+        self.scene.mousePressEvent(event)
+        event.accept.assert_not_called()
+        mouse_mock.assert_called_once_with(event)
+        assert self.scene.move_active is True
+        assert self.scene.move_start == QtCore.QPoint(10, 20)
+
+    @patch('PyQt6.QtWidgets.QGraphicsScene.mouseReleaseEvent')
+    def test_mouse_release_event_when_move_active(self, mouse_mock):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        item.setSelected(True)
+        event = MagicMock(
+            scenePos=MagicMock(return_value=QtCore.QPoint(10, 20)))
+        self.scene.move_active = True
+        self.scene.move_start = QtCore.QPoint(0, 0)
+        self.scene.undo_stack = MagicMock(push=MagicMock())
+
+        self.scene.mouseReleaseEvent(event)
+        self.scene.undo_stack.push.assert_called_once()
+        args = self.scene.undo_stack.push.call_args_list[0][0]
+        cmd = args[0]
+        assert cmd.items == [item]
+        assert cmd.ignore_first_redo is True
+        assert cmd.delta_x == 10
+        assert cmd.delta_y == 20
+        mouse_mock.assert_called_once_with(event)
+        assert self.scene.move_active is False
+
+    @patch('PyQt6.QtWidgets.QGraphicsScene.mouseReleaseEvent')
+    def test_mouse_release_event_when_move_not_active(self, mouse_mock):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        item.setSelected(True)
+        event = MagicMock(
+            scenePos=MagicMock(return_value=QtCore.QPoint(10, 20)))
+        self.scene.move_active = False
+        self.scene.undo_stack = MagicMock(push=MagicMock())
+
+        self.scene.mouseReleaseEvent(event)
+        self.scene.undo_stack.push.assert_not_called()
+        mouse_mock.assert_called_once_with(event)
+        assert self.scene.move_active is False
+
+    @patch('PyQt6.QtWidgets.QGraphicsScene.mouseReleaseEvent')
+    def test_mouse_release_event_when_no_selection(self, mouse_mock):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        item.setSelected(False)
+        event = MagicMock(
+            scenePos=MagicMock(return_value=QtCore.QPoint(10, 20)))
+        self.scene.move_active = True
+        self.scene.undo_stack = MagicMock(push=MagicMock())
+
+        self.scene.mouseReleaseEvent(event)
+        self.scene.undo_stack.push.assert_not_called()
+        mouse_mock.assert_called_once_with(event)
+        assert self.scene.move_active is False
+
+    def test_items_for_save(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item3 = QtWidgets.QGraphicsRectItem()
+        self.scene.addItem(item3)
+
+        items = list(self.scene.items_for_save())
+        assert items == [item1, item2]
+
     def test_clear_save_ids(self):
         item1 = BeePixmapItem(QtGui.QImage())
         item1.save_id = 5
@@ -70,13 +215,100 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
         assert item2.save_id is None
         assert hasattr(item3, 'save_id') is False
 
-    def test_items_for_save(self):
+    def test_on_view_scale_change(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        item.setSelected(True)
+        item.on_view_scale_change = MagicMock()
+        self.scene.on_view_scale_change()
+        item.on_view_scale_change.assert_called_once()
+
+    def test_get_selection_rect_two_items(self):
         item1 = BeePixmapItem(QtGui.QImage())
         self.scene.addItem(item1)
+        item1.setSelected(True)
+        item1.setPos(4, -6)
         item2 = BeePixmapItem(QtGui.QImage())
         self.scene.addItem(item2)
-        item3 = QtWidgets.QGraphicsRectItem()
+        item2.setSelected(True)
+        item2.setPos(-33, 22)
+        item3 = BeePixmapItem(QtGui.QImage())
         self.scene.addItem(item3)
+        item3.setSelected(False)
+        item3.setPos(1000, 1000)
 
-        items = list(self.scene.items_for_save())
-        assert items == [item1, item2]
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=100):
+                rect = self.scene.get_selection_rect()
+
+        assert rect.topLeft().x() == -33
+        assert rect.topLeft().y() == -6
+        assert rect.bottomRight().x() == 104
+        assert rect.bottomRight().y() == 122
+
+    def test_get_selection_rect_rotated_item(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        item.setSelected(True)
+        item.setRotation(-45)
+
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=100):
+                rect = self.scene.get_selection_rect()
+
+        assert rect.topLeft().x() == 0
+        assert rect.topLeft().y() == approx(-math.sqrt(2) * 50)
+        assert rect.bottomRight().x() == approx(math.sqrt(2) * 100)
+        assert rect.bottomRight().y() == approx(math.sqrt(2) * 50)
+
+    def test_on_selection_change_when_multi_selection_new(self):
+        self.scene.has_multi_selection = MagicMock(return_value=True)
+        self.scene.multi_select_item.fit_selection_area = MagicMock()
+        self.scene.multi_select_item.bring_to_front = MagicMock()
+        self.scene.get_selection_rect = MagicMock(
+            return_value=QtCore.QRectF(0, 0, 100, 80))
+        self.scene.addItem = MagicMock()
+
+        self.scene.on_selection_change()
+
+        m_item = self.scene.multi_select_item
+        m_item.fit_selection_area.assert_called_once_with(
+            QtCore.QRectF(0, 0, 100, 80))
+        m_item.bring_to_front.assert_called_once()
+        self.scene.addItem.assert_called_once_with(m_item)
+
+    def test_on_selection_change_when_multi_selection_existing(self):
+        self.scene.addItem(self.scene.multi_select_item)
+        self.scene.has_multi_selection = MagicMock(return_value=True)
+        self.scene.multi_select_item.fit_selection_area = MagicMock()
+        self.scene.multi_select_item.bring_to_front = MagicMock()
+        self.scene.get_selection_rect = MagicMock(
+            return_value=QtCore.QRectF(0, 0, 100, 80))
+        self.scene.addItem = MagicMock()
+
+        self.scene.on_selection_change()
+
+        m_item = self.scene.multi_select_item
+        m_item.fit_selection_area.assert_called_once_with(
+            QtCore.QRectF(0, 0, 100, 80))
+        m_item.bring_to_front.assert_not_called()
+        self.scene.addItem.assert_not_called()
+
+    def test_on_selection_change_when_multi_selection_ended(self):
+        self.scene.addItem(self.scene.multi_select_item)
+        self.scene.has_multi_selection = MagicMock(return_value=False)
+        self.scene.multi_select_item.fit_selection_area = MagicMock()
+        self.scene.multi_select_item.bring_to_front = MagicMock()
+        self.scene.get_selection_rect = MagicMock(
+            return_value=QtCore.QRectF(0, 0, 100, 80))
+        self.scene.removeItem = MagicMock()
+
+        self.scene.on_selection_change()
+
+        m_item = self.scene.multi_select_item
+        m_item.fit_selection_area.assert_not_called()
+        self.scene.removeItem.assert_called_once_with(m_item)

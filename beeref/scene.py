@@ -20,7 +20,7 @@ from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
 
 from beeref import commands
-from beeref.items import MultiSelectItem
+from beeref.selection import MultiSelectItem
 
 
 logger = logging.getLogger('BeeRef')
@@ -119,13 +119,13 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
                     commands.MoveItemsBy(self.selectedItems(),
                                          delta.x(), delta.y(),
                                          ignore_first_redo=True))
-            self.move_active = False
+        self.move_active = False
         super().mouseReleaseEvent(event)
 
     def items_for_save(self):
         """Returns the items that are to be saved.
 
-        Items to be saved are items that have an save_id attribute.
+        Items to be saved are items that have a save_id attribute.
         """
 
         return filter(lambda i: hasattr(i, 'save_id'),
@@ -144,19 +144,17 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         items = list(filter(lambda i: hasattr(i, 'save_id'),
                             self.selectedItems()))
+        x = []
+        y = []
 
-        topleft = items[0].pos()
-        bottomright = items[0].scene_bottomright
+        for item in items:
+            for corner in item.corners_scene_coords:
+                x.append(corner.x())
+                y.append(corner.y())
 
-        for item in items[1:]:
-            tl = item.pos()
-            br = item.scene_bottomright
-            topleft.setX(min(topleft.x(), tl.x(), br.x()))
-            topleft.setY(min(topleft.y(), tl.y(), br.y()))
-            bottomright.setX(max(bottomright.x(), tl.x(), br.x()))
-            bottomright.setY(max(bottomright.y(), tl.y(), br.y()))
-
-        return QtCore.QRectF(topleft, bottomright)
+        return QtCore.QRectF(
+            QtCore.QPointF(min(x), min(y)),
+            QtCore.QPointF(max(x), max(y)))
 
     def on_selection_change(self):
         if self.has_multi_selection():
