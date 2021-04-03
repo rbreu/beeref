@@ -1,7 +1,11 @@
 BeeRef — A Simple Reference Image Viewer
 ========================================
 
-View your references while you art!
+.. image:: /home/rbreu/code/python/beeref/git/beeref/assets/logo.png
+     :align: left
+     :width: 100px
+
+BeeRef lets you quickly arrange your reference images and view them while you create. Its minimal interface is designed not to get in the way of your creative process.
 
 |python-version| |github-ci-flake8| |github-ci-pytest| |codecov|
 
