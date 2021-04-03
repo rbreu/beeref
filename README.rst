@@ -5,7 +5,10 @@ View your references while you art!
 
 .. image:: https://github.com/rbreu/beeref/blob/main/images/screenshot.jpg
 
-|github-ci-flake8| |github-ci-pytest| |codecov|
+|python-version| |github-ci-flake8| |github-ci-pytest| |codecov|
+
+
+.. |python-version| image:: https://github.com/rbreu/beeref/blob/main/images/python_version_badge.svg
 
 .. |github-ci-flake8| image:: https://github.com/rbreu/beeref/actions/workflows/flake8.yml/badge.svg
    :target: https://github.com/rbreu/beeref/actions/workflows/flake8.yml
