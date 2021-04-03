@@ -22,4 +22,4 @@ jobs:
         pip install pytest
     - name: Run Unittests with pytest
       run: |
-        xvfb-run pytest .
+        xvfb-run pytest -v -s .
