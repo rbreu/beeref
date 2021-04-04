@@ -11,7 +11,7 @@ from beeref.scene import BeeGraphicsScene
 from .base import BeeTestCase
 
 
-class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
+class BeeGraphicsSceneTestCase(BeeTestCase):
 
     def setUp(self):
         self.undo_stack = QtGui.QUndoStack()
@@ -230,6 +230,7 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
     def test_mouse_release_event_when_rubberband_active(self, mouse_mock):
         event = MagicMock()
         self.scene.rubberband_active = True
+        self.scene.addItem(self.scene.rubberband_item)
         self.scene.removeItem = MagicMock()
 
         self.scene.mouseReleaseEvent(event)

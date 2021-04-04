@@ -244,7 +244,7 @@ class SelectableMixinTestCase(SelectableMixinBaseTestCase):
             assert shape.bottomRight().x() == 100
             assert shape.bottomRight().y() == 80
 
-    def test_shape_when_selected(self):
+    def test_shape_when_selected_single(self):
         self.item.SELECT_RESIZE_SIZE = 10
         self.item.SELECT_ROTATE_SIZE = 10
         self.view.get_scale = MagicMock(return_value=1)
@@ -259,6 +259,25 @@ class SelectableMixinTestCase(SelectableMixinBaseTestCase):
             assert shape.topLeft().y() == -5
             assert shape.bottomRight().x() == 115
             assert shape.bottomRight().y() == 95
+
+    def test_shape_when_selected_multi(self):
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        self.item.SELECT_RESIZE_SIZE = 10
+        self.item.SELECT_ROTATE_SIZE = 10
+        self.view.get_scale = MagicMock(return_value=1)
+        self.item.setSelected(True)
+        path = QtGui.QPainterPath()
+        path.addRect(QtCore.QRectF(0, 0, 100, 80))
+
+        with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.shape',
+                   return_value=path):
+            shape = self.item.shape().boundingRect()
+            assert shape.topLeft().x() == 0
+            assert shape.topLeft().y() == 0
+            assert shape.bottomRight().x() == 100
+            assert shape.bottomRight().y() == 80
 
 
 class SelectableMixinScalingTestCase(SelectableMixinBaseTestCase):

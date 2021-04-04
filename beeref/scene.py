@@ -127,7 +127,9 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
     def mouseReleaseEvent(self, event):
         if self.rubberband_active:
-            self.removeItem(self.rubberband_item)
+            if self.rubberband_item.scene():
+                logger.debug('Ending rubberband selection')
+                self.removeItem(self.rubberband_item)
             self.rubberband_active = False
         if self.move_active and self.has_selection():
             delta = event.scenePos() - self.event_start

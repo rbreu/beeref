@@ -164,7 +164,7 @@ class SelectableMixin(BaseItemMixin):
 
     def shape(self):
         shape_ = super().shape()
-        if self.has_selection_outline():
+        if self.has_selection_handles():
             # Add extra space for scale and rotate interactive areas
             path = QtGui.QPainterPath()
             for corner in self.corners:
