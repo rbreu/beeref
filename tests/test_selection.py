@@ -5,34 +5,14 @@ from PyQt6.QtCore import Qt
 
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
-from beeref.selection import MultiSelectItem
+from beeref.selection import MultiSelectItem, RubberbandItem
 from .base import BeeTestCase
 
 
-class SelectableMixinBaseTestCase(BeeTestCase):
+class BaseItemMixinTestCase(BeeTestCase):
 
     def setUp(self):
         self.scene = BeeGraphicsScene(None)
-        self.item = BeePixmapItem(QtGui.QImage())
-        self.scene.addItem(self.item)
-        self.view = MagicMock(get_scale=MagicMock(return_value=1))
-        views_patcher = patch('beeref.scene.BeeGraphicsScene.views',
-                              return_value=[self.view])
-        views_patcher.start()
-        self.addCleanup(views_patcher.stop)
-        width_patcher = patch('beeref.items.BeePixmapItem.width',
-                              new_callable=PropertyMock,
-                              return_value=100)
-        width_patcher.start()
-        self.addCleanup(width_patcher.stop)
-        height_patcher = patch('beeref.items.BeePixmapItem.height',
-                               new_callable=PropertyMock,
-                               return_value=80)
-        height_patcher.start()
-        self.addCleanup(height_patcher.stop)
-
-
-class SelectableMixinTestCase(SelectableMixinBaseTestCase):
 
     def test_set_scale(self):
         item = BeePixmapItem(
@@ -78,6 +58,32 @@ class SelectableMixinTestCase(SelectableMixinBaseTestCase):
         item2.bring_to_front()
         assert item2.zValue() > item1.zValue()
         assert item2.zValue() == self.scene.max_z
+
+
+class SelectableMixinBaseTestCase(BeeTestCase):
+
+    def setUp(self):
+        self.scene = BeeGraphicsScene(None)
+        self.item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(self.item)
+        self.view = MagicMock(get_scale=MagicMock(return_value=1))
+        views_patcher = patch('beeref.scene.BeeGraphicsScene.views',
+                              return_value=[self.view])
+        views_patcher.start()
+        self.addCleanup(views_patcher.stop)
+        width_patcher = patch('beeref.items.BeePixmapItem.width',
+                              new_callable=PropertyMock,
+                              return_value=100)
+        width_patcher.start()
+        self.addCleanup(width_patcher.stop)
+        height_patcher = patch('beeref.items.BeePixmapItem.height',
+                               new_callable=PropertyMock,
+                               return_value=80)
+        height_patcher.start()
+        self.addCleanup(height_patcher.stop)
+
+
+class SelectableMixinTestCase(SelectableMixinBaseTestCase):
 
     def test_on_view_scale_change(self):
         item = BeePixmapItem(QtGui.QImage())
@@ -466,7 +472,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         assert self.item.scale_active is False
 
 
-class MultiSelectItemItemTestCase(BeeTestCase):
+class MultiSelectItemTestCase(BeeTestCase):
 
     def setUp(self):
         self.scene = BeeGraphicsScene(None)
@@ -555,3 +561,35 @@ class MultiSelectItemItemTestCase(BeeTestCase):
         item.mousePressEvent(event)
         event.ignore.assert_not_called()
         mouse_mock.assert_called_once_with(event)
+
+
+class RubberbandItemTestCase(BeeTestCase):
+
+    def setUp(self):
+        self.scene = BeeGraphicsScene(None)
+
+    def test_width(self):
+        item = RubberbandItem()
+        item.setRect(5, 5, 100, 80)
+        assert item.width == 100
+
+    def test_height(self):
+        item = RubberbandItem()
+        item.setRect(5, 5, 100, 80)
+        assert item.height == 80
+
+    def test_fit_topleft_to_bottomright(self):
+        item = RubberbandItem()
+        item.fit(QtCore.QPointF(-10, -20), QtCore.QPointF(30, 40))
+        assert item.rect().topLeft().x() == -10
+        assert item.rect().topLeft().y() == -20
+        assert item.rect().bottomRight().x() == 30
+        assert item.rect().bottomRight().y() == 40
+
+    def test_fit_topright_to_bottomleft(self):
+        item = RubberbandItem()
+        item.fit(QtCore.QPointF(50, -20), QtCore.QPointF(-30, 40))
+        assert item.rect().topLeft().x() == -30
+        assert item.rect().topLeft().y() == -20
+        assert item.rect().bottomRight().x() == 50
+        assert item.rect().bottomRight().y() == 40

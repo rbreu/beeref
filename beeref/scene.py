@@ -20,7 +20,7 @@ from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
 
 from beeref import commands
-from beeref.selection import MultiSelectItem
+from beeref.selection import MultiSelectItem, RubberbandItem
 
 
 logger = logging.getLogger('BeeRef')
@@ -31,9 +31,11 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
     def __init__(self, undo_stack):
         super().__init__()
         self.move_active = False
+        self.rubberband_active = False
         self.undo_stack = undo_stack
         self.max_z = 0
         self.multi_select_item = MultiSelectItem()
+        self.rubberband_item = RubberbandItem()
         self.selectionChanged.connect(self.on_selection_change)
 
     def normalize_width_or_height(self, mode):
@@ -105,15 +107,30 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             return
 
         if event.button() == Qt.MouseButtons.LeftButton:
-            self.move_active = True
-            self.move_start = event.scenePos()
+            self.event_start = event.scenePos()
+            if self.itemAt(event.scenePos(), self.views()[0].transform()):
+                self.move_active = True
+            else:
+                self.rubberband_active = True
 
         super().mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event):
+    def mouseMoveEvent(self, event):
+        if self.rubberband_active:
+            if not self.rubberband_item.scene():
+                logger.debug('Activating rubberband selection')
+                self.addItem(self.rubberband_item)
+                self.rubberband_item.bring_to_front()
+            self.rubberband_item.fit(self.event_start, event.scenePos())
+            self.setSelectionArea(self.rubberband_item.shape())
+        super().mouseMoveEvent(event)
 
+    def mouseReleaseEvent(self, event):
+        if self.rubberband_active:
+            self.removeItem(self.rubberband_item)
+            self.rubberband_active = False
         if self.move_active and self.has_selection():
-            delta = event.scenePos() - self.move_start
+            delta = event.scenePos() - self.event_start
             if not delta.isNull():
                 self.undo_stack.push(
                     commands.MoveItemsBy(self.selectedItems(),

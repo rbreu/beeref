@@ -127,16 +127,115 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
         mouse_mock.assert_not_called()
 
     @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
-    def test_mouse_press_event_when_left_click(self, mouse_mock):
+    def test_mouse_press_event_when_left_click_over_item(self, mouse_mock):
+        self.scene.itemAt = MagicMock(
+            return_value=BeePixmapItem(QtGui.QImage()))
         event = MagicMock(
             button=MagicMock(return_value=Qt.MouseButtons.LeftButton),
-            scenePos=MagicMock(return_value=QtCore.QPoint(10, 20)),
+            scenePos=MagicMock(return_value=QtCore.QPointF(10, 20)),
         )
         self.scene.mousePressEvent(event)
         event.accept.assert_not_called()
         mouse_mock.assert_called_once_with(event)
         assert self.scene.move_active is True
-        assert self.scene.move_start == QtCore.QPoint(10, 20)
+        assert self.scene.rubberband_active is False
+        assert self.scene.event_start == QtCore.QPointF(10, 20)
+
+    @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
+    def test_mouse_press_event_when_left_click_not_over_item(self, mouse_mock):
+        self.scene.itemAt = MagicMock(return_value=None)
+        event = MagicMock(
+            button=MagicMock(return_value=Qt.MouseButtons.LeftButton),
+            scenePos=MagicMock(return_value=QtCore.QPointF(10, 20)),
+        )
+        self.scene.mousePressEvent(event)
+        event.accept.assert_not_called()
+        mouse_mock.assert_called_once_with(event)
+        assert self.scene.move_active is False
+        assert self.scene.rubberband_active is True
+        assert self.scene.event_start == QtCore.QPointF(10, 20)
+
+    @patch('PyQt6.QtWidgets.QGraphicsScene.mouseMoveEvent')
+    def test_mouse_move_event_when_rubberband_new(self, mouse_mock):
+        item = BeePixmapItem(QtGui.QImage(self.imgfilename3x3))
+        self.scene.addItem(item)
+        self.scene.rubberband_active = True
+        self.scene.addItem = MagicMock()
+        self.scene.event_start = QtCore.QPointF(0, 0)
+        self.scene.rubberband_item.bring_to_front = MagicMock()
+        self.scene.removeItem(self.scene.rubberband_item)
+        event = MagicMock(
+            scenePos=MagicMock(return_value=QtCore.QPointF(10, 20)),
+        )
+
+        self.scene.mouseMoveEvent(event)
+
+        self.scene.addItem.assert_called_once_with(self.scene.rubberband_item)
+        self.scene.rubberband_item.bring_to_front.assert_called_once()
+        self.scene.rubberband_item.rect().topLeft().x() == 0
+        self.scene.rubberband_item.rect().topLeft().y() == 0
+        self.scene.rubberband_item.rect().bottomRight().x() == 10
+        self.scene.rubberband_item.rect().bottomRight().y() == 20
+        assert item.isSelected() is True
+        assert mouse_mock.called_once_with(event)
+
+    @patch('PyQt6.QtWidgets.QGraphicsScene.mouseMoveEvent')
+    def test_mouse_move_event_when_rubberband_not_new(self, mouse_mock):
+        item = BeePixmapItem(QtGui.QImage(self.imgfilename3x3))
+        self.scene.addItem(item)
+        self.scene.rubberband_active = True
+        self.scene.event_start = QtCore.QPointF(0, 0)
+        self.scene.rubberband_item.bring_to_front = MagicMock()
+        self.scene.addItem(self.scene.rubberband_item)
+        self.scene.addItem = MagicMock()
+        event = MagicMock(
+            scenePos=MagicMock(return_value=QtCore.QPointF(10, 20)),
+        )
+
+        self.scene.mouseMoveEvent(event)
+
+        self.scene.addItem.assert_not_called()
+        self.scene.rubberband_item.bring_to_front.assert_not_called()
+        self.scene.rubberband_item.rect().topLeft().x() == 0
+        self.scene.rubberband_item.rect().topLeft().y() == 0
+        self.scene.rubberband_item.rect().bottomRight().x() == 10
+        self.scene.rubberband_item.rect().bottomRight().y() == 20
+        assert item.isSelected() is True
+        assert mouse_mock.called_once_with(event)
+
+    @patch('PyQt6.QtWidgets.QGraphicsScene.mouseMoveEvent')
+    def test_mouse_move_event_when_no_rubberband(self, mouse_mock):
+        item = BeePixmapItem(QtGui.QImage(self.imgfilename3x3))
+        self.scene.addItem(item)
+        self.scene.rubberband_active = False
+        self.scene.event_start = QtCore.QPointF(0, 0)
+        self.scene.rubberband_item.bring_to_front = MagicMock()
+        self.scene.addItem = MagicMock()
+        event = MagicMock(
+            scenePos=MagicMock(return_value=QtCore.QPointF(10, 20)),
+        )
+
+        self.scene.mouseMoveEvent(event)
+
+        self.scene.addItem.assert_not_called()
+        self.scene.rubberband_item.bring_to_front.assert_not_called()
+        self.scene.rubberband_item.rect().topLeft().x() == 0
+        self.scene.rubberband_item.rect().topLeft().y() == 0
+        self.scene.rubberband_item.rect().bottomRight().x() == 0
+        self.scene.rubberband_item.rect().bottomRight().y() == 0
+        assert item.isSelected() is False
+        assert mouse_mock.called_once_with(event)
+
+    @patch('PyQt6.QtWidgets.QGraphicsScene.mouseReleaseEvent')
+    def test_mouse_release_event_when_rubberband_active(self, mouse_mock):
+        event = MagicMock()
+        self.scene.rubberband_active = True
+        self.scene.removeItem = MagicMock()
+
+        self.scene.mouseReleaseEvent(event)
+        self.scene.removeItem.assert_called_once_with(
+            self.scene.rubberband_item)
+        self.scene.rubberband_active is False
 
     @patch('PyQt6.QtWidgets.QGraphicsScene.mouseReleaseEvent')
     def test_mouse_release_event_when_move_active(self, mouse_mock):
@@ -146,7 +245,7 @@ class BeeGraphicsSceneNormalizeTestCase(BeeTestCase):
         event = MagicMock(
             scenePos=MagicMock(return_value=QtCore.QPoint(10, 20)))
         self.scene.move_active = True
-        self.scene.move_start = QtCore.QPoint(0, 0)
+        self.scene.event_start = QtCore.QPoint(0, 0)
         self.scene.undo_stack = MagicMock(push=MagicMock())
 
         self.scene.mouseReleaseEvent(event)

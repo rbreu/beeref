@@ -27,12 +27,31 @@ from beeref.config import CommandlineArgs
 
 commandline_args = CommandlineArgs()
 logger = logging.getLogger('BeeRef')
+SELECT_COLOR = QtGui.QColor(116, 234, 231, 255)
 
 
-class SelectableMixin:
+class BaseItemMixin:
+
+    def setScale(self, factor):
+        if factor <= 0:
+            return
+
+        logger.debug(f'Setting scale for {self} to {factor}')
+        self.prepareGeometryChange()
+        super().setScale(factor)
+
+    def setZValue(self, value):
+        logger.debug(f'Setting z-value for {self} to {value}')
+        super().setZValue(value)
+        self.scene().max_z = max(self.scene().max_z, value)
+
+    def bring_to_front(self):
+        self.setZValue(self.scene().max_z + 0.001)
+
+
+class SelectableMixin(BaseItemMixin):
     """Common code for selectable items: Selection outline, handles etc."""
 
-    select_color = QtGui.QColor(116, 234, 231, 255)
     SELECT_LINE_WIDTH = 4  # line width for the selection box
     SELECT_HANDLE_SIZE = 15  # size of selection handles for scaling
     SELECT_RESIZE_SIZE = 20  # size of hover area for scaling
@@ -47,22 +66,6 @@ class SelectableMixin:
         self.scale_active = False
         self.viewport_scale = 1
         self.conf_debug_shapes = commandline_args.draw_debug_shapes
-
-    def setScale(self, factor):
-        if factor <= 0:
-            return
-
-        logger.debug(f'Setting scale for {self} to {factor}')
-        self.prepareGeometryChange()
-        super().setScale(factor)
-
-    def setZValue(self, value):
-        logger.debug(f'Setting z-value for image {self} to {value}')
-        super().setZValue(value)
-        self.scene().max_z = max(self.scene().max_z, value)
-
-    def bring_to_front(self):
-        self.setZValue(self.scene().max_z + 0.001)
 
     def fixed_length_for_viewport(self, value):
         """The interactable areas need to stay the same size on the
@@ -101,7 +104,7 @@ class SelectableMixin:
         if not self.has_selection_outline():
             return
 
-        pen = QtGui.QPen(self.select_color)
+        pen = QtGui.QPen(SELECT_COLOR)
         pen.setWidth(self.SELECT_LINE_WIDTH)
         pen.setCosmetic(True)
         painter.setPen(pen)
@@ -277,8 +280,9 @@ class SelectableMixin:
         return super().itemChange(change, value)
 
 
-class MultiSelectItem(SelectableMixin, QtWidgets.QGraphicsRectItem):
-    """Class for images added by the user."""
+class MultiSelectItem(SelectableMixin,
+                      QtWidgets.QGraphicsRectItem):
+    """The multi selection outline around all selected items."""
 
     def __init__(self):
         super().__init__()
@@ -329,3 +333,36 @@ class MultiSelectItem(SelectableMixin, QtWidgets.QGraphicsRectItem):
             return
 
         super().mousePressEvent(event)
+
+
+class RubberbandItem(BaseItemMixin, QtWidgets.QGraphicsRectItem):
+    """The outline for the rubber band selection."""
+
+    def __init__(self):
+        super().__init__()
+        color = QtGui.QColor(SELECT_COLOR)
+        color.setAlpha(40)
+        self.setBrush(QtGui.QBrush(color))
+
+    def __str__(self):
+        return (f'RubberbandItem {self.width} x {self.height}')
+
+    @property
+    def width(self):
+        return self.rect().width()
+
+    @property
+    def height(self):
+        return self.rect().height()
+
+    def fit(self, point1, point2):
+        """Updates itself to fit the two given points."""
+
+        topleft = QtCore.QPointF(
+            min(point1.x(), point2.x()),
+            min(point1.y(), point2.y()))
+        bottomright = QtCore.QPointF(
+            max(point1.x(), point2.x()),
+            max(point1.y(), point2.y()))
+        self.setRect(QtCore.QRectF(topleft, bottomright))
+        logger.debug(f'Updated rubberband {self}')
