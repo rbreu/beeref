@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import QGraphicsItem
 
 from beeref import commands
 from beeref.config import CommandlineArgs
+from beeref import utils
 
 
 commandline_args = CommandlineArgs()
@@ -133,21 +134,39 @@ class SelectableMixin(BaseItemMixin):
 
         return [self.mapToScene(corner) for corner in self.corners]
 
-    def get_scale_bounds(self, center):
+    def get_scale_bounds(self, corner, margin=0):
         """The interactable shape of the scale handles."""
-        return QtCore.QRectF(
-            center.x() - self.select_resize_size/2,
-            center.y() - self.select_resize_size/2,
-            self.select_resize_size,
-            self.select_resize_size)
+        path = QtGui.QPainterPath()
+        path.addRect(QtCore.QRectF(
+            corner.x() - self.select_resize_size/2 - margin,
+            corner.y() - self.select_resize_size/2 - margin,
+            self.select_resize_size + 2 * margin,
+            self.select_resize_size + 2 * margin))
+        return path
 
-    @property
-    def bottom_right_rotate_bounds(self):
-        """The interactable shape of the bottom right rotate handle"""
-        return QtCore.QRectF(
-            self.width + self.select_resize_size / 2,
-            self.height + self.select_resize_size / 2,
-            self.select_rotate_size, self.select_rotate_size)
+    def get_rotate_bounds(self, corner):
+        """The interactable shape of the rotation area. It sits around the
+        scale area like an L shape, e.g. for the bottom right corner:
+          │
+         ┌┴┬─┐
+        ─┤S│R│
+         ├─┘ │
+         │R R│
+         └───┘
+        """
+
+        path = QtGui.QPainterPath()
+
+        # The whole square containing the rotate area:
+        d = self.get_corner_direction(corner)
+        p1 = corner - d * self.select_resize_size / 2
+        p2 = p1 + d * (self.select_resize_size + self.select_rotate_size)
+        path.addRect(utils.get_rect_from_points(p1, p2))
+
+        # Substract the scale area:
+        # We need to make the substracted shape slighty bigger due to this bug:
+        # https://bugreports.qt.io/browse/QTBUG-57567
+        return path - self.get_scale_bounds(corner, margin=0.001)
 
     def boundingRect(self):
         bounds = super().boundingRect()
@@ -163,15 +182,13 @@ class SelectableMixin(BaseItemMixin):
             bounds.bottomRight().y() + 2 * margin)
 
     def shape(self):
-        shape_ = super().shape()
+        path = super().shape()
         if self.has_selection_handles():
             # Add extra space for scale and rotate interactive areas
-            path = QtGui.QPainterPath()
             for corner in self.corners:
-                path.addRect(self.get_scale_bounds(corner))
-            path.addRect(self.bottom_right_rotate_bounds)
-            shape_ = shape_ + path
-        return shape_
+                path += self.get_scale_bounds(corner)
+                path += self.get_rotate_bounds(corner)
+        return path
 
     def hoverMoveEvent(self, event):
         if not self.has_selection_handles():
@@ -180,16 +197,15 @@ class SelectableMixin(BaseItemMixin):
         for corner in self.corners:
             # See if we need to change the cursor for scale areas
             if self.get_scale_bounds(corner).contains(event.pos()):
-                direction = self.get_scale_direction(corner)
+                direction = self.get_corner_direction(corner)
                 if direction.x() == direction.y():
                     self.setCursor(Qt.CursorShape.SizeFDiagCursor)
                 else:
                     self.setCursor(Qt.CursorShape.SizeBDiagCursor)
                 return
-
-        if self.bottom_right_rotate_bounds.contains(event.pos()):
-            self.setCursor(Qt.CursorShape.ForbiddenCursor)
-            return
+            if self.get_rotate_bounds(corner).contains(event.pos()):
+                self.setCursor(Qt.CursorShape.ForbiddenCursor)
+                return
 
         self.setCursor(Qt.CursorShape.ArrowCursor)
 
@@ -207,7 +223,7 @@ class SelectableMixin(BaseItemMixin):
                     # Start scale action for this corner
                     self.scale_active = True
                     self.scale_start = event.scenePos()
-                    self.scale_direction = self.get_scale_direction(corner)
+                    self.scale_direction = self.get_corner_direction(corner)
                     for item in self.selection_action_items():
                         item.scale_anchor = self.get_scale_anchor(item, corner)
                         item.scale_orig_factor = item.scale()
@@ -229,8 +245,9 @@ class SelectableMixin(BaseItemMixin):
         return item.mapFromScene(
             self.mapToScene(self.width - corner.x(), self.height - corner.y()))
 
-    def get_scale_direction(self, corner):
-        """Get the direction in which the scale for this corner increases"""
+    def get_corner_direction(self, corner):
+        """Get the direction facing away from the center, e.g. the direction
+        in which the scale for this corner increases."""
         return QtCore.QPointF(1 if corner.x() > 0 else -1,
                               1 if corner.y() > 0 else -1)
 
@@ -358,11 +375,5 @@ class RubberbandItem(BaseItemMixin, QtWidgets.QGraphicsRectItem):
     def fit(self, point1, point2):
         """Updates itself to fit the two given points."""
 
-        topleft = QtCore.QPointF(
-            min(point1.x(), point2.x()),
-            min(point1.y(), point2.y()))
-        bottomright = QtCore.QPointF(
-            max(point1.x(), point2.x()),
-            max(point1.y(), point2.y()))
-        self.setRect(QtCore.QRectF(topleft, bottomright))
+        self.setRect(utils.get_rect_from_points(point1, point2))
         logger.debug(f'Updated rubberband {self}')

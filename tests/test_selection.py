@@ -190,21 +190,44 @@ class SelectableMixinTestCase(SelectableMixinBaseTestCase):
     def test_get_scale_bounds(self):
         self.view.get_scale = MagicMock(return_value=1)
         self.item.SELECT_RESIZE_SIZE = 10
-        rect = self.item.get_scale_bounds(QtCore.QPointF(100, 100))
+        rect = self.item.get_scale_bounds(
+            QtCore.QPointF(100, 80)).boundingRect()
         assert rect.topLeft().x() == 95
-        assert rect.topLeft().y() == 95
+        assert rect.topLeft().y() == 75
         assert rect.bottomRight().x() == 105
-        assert rect.bottomRight().y() == 105
+        assert rect.bottomRight().y() == 85
 
-    def test_bottom_right_rotate_bounds(self):
+    def test_get_scale_bounds_with_margin(self):
+        self.view.get_scale = MagicMock(return_value=1)
+        self.item.SELECT_RESIZE_SIZE = 10
+        rect = self.item.get_scale_bounds(
+            QtCore.QPointF(100, 80), margin=1).boundingRect()
+        assert rect.topLeft().x() == 94
+        assert rect.topLeft().y() == 74
+        assert rect.bottomRight().x() == 106
+        assert rect.bottomRight().y() == 86
+
+    def test_rotate_bounds_bottomright(self):
         self.view.get_scale = MagicMock(return_value=1)
         self.item.SELECT_RESIZE_SIZE = 10
         self.item.SELECT_ROTATE_SIZE = 10
-        rect = self.item.bottom_right_rotate_bounds
-        assert rect.topLeft().x() == 105
-        assert rect.topLeft().y() == 85
-        assert rect.bottomRight().x() == 115
-        assert rect.bottomRight().y() == 95
+        path = self.item.get_rotate_bounds(QtCore.QPointF(100, 80))
+        assert path.boundingRect().topLeft().x() == 95
+        assert path.boundingRect().topLeft().y() == 75
+        assert path.boundingRect().bottomRight().x() == 115
+        assert path.boundingRect().bottomRight().y() == 95
+        assert path.contains(QtCore.QPointF(104, 84)) is False
+
+    def test_rotate_bounds_topleft(self):
+        self.view.get_scale = MagicMock(return_value=1)
+        self.item.SELECT_RESIZE_SIZE = 10
+        self.item.SELECT_ROTATE_SIZE = 10
+        path = self.item.get_rotate_bounds(QtCore.QPointF(0, 0))
+        assert path.boundingRect().topLeft().x() == -15
+        assert path.boundingRect().topLeft().y() == -15
+        assert path.boundingRect().bottomRight().x() == 5
+        assert path.boundingRect().bottomRight().y() == 5
+        assert path.contains(QtCore.QPointF(-4, -4)) is False
 
     def test_bounding_rect_when_not_selected(self):
         self.view.get_scale = MagicMock(return_value=1)
@@ -255,8 +278,8 @@ class SelectableMixinTestCase(SelectableMixinBaseTestCase):
         with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.shape',
                    return_value=path):
             shape = self.item.shape().boundingRect()
-            assert shape.topLeft().x() == -5
-            assert shape.topLeft().y() == -5
+            assert shape.topLeft().x() == -15
+            assert shape.topLeft().y() == -15
             assert shape.bottomRight().x() == 115
             assert shape.bottomRight().y() == 95
 
@@ -325,20 +348,20 @@ class SelectableMixinScalingTestCase(SelectableMixinBaseTestCase):
         assert anchor.x() == 78
         assert anchor.y() == 47
 
-    def test_get_scale_direction_topleft(self):
-        assert self.item.get_scale_direction(
+    def test_get_corner_direction_topleft(self):
+        assert self.item.get_corner_direction(
             QtCore.QPointF(0, 0)) == QtCore.QPointF(-1, -1)
 
-    def test_get_scale_direction_bottomright(self):
-        assert self.item.get_scale_direction(
+    def test_get_corner_direction_bottomright(self):
+        assert self.item.get_corner_direction(
             QtCore.QPointF(100, 80)) == QtCore.QPointF(1, 1)
 
-    def test_get_scale_direction_topright(self):
-        assert self.item.get_scale_direction(
+    def test_get_corner_direction_topright(self):
+        assert self.item.get_corner_direction(
             QtCore.QPointF(100, 0)) == QtCore.QPointF(1, -1)
 
-    def test_get_scale_direction_bottomleft(self):
-        assert self.item.get_scale_direction(
+    def test_get_corner_direction_bottomleft(self):
+        assert self.item.get_corner_direction(
             QtCore.QPointF(0, 80)) == QtCore.QPointF(-1, 1)
 
     def test_translate_for_scale_anchor(self):
