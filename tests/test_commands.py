@@ -150,6 +150,58 @@ class ScaleItemsByTestCase(BeeTestCase):
         assert item2.pos().y() == 100
 
 
+class RotateItemsByTestCase(BeeTestCase):
+
+    def test_redo_undo(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        item1.setRotation(0)
+
+        item2 = BeePixmapItem(QtGui.QImage())
+        item2.setRotation(30)
+        item2.setPos(100, 100)
+        command = commands.RotateItemsBy([item1, item2], -90,
+                                         QtCore.QPointF(100, 100))
+        command.redo()
+        assert item1.rotation() == -90
+        assert item1.pos().x() == 0
+        assert item1.pos().y() == 200
+        assert item2.rotation() == -60
+        assert item2.pos().x() == 100
+        assert item2.pos().y() == 100
+        command.undo()
+        assert item1.rotation() == 0
+        assert item1.pos().x() == 0
+        assert item1.pos().y() == 0
+        assert item2.rotation() == 30
+        assert item2.pos().x() == 100
+        assert item2.pos().y() == 100
+
+    def test_ignore_first_redo(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        item1.setRotation(0)
+
+        item2 = BeePixmapItem(QtGui.QImage())
+        item2.setRotation(30)
+        item2.setPos(100, 100)
+        command = commands.RotateItemsBy([item1, item2], -90,
+                                         QtCore.QPointF(100, 100),
+                                         ignore_first_redo=True)
+        command.redo()
+        assert item1.rotation() == 0
+        assert item1.pos().x() == 0
+        assert item1.pos().y() == 0
+        assert item2.rotation() == 30
+        assert item2.pos().x() == 100
+        assert item2.pos().y() == 100
+        command.redo()
+        assert item1.rotation() == -90
+        assert item1.pos().x() == 0
+        assert item1.pos().y() == 200
+        assert item2.rotation() == -60
+        assert item2.pos().x() == 100
+        assert item2.pos().y() == 100
+
+
 class NormalizeItemsTestCase(BeeTestCase):
 
     def test_redo_undo(self):

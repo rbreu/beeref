@@ -37,6 +37,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.multi_select_item = MultiSelectItem()
         self.rubberband_item = RubberbandItem()
         self.selectionChanged.connect(self.on_selection_change)
+        self.changed.connect(self.on_change)
 
     def normalize_width_or_height(self, mode):
         """Scale the selected images to have the same width or height, as
@@ -186,3 +187,10 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         if not self.has_multi_selection() and self.multi_select_item.scene():
             logger.debug('Removing multi select outline')
             self.removeItem(self.multi_select_item)
+
+    def on_change(self, region):
+        if (self.multi_select_item.scene()
+                and not self.multi_select_item.scale_active
+                and not self.multi_select_item.rotate_active):
+            self.multi_select_item.fit_selection_area(
+                self.get_selection_rect())

@@ -120,16 +120,11 @@ class RotateItemsBy(QtGui.QUndoCommand):
         for item in self.items:
             item.setRotation(item.rotation() + self.delta,
                              item.mapFromScene(self.anchor))
-        item.scene().on_selection_change()
 
     def undo(self):
-        if self.ignore_first_redo:
-            self.ignore_first_redo = False
-            return
         for item in self.items:
             item.setRotation(item.rotation() - self.delta,
                              item.mapFromScene(self.anchor))
-        item.scene().on_selection_change()
 
 
 class NormalizeItems(QtGui.QUndoCommand):

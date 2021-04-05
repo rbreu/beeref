@@ -412,3 +412,38 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         m_item = self.scene.multi_select_item
         m_item.fit_selection_area.assert_not_called()
         self.scene.removeItem.assert_called_once_with(m_item)
+
+    def test_on_change_when_multi_select_when_no_scale_no_rotate(self):
+        self.scene.addItem(self.scene.multi_select_item)
+        self.scene.multi_select_item.fit_selection_area = MagicMock()
+        self.scene.get_selection_rect = MagicMock()
+        self.scene.multi_select_item.scale_active = False
+        self.scene.multi_select_item.rotate_active = False
+        self.scene.on_change(None)
+        self.scene.multi_select_item.fit_selection_area.assert_called_once()
+
+    def test_on_change_when_multi_select_when_scale_active(self):
+        self.scene.addItem(self.scene.multi_select_item)
+        self.scene.multi_select_item.fit_selection_area = MagicMock()
+        self.scene.get_selection_rect = MagicMock()
+        self.scene.multi_select_item.scale_active = True
+        self.scene.multi_select_item.rotate_active = False
+        self.scene.on_change(None)
+        self.scene.multi_select_item.fit_selection_area.assert_not_called()
+
+    def test_on_change_when_multi_select_when_rotate_active(self):
+        self.scene.addItem(self.scene.multi_select_item)
+        self.scene.multi_select_item.fit_selection_area = MagicMock()
+        self.scene.get_selection_rect = MagicMock()
+        self.scene.multi_select_item.scale_active = False
+        self.scene.multi_select_item.rotate_active = True
+        self.scene.on_change(None)
+        self.scene.multi_select_item.fit_selection_area.assert_not_called()
+
+    def test_on_change_when_no_multi_select(self):
+        self.scene.multi_select_item.fit_selection_area = MagicMock()
+        self.scene.get_selection_rect = MagicMock()
+        self.scene.multi_select_item.scale_active = True
+        self.scene.multi_select_item.rotate_active = True
+        self.scene.on_change(None)
+        self.scene.multi_select_item.fit_selection_area.assert_not_called()

@@ -68,7 +68,7 @@ class SelectableMixin(BaseItemMixin):
     SELECT_LINE_WIDTH = 4  # line width for the selection box
     SELECT_HANDLE_SIZE = 15  # size of selection handles for scaling
     SELECT_RESIZE_SIZE = 20  # size of hover area for scaling
-    SELECT_ROTATE_SIZE = 20  # size of hover area for rotating
+    SELECT_ROTATE_SIZE = 15  # size of hover area for rotating
 
     def init_selectable(self):
         self.setAcceptHoverEvents(True)
@@ -129,6 +129,7 @@ class SelectableMixin(BaseItemMixin):
         # If it's a single selection, draw the handles:
         if self.has_selection_handles():
             pen.setWidth(self.SELECT_HANDLE_SIZE)
+            pen.setCapStyle(Qt.PenCapStyle.RoundCap)
             painter.setPen(pen)
             for corner in self.corners:
                 painter.drawPoint(corner)
