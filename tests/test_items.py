@@ -1,6 +1,6 @@
 from unittest.mock import patch, MagicMock, PropertyMock
 
-from PyQt6 import QtGui
+from PyQt6 import QtCore, QtGui
 
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
@@ -29,7 +29,7 @@ class BeePixmapItemTestCase(BeeTestCase):
                    new_callable=PropertyMock, return_value=200):
             with patch('beeref.items.BeePixmapItem.height',
                        new_callable=PropertyMock, return_value=100):
-                item.set_pos_center(0, 0)
+                item.set_pos_center(QtCore.QPointF(0, 0))
                 assert item.pos().x() == -100
                 assert item.pos().y() == -50
 

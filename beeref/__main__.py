@@ -16,11 +16,10 @@
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
-import os.path
 import signal
 import sys
 
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtWidgets
 
 from beeref.assets import BeeAssets
 from beeref.config import CommandlineArgs

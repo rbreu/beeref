@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 from beeref.config import CommandlineArgs
 
 

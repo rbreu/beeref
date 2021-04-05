@@ -323,7 +323,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
                 errors.append(filename)
                 continue
             item = BeePixmapItem(img, filename)
-            item.set_pos_center(pos.x(), pos.y())
+            item.set_pos_center(pos)
             items.append(item)
             pos.setX(pos.x() + 50)
             pos.setY(pos.y() + 50)

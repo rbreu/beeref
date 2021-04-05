@@ -103,6 +103,35 @@ class ScaleItemsBy(QtGui.QUndoCommand):
             item.setPos(data['orig_pos'])
 
 
+class RotateItemsBy(QtGui.QUndoCommand):
+    """Rotate items by a given deltan around the given anchor."""
+
+    def __init__(self, items, delta, anchor, ignore_first_redo=False):
+        super().__init__('Scale items')
+        self.ignore_first_redo = ignore_first_redo
+        self.items = items
+        self.delta = delta
+        self.anchor = anchor
+
+    def redo(self):
+        if self.ignore_first_redo:
+            self.ignore_first_redo = False
+            return
+        for item in self.items:
+            item.setRotation(item.rotation() + self.delta,
+                             item.mapFromScene(self.anchor))
+        item.scene().on_selection_change()
+
+    def undo(self):
+        if self.ignore_first_redo:
+            self.ignore_first_redo = False
+            return
+        for item in self.items:
+            item.setRotation(item.rotation() - self.delta,
+                             item.mapFromScene(self.anchor))
+        item.scene().on_selection_change()
+
+
 class NormalizeItems(QtGui.QUndoCommand):
 
     def __init__(self, items, scale_factors):

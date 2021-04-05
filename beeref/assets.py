@@ -18,8 +18,7 @@
 import logging
 import os.path
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt
+from PyQt6 import QtGui
 
 
 logger = logging.getLogger('BeeRef')
@@ -27,7 +26,7 @@ logger = logging.getLogger('BeeRef')
 
 class BeeAssets:
     _instance = None
-    PATH = os.path.join( os.path.dirname(__file__), 'assets')
+    PATH = os.path.join(os.path.dirname(__file__), 'assets')
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -36,7 +35,6 @@ class BeeAssets:
         return cls._instance
 
     def on_new(self):
-        PATH = os.path.join(os.path.dirname(__file__), 'assets')
         logger.debug(f'Assets path: {self.PATH}')
 
         self.logo = QtGui.QIcon(os.path.join(self.PATH, 'logo.png'))

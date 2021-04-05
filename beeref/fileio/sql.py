@@ -127,20 +127,21 @@ class SQLiteIO:
     @handle_sqlite_errors
     def read(self):
         rows = self.fetchall(
-            'SELECT items.id, x, y, z, scale, filename, sqlar.data '
+            'SELECT items.id, x, y, z, scale, rotation, filename, sqlar.data '
             'FROM items '
             'INNER JOIN sqlar on sqlar.item_id = items.id')
         if self.progress:
             self.progress.setMaximum(len(rows))
 
         for i, row in enumerate(rows):
-            item = BeePixmapItem(QtGui.QImage(), filename=row[5])
+            item = BeePixmapItem(QtGui.QImage(), filename=row[6])
             item.save_id = row[0]
-            item.pixmap_from_bytes(row[6])
+            item.pixmap_from_bytes(row[7])
             item.setPos(row[1], row[2])
             self.scene.addItem(item)
             item.setZValue(row[3])
             item.setScale(row[4])
+            item.setRotation(row[5])
             if self.progress:
                 self.progress.setValue(i)
                 if self.progress.wasCanceled():
@@ -187,10 +188,10 @@ class SQLiteIO:
 
     def insert_item(self, item):
         self.ex(
-            'INSERT INTO items (type, x, y, z, scale, filename) '
-            'VALUES (?, ?, ?, ?, ?, ?) ',
+            'INSERT INTO items (type, x, y, z, scale, rotation, filename) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?) ',
             ('pixmap', item.pos().x(), item.pos().y(), item.zValue(),
-             item.scale(), item.filename))
+             item.scale(), item.rotation(), item.filename))
         item.save_id = self.cursor.lastrowid
         pixmap = item.pixmap_to_bytes()
 
@@ -213,8 +214,8 @@ class SQLiteIO:
         data never changes and is also time-consuming to save.
         """
         self.ex(
-            'UPDATE items SET x=?, y=?, z=?, scale=?, filename=? '
+            'UPDATE items SET x=?, y=?, z=?, scale=?, rotation=?, filename=? '
             'WHERE id=?',
             (item.pos().x(), item.pos().y(), item.zValue(), item.scale(),
-             item.filename, item.save_id))
+             item.rotation(), item.filename, item.save_id))
         self.connection.commit()

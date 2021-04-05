@@ -92,12 +92,13 @@ class SQLiteIOWriteTestCase(BeeTestCase):
         item.setScale(1.3)
         item.setPos(44, 55)
         item.setZValue(0.22)
+        item.setRotation(33)
         item.pixmap_to_bytes = MagicMock(return_value=b'abc')
         self.io.write()
 
         assert item.save_id == 1
         result = self.io.fetchone(
-            'SELECT x, y, z, scale, filename, type, '
+            'SELECT x, y, z, scale, rotation, filename, type, '
             'sqlar.data, sqlar.name '
             'FROM items '
             'INNER JOIN sqlar on sqlar.item_id = items.id')
@@ -105,10 +106,11 @@ class SQLiteIOWriteTestCase(BeeTestCase):
         assert result[1] == 55.0
         assert result[2] == 0.22
         assert result[3] == 1.3
-        assert result[4] == 'bee.jpg'
-        assert result[5] == 'pixmap'
-        assert result[6] == b'abc'
-        assert result[7] == '0001-bee.png'
+        assert result[4] == 33
+        assert result[5] == 'bee.jpg'
+        assert result[6] == 'pixmap'
+        assert result[7] == b'abc'
+        assert result[8] == '0001-bee.png'
 
     def test_inserts_new_item_without_filename(self):
         item = BeePixmapItem(QtGui.QImage())
@@ -128,12 +130,14 @@ class SQLiteIOWriteTestCase(BeeTestCase):
         item.setScale(1.3)
         item.setPos(44, 55)
         item.setZValue(0.22)
+        item.setRotation(33)
         item.save_id = 1
         item.pixmap_to_bytes = MagicMock(return_value=b'abc')
         self.io.write()
         item.setScale(0.7)
         item.setPos(20, 30)
         item.setZValue(0.33)
+        item.setRotation(100)
         item.filename = 'new.png'
         item.pixmap_to_bytes.return_value = b'updated'
         self.io.create_new = False
@@ -141,15 +145,16 @@ class SQLiteIOWriteTestCase(BeeTestCase):
 
         assert self.io.fetchone('SELECT COUNT(*) from items') == (1,)
         result = self.io.fetchone(
-            'SELECT x, y, z, scale, filename, sqlar.data '
+            'SELECT x, y, z, scale, rotation, filename, sqlar.data '
             'FROM items '
             'INNER JOIN sqlar on sqlar.item_id = items.id')
         assert result[0] == 20
         assert result[1] == 30
         assert result[2] == 0.33
         assert result[3] == 0.7
-        assert result[4] == 'new.png'
-        assert result[5] == b'abc'
+        assert result[4] == 100
+        assert result[5] == 'new.png'
+        assert result[6] == b'abc'
 
     def test_removes_nonexisting_item(self):
         item = BeePixmapItem(QtGui.QImage(), filename='bee.png')
@@ -200,9 +205,10 @@ class SQLiteIOReadTestCase(BeeTestCase):
             fname = os.path.join(dirname, 'test.bee')
             io = SQLiteIO(fname, self.scene, create_new=True)
             io.create_schema_on_new()
-            io.ex('INSERT INTO items (type, x, y, z, scale, filename) '
-                  'VALUES (?, ?, ?, ?, ?, ?) ',
-                  ('pixmap', 22.2, 33.3, 0.22, 3.4, 'bee.png'))
+            io.ex('INSERT INTO items '
+                  '(type, x, y, z, scale, rotation, filename) '
+                  'VALUES (?, ?, ?, ?, ?, ?, ?) ',
+                  ('pixmap', 22.2, 33.3, 0.22, 3.4, 45, 'bee.png'))
             io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)',
                   (1, self.imgdata3x3))
             io.connection.commit()
@@ -217,6 +223,7 @@ class SQLiteIOReadTestCase(BeeTestCase):
             assert item.pos().y() == 33.3
             assert item.zValue() == 0.22
             assert item.scale() == 3.4
+            assert item.rotation() == 45
             assert item.filename == 'bee.png'
             assert item.width == 3
             assert item.height == 3
