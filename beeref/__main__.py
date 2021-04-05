@@ -22,6 +22,7 @@ import sys
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
+from beeref.assets import BeeAssets
 from beeref.config import CommandlineArgs
 from beeref.view import BeeGraphicsView
 
@@ -33,10 +34,7 @@ class BeeRefMainWindow(QtWidgets.QWidget):
     def __init__(self, app, filename=None):
         super().__init__()
         self.setWindowTitle('BeeRef')
-        root = os.path.dirname(__file__)
-        logo = os.path.join(root, 'assets', 'logo.png')
-        logger.debug(f'Loading icon {logo}')
-        self.setWindowIcon(QtGui.QIcon(logo))
+        self.setWindowIcon(BeeAssets().logo)
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
         self.setLayout(layout)

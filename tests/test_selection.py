@@ -3,6 +3,7 @@ from unittest.mock import patch, MagicMock, PropertyMock
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import Qt
 
+from beeref.assets import BeeAssets
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
 from beeref.selection import MultiSelectItem, RubberbandItem
@@ -405,6 +406,14 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.hoverMoveEvent(self.event)
         self.item.setCursor.assert_called_once_with(
             Qt.CursorShape.SizeBDiagCursor)
+
+    def test_hover_move_event_rotate(self):
+        self.item.setSelected(True)
+        self.item.SELECT_RESIZE_SIZE = 10
+        self.item.SELECT_ROTATE_SIZE = 10
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(110, 90))
+        self.item.hoverMoveEvent(self.event)
+        self.item.setCursor.assert_called_once_with(BeeAssets().cursor_rotate)
 
     def test_hover_move_event_not_in_handles(self):
         self.item.setSelected(True)

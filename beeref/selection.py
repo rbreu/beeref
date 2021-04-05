@@ -21,6 +21,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QGraphicsItem
 
+from beeref.assets import BeeAssets
 from beeref import commands
 from beeref.config import CommandlineArgs
 from beeref import utils
@@ -204,7 +205,7 @@ class SelectableMixin(BaseItemMixin):
                     self.setCursor(Qt.CursorShape.SizeBDiagCursor)
                 return
             if self.get_rotate_bounds(corner).contains(event.pos()):
-                self.setCursor(Qt.CursorShape.ForbiddenCursor)
+                self.setCursor(BeeAssets().cursor_rotate)
                 return
 
         self.setCursor(Qt.CursorShape.ArrowCursor)

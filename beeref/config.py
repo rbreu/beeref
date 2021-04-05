@@ -35,7 +35,7 @@ parser.add_argument(
     help='draw debug shapes for bounding rects and interactable areas')
 
 
-class CommandlineArgs():
+class CommandlineArgs:
     """Wrapper around argument parsing.
 
     Checking for unknown arugments is configurable so that it can be
@@ -52,10 +52,11 @@ class CommandlineArgs():
         return cls._instance
 
     def __init__(self, with_check=False):
-        if with_check:
-            self._args = parser.parse_args()
-        else:
-            self._args = parser.parse_known_args()[0]
+        if not hasattr(self, '_args'):
+            if with_check:
+                self._args = parser.parse_args()
+            else:
+                self._args = parser.parse_known_args()[0]
 
     def __getattribute__(self, name):
         if name == '_args':
