@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
-from PyQt6 import QtGui
+from PyQt6 import QtCore, QtGui
 
 
 class InsertItems(QtGui.QUndoCommand):
@@ -132,8 +132,10 @@ class NormalizeItems(QtGui.QUndoCommand):
         self.old_scale_factors = []
         for item, factor in zip(self.items, self.scale_factors):
             self.old_scale_factors.append(item.scale())
-            item.setScale(factor)
+            item.setScale(factor,
+                          QtCore.QPointF(item.width, item.height) / 2)
 
     def undo(self):
         for item, factor in zip(self.items, self.old_scale_factors):
-            item.setScale(factor)
+            item.setScale(factor,
+                          QtCore.QPointF(item.width, item.height) / 2)

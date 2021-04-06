@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, PropertyMock
 
 from PyQt6 import QtCore, QtGui
 
@@ -199,10 +199,18 @@ class NormalizeItemsTestCase(BeeTestCase):
         item1.setScale(1)
         item2 = BeePixmapItem(QtGui.QImage())
         item2.setScale(3)
-        command = commands.NormalizeItems([item1, item2], [2, 0.5])
-        command.redo()
-        assert item1.scale() == 2
-        assert item2.scale() == 0.5
-        command.undo()
-        assert item1.scale() == 1
-        assert item2.scale() == 3
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=80):
+                command = commands.NormalizeItems([item1, item2], [2, 0.5])
+                command.redo()
+                assert item1.scale() == 2
+                assert item1.pos() == QtCore.QPointF(-50, -40)
+                assert item2.scale() == 0.5
+                assert item2.pos() == QtCore.QPointF(125, 100)
+                command.undo()
+                assert item1.scale() == 1
+                assert item1.pos() == QtCore.QPointF(0, 0)
+                assert item2.scale() == 3
+                assert item2.pos() == QtCore.QPointF(0, 0)

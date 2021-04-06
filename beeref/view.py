@@ -247,6 +247,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
                 parent=self)
             fileio.load(filename, self.scene, progress)
             self.filename = filename
+            progress.close()
         except fileio.BeeFileIOError:
             QtWidgets.QMessageBox.warning(
                 self,
@@ -278,6 +279,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
                 fileio.save(filename, self.scene, create_new=True,
                             progress=progress)
                 self.filename = filename
+                progress.close()
             except fileio.BeeFileIOError:
                 QtWidgets.QMessageBox.warning(
                     self,
@@ -294,6 +296,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
                 parent=self)
             fileio.save(self.filename, self.scene, create_new=False,
                         progress=progress)
+            progress.close()
 
     def on_action_quit(self):
         logger.info('User quit. Exiting...')
@@ -328,6 +331,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             pos.setX(pos.x() + 50)
             pos.setY(pos.y() + 50)
 
+        progress.close()
         self.undo_stack.push(commands.InsertItems(self.scene, items))
 
         if errors:
