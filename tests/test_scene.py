@@ -23,29 +23,29 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         self.addCleanup(views_patcher.stop)
 
     def test_normalize_height(self):
-        item1 = MagicMock(height=100, scale_factor=1)
-        item2 = MagicMock(height=200, scale_factor=3)
+        item1 = MagicMock(width=200, height=100, scale_factor=1)
+        item2 = MagicMock(width=300, height=200, scale_factor=3)
 
         with patch.object(self.scene, 'selectedItems',
                           return_value=[item1, item2]):
             self.scene.normalize_height()
 
-        item1.setScale.assert_called_once_with(1.5)
-        item2.setScale.assert_called_once_with(0.75)
+        item1.setScale.assert_called_once_with(1.5, QtCore.QPointF(100, 50))
+        item2.setScale.assert_called_once_with(0.75, QtCore.QPointF(150, 100))
 
     def test_normalize_height_when_no_items(self):
         self.scene.normalize_height()
 
     def test_normalize_width(self):
-        item1 = MagicMock(width=100, scale_factor=1)
-        item2 = MagicMock(width=200, scale_factor=3)
+        item1 = MagicMock(width=100, height=200, scale_factor=1)
+        item2 = MagicMock(width=200, height=300, scale_factor=3)
 
         with patch.object(self.scene, 'selectedItems',
                           return_value=[item1, item2]):
             self.scene.normalize_width()
 
-        item1.setScale.assert_called_once_with(1.5)
-        item2.setScale.assert_called_once_with(0.75)
+        item1.setScale.assert_called_once_with(1.5, QtCore.QPointF(50, 100))
+        item2.setScale.assert_called_once_with(0.75, QtCore.QPointF(100, 150))
 
     def test_normalize_width_when_no_items(self):
         self.scene.normalize_width()
@@ -58,8 +58,10 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
                           return_value=[item1, item2]):
             self.scene.normalize_size()
 
-        item1.setScale.assert_called_once_with(math.sqrt(1.5))
-        item2.setScale.assert_called_once_with(math.sqrt(0.75))
+        item1.setScale.assert_called_once_with(
+            math.sqrt(1.5), QtCore.QPointF(50, 100))
+        item2.setScale.assert_called_once_with(
+            math.sqrt(0.75), QtCore.QPointF(200, 50))
 
     def test_normalize_size_when_no_items(self):
         self.scene.normalize_size()
