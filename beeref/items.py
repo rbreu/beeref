@@ -43,8 +43,7 @@ class BeePixmapItem(SelectableMixin, QtWidgets.QGraphicsPixmapItem):
     def set_pos_center(self, pos):
         """Sets the position using the item's center as the origin point."""
 
-        center = self.mapToScene(QtCore.QPointF(self.width/2, self.height/2))
-        self.setPos(pos - center)
+        self.setPos(pos - self.center_scene_coords)
 
     @property
     def width(self):
