@@ -33,17 +33,17 @@ At the moment, you need to have a working Python 3 environment to install BeeRef
 
 Then run ``beeref`` or ``beeref filename.bee``.
 
-If there are issues starting the applictaion, run it with the environment varibale ``QT_DEBUG_PLUGINS`` set to 1, for example from a Linux shell::
+If there are issues starting the application, run it with the environment varibale ``QT_DEBUG_PLUGINS`` set to 1, for example from a Linux shell::
 
   QT_DEBUG_PLUGINS=1 beeref
 
-This should tell you whether you need to install any additional libraries, most likely regarding opengl.
+This should tell you whether you need to install any additional libraries.
 
 
 Regarding the bee file format
 -----------------------------
 
-Currently, all images are embedded into the bee file as png files. While png is a lossless format, it may also produce larger file sizes than compressed jpg files, so bee files may become bigger than the imported images. More embedding options are to come later.
+Currently, all images are embedded into the bee file as png files. While png is a lossless format, it may also produce larger file sizes than compressed jpg files, so bee files may become bigger than the imported images on their own. More embedding options are to come later.
 
 The bee file format is a sqlite database inside which the images are stored in an sqlar table—meaning they can be extracted with the `sqlite command line program <https://www.sqlite.org/cli.html>`_::
 
