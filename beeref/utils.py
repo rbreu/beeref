@@ -28,3 +28,12 @@ def get_rect_from_points(point1, point2):
         max(point1.x(), point2.x()),
         max(point1.y(), point2.y()))
     return QtCore.QRectF(topleft, bottomright)
+
+
+def round_to(number, base):
+    """Rounds to the given base.
+
+    E.g. with ``base=5`` round to the nearest number divisible by 5.
+    """
+
+    return base * round(number / base)

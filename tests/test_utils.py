@@ -1,3 +1,5 @@
+import pytest
+
 from PyQt6 import QtCore
 
 from beeref import utils
@@ -21,3 +23,12 @@ class GetRectFromPointsTestCase(BeeTestCase):
         assert rect.topLeft().y() == -20
         assert rect.bottomRight().x() == 50
         assert rect.bottomRight().y() == 40
+
+
+@pytest.mark.parametrize('number,base,expected',
+                         [(33, 5, 35),
+                          (-33, 5, -35),
+                          (50, 5, 50),
+                          (3.1, 0.5, 3.0)])
+def test_round_to(number, base, expected):
+    assert utils.round_to(number, base) == expected

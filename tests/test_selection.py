@@ -344,7 +344,7 @@ class SelectableMixinTestCase(SelectableMixinBaseTestCase):
             assert shape.bottomRight().y() == 80
 
 
-class SelectableMixinScalingTestCase(SelectableMixinBaseTestCase):
+class SelectableMixinCalculationsTestCase(SelectableMixinBaseTestCase):
 
     def test_get_scale_factor_bottomright(self):
         self.item.event_start = QtCore.QPointF(10, 10)
@@ -422,6 +422,13 @@ class SelectableMixinScalingTestCase(SelectableMixinBaseTestCase):
         self.item.event_anchor = QtCore.QPointF(10, 20)
         self.item.rotate_start_angle = -3
         assert self.item.get_rotate_delta(QtCore.QPointF(15, 25)) == -42
+
+    def test_get_rotate_delta_snaps(self):
+        self.item.event_anchor = QtCore.QPointF(10, 20)
+        self.item.rotate_start_angle = -3
+        self.item.rotate_orig_degrees = 5
+        assert self.item.get_rotate_delta(
+            QtCore.QPointF(15, 25), snap=True) == -35
 
 
 class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):

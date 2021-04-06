@@ -315,9 +315,17 @@ class SelectableMixin(BaseItemMixin):
         diff = pos - self.event_anchor
         return -math.degrees(math.atan2(diff.x(), diff.y()))
 
-    def get_rotate_delta(self, pos):
-        """Get the rotate delta for the current mouse movement"""
-        return self.get_rotate_angle(pos) - self.rotate_start_angle
+    def get_rotate_delta(self, pos, snap=False):
+        """Get the rotate delta for the current mouse movement.
+
+        If ``snap`` is True, snap to 15 degree units."""
+
+        delta = self.get_rotate_angle(pos) - self.rotate_start_angle
+        if snap:
+            target = utils.round_to(self.rotate_orig_degrees + delta, 15)
+            delta = target - self.rotate_orig_degrees
+
+        return delta
 
     def mouseMoveEvent(self, event):
         if self.scale_active:
@@ -327,7 +335,9 @@ class SelectableMixin(BaseItemMixin):
                               item.mapFromScene(self.event_anchor))
             event.accept()
         elif self.rotate_active:
-            delta = self.get_rotate_delta(event.scenePos())
+            snap = (event.modifiers() == Qt.KeyboardModifiers.ControlModifier
+                    or event.modifiers() == Qt.KeyboardModifiers.ShiftModifier)
+            delta = self.get_rotate_delta(event.scenePos(), snap)
             for item in self.selection_action_items():
                 item.setRotation(item.rotate_orig_degrees + delta,
                                  item.mapFromScene(self.event_anchor))
