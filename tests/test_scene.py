@@ -20,6 +20,7 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         views_patcher = patch('beeref.scene.BeeGraphicsScene.views',
                               return_value=[self.view])
         views_patcher.start()
+        self.addCleanup(views_patcher.stop)
 
     def test_normalize_height(self):
         item1 = MagicMock(height=100, scale_factor=1)

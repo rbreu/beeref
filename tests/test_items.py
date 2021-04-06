@@ -44,6 +44,17 @@ class BeePixmapItemTestCase(BeeTestCase):
                 assert item.pos().x() == -200
                 assert item.pos().y() == -100
 
+    def test_set_pos_center_when_rotated(self):
+        item = BeePixmapItem(QtGui.QImage())
+        item.setRotation(90)
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=200):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=100):
+                item.set_pos_center(QtCore.QPointF(0, 0))
+                assert item.pos().x() == 50
+                assert item.pos().y() == -100
+
     def test_pixmap_to_bytes(self):
         item = BeePixmapItem(QtGui.QImage(self.imgfilename3x3))
         assert item.pixmap_to_bytes().startswith(b'\x89PNG')

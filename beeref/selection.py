@@ -34,7 +34,7 @@ SELECT_COLOR = QtGui.QColor(116, 234, 231, 255)
 
 
 def with_anchor(func):
-    """Decorator that handles anchors for translate operations.
+    """Decorator that adds an anchor parameter to transform operations.
 
     The anchor is given in item coordinates.
     """
@@ -45,7 +45,7 @@ def with_anchor(func):
 
         anchor = anchor if anchor else QtCore.QPointF(0, 0)
         prev = self.mapToScene(anchor)
-        func(self, value, anchor)
+        func(self, value)
         diff = self.mapToScene(anchor) - prev
         self.setPos(self.pos() - diff)
 
@@ -55,7 +55,7 @@ def with_anchor(func):
 class BaseItemMixin:
 
     @with_anchor
-    def setScale(self, value, anchor=None):
+    def setScale(self, value):
         if value <= 0:
             return
 
@@ -72,14 +72,14 @@ class BaseItemMixin:
         self.setZValue(self.scene().max_z + 0.001)
 
     @with_anchor
-    def setRotation(self, value, anchor):
+    def setRotation(self, value):
         logger.debug(f'Setting rotation for {self} to {value}')
         super().setRotation(value)
 
     @property
     def center_scene_coords(self):
         """The item's center in scene coordinates."""
-        return self.mapToScene(QtCore.QPointF(self.width/2, self.height/2))
+        return self.mapToScene(QtCore.QPointF(self.width, self.height) / 2)
 
 
 class SelectableMixin(BaseItemMixin):
