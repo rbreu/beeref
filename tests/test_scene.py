@@ -166,7 +166,7 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         self.scene.addItem = MagicMock()
         self.scene.event_start = QtCore.QPointF(0, 0)
         self.scene.rubberband_item.bring_to_front = MagicMock()
-        self.scene.removeItem(self.scene.rubberband_item)
+        assert self.scene.rubberband_item.scene() is None
         event = MagicMock(
             scenePos=MagicMock(return_value=QtCore.QPointF(10, 20)),
         )

@@ -353,7 +353,6 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         if img.isNull():
             logger.info('No image data in clipboard')
         else:
-            self.scene.clearSelection()
             item = BeePixmapItem(img)
             pos = self.mapToScene(self.mapFromGlobal(self.cursor().pos()))
             item.set_pos_center(pos)
