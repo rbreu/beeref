@@ -33,15 +33,35 @@ logger = logging.getLogger('BeeRef')
 SELECT_COLOR = QtGui.QColor(116, 234, 231, 255)
 
 
+def with_anchor(func):
+    """Decorator that handles anchors for translate operations.
+
+    The anchor is given in item coordinates.
+    """
+
+    def wrapper(self, value, anchor=None):
+        # We caculate where the anchor is before and after the transformation
+        # and then move the item accordingly to keep the anchor fixed
+
+        anchor = anchor if anchor else QtCore.QPointF(0, 0)
+        prev = self.mapToScene(anchor)
+        func(self, value, anchor)
+        diff = self.mapToScene(anchor) - prev
+        self.setPos(self.pos() - diff)
+
+    return wrapper
+
+
 class BaseItemMixin:
 
-    def setScale(self, factor):
-        if factor <= 0:
+    @with_anchor
+    def setScale(self, value, anchor=None):
+        if value <= 0:
             return
 
-        logger.debug(f'Setting scale for {self} to {factor}')
+        logger.debug(f'Setting scale for {self} to {value}')
         self.prepareGeometryChange()
-        super().setScale(factor)
+        super().setScale(value)
 
     def setZValue(self, value):
         logger.debug(f'Setting z-value for {self} to {value}')
@@ -51,15 +71,15 @@ class BaseItemMixin:
     def bring_to_front(self):
         self.setZValue(self.scene().max_z + 0.001)
 
-    def setRotation(self, rotation, anchor=None):
-        anchor = anchor or QtCore.QPointF(0, 0)
-        prev = self.mapToScene(anchor)
-        super().setRotation(rotation)
+    @with_anchor
+    def setRotation(self, value, anchor):
+        logger.debug(f'Setting rotation for {self} to {value}')
+        super().setRotation(value)
 
-        # Calculate where the anchor moved to so that we can shift the
-        # item back to keep the anchor fixed
-        diff = self.mapToScene(anchor) - prev
-        self.setPos(self.pos() - diff)
+    @property
+    def center_scene_coords(self):
+        """The item's center in scene coordinates."""
+        return self.mapToScene(QtCore.QPointF(self.width/2, self.height/2))
 
 
 class SelectableMixin(BaseItemMixin):
@@ -237,22 +257,22 @@ class SelectableMixin(BaseItemMixin):
                     # Start scale action for this corner
                     self.scale_active = True
                     self.event_start = event.scenePos()
+                    self.event_direction = self.get_mouse_event_direction(
+                        event)
+                    self.event_anchor = self.mapToScene(
+                        self.get_scale_anchor(corner))
                     self.scale_direction = self.get_corner_direction(corner)
                     for item in self.selection_action_items():
-                        item.scale_anchor = self.get_scale_anchor(item, corner)
                         item.scale_orig_factor = item.scale()
-                        item.scale_orig_pos = item.pos()
                     event.accept()
                     return
                 # Check if we are in one of the corner's rotate areas
                 if self.get_rotate_bounds(corner).contains(event.pos()):
                     # Start rotate action
                     self.rotate_active = True
-                    self.rotate_anchor = self.mapToScene(
-                        QtCore.QPointF(self.width/2, self.height/2))
+                    self.event_anchor = self.center_scene_coords
                     self.rotate_start_angle = self.get_rotate_angle(event)
                     for item in self.selection_action_items():
-                        item.rotate_anchor = self.rotate_anchor
                         item.rotate_orig_degrees = item.rotation()
                     event.accept()
                     return
@@ -261,16 +281,16 @@ class SelectableMixin(BaseItemMixin):
 
     def get_scale_factor(self, event):
         """Get the scale factor for the current mouse movement."""
-        imgsize = self.width + self.height
+        imgsize = math.sqrt(self.width**2 + self.height**2)
         p = event.scenePos() - self.event_start
-        direction = self.scale_direction
+        direction = self.event_direction
         delta = QtCore.QPointF.dotProduct(direction, p) / imgsize
         return (self.scale_orig_factor + delta) / self.scale_orig_factor
 
-    def get_scale_anchor(self, item, corner):
+    def get_scale_anchor(self, corner):
         """Get the anchor around which the scale for this corner operates."""
-        return item.mapFromScene(
-            self.mapToScene(self.width - corner.x(), self.height - corner.y()))
+        return QtCore.QPointF(self.width - corner.x(),
+                              self.height - corner.y())
 
     def get_corner_direction(self, corner):
         """Get the direction facing away from the center, e.g. the direction
@@ -278,24 +298,18 @@ class SelectableMixin(BaseItemMixin):
         return QtCore.QPointF(1 if corner.x() > 0 else -1,
                               1 if corner.y() > 0 else -1)
 
-    def translate_for_scale_anchor(self, scale_factor):
-        """Adjust the item's position so that a scale with the given scale
-        factor appears to operate around the scale anchor. ``setScale``
-        needs to be called separately with ``scale_factor`` multiplied by
-        the item's current scale factor.
+    def get_mouse_event_direction(self, event):
+        """The direction of a mouse event in relation to the item's center.
         """
-
-        factor = self.scale_orig_factor * (scale_factor - 1)
-        self.setPos(
-            self.scale_orig_pos.x() - self.scale_anchor.x() * factor,
-            self.scale_orig_pos.y() - self.scale_anchor.y() * factor,
-        )
+        diff = event.scenePos() - self.center_scene_coords
+        length = math.sqrt(QtCore.QPointF.dotProduct(diff, diff))
+        return diff / length
 
     def get_rotate_angle(self, event):
         """Get the angle of the current mouse position towards the
         scale center."""
 
-        diff = event.scenePos() - self.rotate_anchor
+        diff = event.scenePos() - self.event_anchor
         return -math.degrees(math.atan2(diff.x(), diff.y()))
 
     def get_rotate_delta(self, event):
@@ -306,14 +320,14 @@ class SelectableMixin(BaseItemMixin):
         if self.scale_active:
             factor = self.get_scale_factor(event)
             for item in self.selection_action_items():
-                item.setScale(item.scale_orig_factor * factor)
-                item.translate_for_scale_anchor(factor)
+                item.setScale(item.scale_orig_factor * factor,
+                              item.mapFromScene(self.event_anchor))
             event.accept()
         elif self.rotate_active:
             delta = self.get_rotate_delta(event)
             for item in self.selection_action_items():
                 item.setRotation(item.rotate_orig_degrees + delta,
-                                 item.mapFromScene(self.rotate_anchor))
+                                 item.mapFromScene(self.event_anchor))
         else:
             super().mouseMoveEvent(event)
 
@@ -323,6 +337,7 @@ class SelectableMixin(BaseItemMixin):
                 commands.ScaleItemsBy(
                     self.selection_action_items(),
                     self.get_scale_factor(event),
+                    self.event_anchor,
                     ignore_first_redo=True))
             self.scale_active = False
             event.accept()
@@ -332,7 +347,7 @@ class SelectableMixin(BaseItemMixin):
                 commands.RotateItemsBy(
                     self.selection_action_items(),
                     self.get_rotate_delta(event),
-                    self.rotate_anchor,
+                    self.event_anchor,
                     ignore_first_redo=True))
             self.rotate_active = False
             event.accept()

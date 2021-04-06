@@ -95,16 +95,11 @@ class ScaleItemsByTestCase(BeeTestCase):
     def test_redo_undo(self):
         item1 = BeePixmapItem(QtGui.QImage())
         item1.setScale(1)
-        item1.scale_orig_factor = 1
-        item1.scale_anchor = QtCore.QPointF(100, 100)
-        item1.scale_orig_pos = QtCore.QPointF(0, 0)
         item2 = BeePixmapItem(QtGui.QImage())
         item2.setScale(3)
-        item2.scale_orig_factor = 3
-        item2.scale_anchor = QtCore.QPointF(0, 0)
         item2.setPos(100, 100)
-        item2.scale_orig_pos = QtCore.QPointF(100, 100)
-        command = commands.ScaleItemsBy([item1, item2], 2)
+        command = commands.ScaleItemsBy([item1, item2], 2,
+                                        QtCore.QPointF(100, 100))
         command.redo()
         assert item1.scale() == 2
         assert item1.pos().x() == -100
@@ -123,22 +118,17 @@ class ScaleItemsByTestCase(BeeTestCase):
     def test_ignore_first_redo(self):
         item1 = BeePixmapItem(QtGui.QImage())
         item1.setScale(1)
-        item1.scale_orig_factor = 1
-        item1.scale_anchor = QtCore.QPointF(100, 100)
-        item1.scale_orig_pos = QtCore.QPointF(0, 0)
         item2 = BeePixmapItem(QtGui.QImage())
         item2.setScale(3)
-        item2.scale_orig_factor = 3
-        item2.scale_anchor = QtCore.QPointF(0, 0)
         item2.setPos(100, 100)
-        item2.scale_orig_pos = QtCore.QPointF(100, 100)
         command = commands.ScaleItemsBy([item1, item2], 2,
+                                        QtCore.QPointF(100, 100),
                                         ignore_first_redo=True)
         command.redo()
         assert item1.scale() == 1
-        assert item2.scale() == 3
         assert item1.pos().x() == 0
         assert item1.pos().y() == 0
+        assert item2.scale() == 3
         assert item2.pos().x() == 100
         assert item2.pos().y() == 100
         command.redo()

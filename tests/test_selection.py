@@ -1,3 +1,5 @@
+import math
+from pytest import approx
 from unittest.mock import patch, MagicMock, PropertyMock
 
 from PyQt6 import QtCore, QtGui
@@ -35,6 +37,12 @@ class BaseItemMixinTestCase(BeeTestCase):
         item.setScale(-0.1)
         assert item.scale() == 1
 
+    def test_set_scale_with_anchor(self):
+        item = BeePixmapItem(QtGui.QImage())
+        item.setScale(2, anchor=QtCore.QPointF(100, 100))
+        assert item.scale() == 2
+        assert item.pos() == QtCore.QPointF(-100, -100)
+
     def test_set_zvalue_sets_new_max(self):
         item = BeePixmapItem(QtGui.QImage())
         self.scene.addItem(item)
@@ -60,7 +68,7 @@ class BaseItemMixinTestCase(BeeTestCase):
         assert item2.zValue() > item1.zValue()
         assert item2.zValue() == self.scene.max_z
 
-    def test_set_rotation_anchor_topleft(self):
+    def test_set_rotation_anchor(self):
         item = BeePixmapItem(QtGui.QImage())
         item.setRotation(45)
         assert item.rotation() == 45
@@ -80,6 +88,17 @@ class BaseItemMixinTestCase(BeeTestCase):
         assert item.rotation() == -90
         assert item.pos().x() == 0
         assert item.pos().y() == 200
+
+    def test_center_scene_coords(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        item.setPos(5, 5)
+        item.setScale(2)
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=80):
+                assert item.center_scene_coords == QtCore.QPointF(105, 85)
 
 
 class SelectableMixinBaseTestCase(BeeTestCase):
@@ -329,46 +348,39 @@ class SelectableMixinScalingTestCase(SelectableMixinBaseTestCase):
 
     def test_get_scale_factor_bottomright(self):
         self.item.event_start = QtCore.QPointF(10, 10)
-        self.item.scale_direction = QtCore.QPointF(1, 1)
+        self.item.event_direction = QtCore.QPointF(1, 1) / math.sqrt(2)
         self.item.scale_orig_factor = 1
         event = MagicMock()
         event.scenePos = MagicMock(return_value=QtCore.QPointF(20, 90))
-        assert self.item.get_scale_factor(event) == 1.5
+        assert self.item.get_scale_factor(event) == approx(1.5, 0.01)
 
     def test_get_scale_factor_topleft(self):
         self.item.event_start = QtCore.QPointF(10, 10)
-        self.item.scale_direction = QtCore.QPointF(-1, -1)
+        self.item.event_direction = QtCore.QPointF(-1, -1) / math.sqrt(2)
         self.item.scale_orig_factor = 0.5
         event = MagicMock()
         event.scenePos = MagicMock(return_value=QtCore.QPointF(-10, -60))
-        assert self.item.get_scale_factor(event) == 2
+        assert self.item.get_scale_factor(event) == approx(2, 0.01)
 
     def test_get_scale_anchor_topleft(self):
-        anchor = self.item.get_scale_anchor(self.item, QtCore.QPointF(0, 0))
+        anchor = self.item.get_scale_anchor(QtCore.QPointF(0, 0))
         assert anchor.x() == 100
         assert anchor.y() == 80
 
     def test_get_scale_anchor_bottomright(self):
-        anchor = self.item.get_scale_anchor(self.item, QtCore.QPointF(100, 80))
+        anchor = self.item.get_scale_anchor(QtCore.QPointF(100, 80))
         assert anchor.x() == 0
         assert anchor.y() == 0
 
     def test_get_scale_anchor_topright(self):
-        anchor = self.item.get_scale_anchor(self.item, QtCore.QPointF(100, 0))
+        anchor = self.item.get_scale_anchor(QtCore.QPointF(100, 0))
         assert anchor.x() == 0
         assert anchor.y() == 80
 
     def test_get_scale_anchor_bottomleft(self):
-        anchor = self.item.get_scale_anchor(self.item, QtCore.QPointF(0, 80))
+        anchor = self.item.get_scale_anchor(QtCore.QPointF(0, 80))
         assert anchor.x() == 100
         assert anchor.y() == 0
-
-    def test_get_scale_anchor_topleft_when_anchor_other_item(self):
-        item2 = BeePixmapItem(QtGui.QImage())
-        item2.setPos(22, 33)
-        anchor = self.item.get_scale_anchor(item2, QtCore.QPointF(0, 0))
-        assert anchor.x() == 78
-        assert anchor.y() == 47
 
     def test_get_corner_direction_topleft(self):
         assert self.item.get_corner_direction(
@@ -386,22 +398,33 @@ class SelectableMixinScalingTestCase(SelectableMixinBaseTestCase):
         assert self.item.get_corner_direction(
             QtCore.QPointF(0, 80)) == QtCore.QPointF(-1, 1)
 
-    def test_translate_for_scale_anchor(self):
-        self.item.scale_orig_pos = QtCore.QPoint(50, 70)
-        self.item.scale_anchor = QtCore.QPoint(100, 80)
-        self.item.scale_orig_factor = 1
-        self.item.translate_for_scale_anchor(3)
-        assert self.item.pos().x() == -150
-        assert self.item.pos().y() == -90
+    def test_get_mouse_event_direction_bottomright(self):
+        event = MagicMock()
+        event.scenePos = MagicMock(return_value=QtCore.QPointF(100, 90))
+        direction = self.item.get_mouse_event_direction(event)
+        assert direction == approx(QtCore.QPointF(1, 1) / math.sqrt(2))
+
+    def test_get_mouse_event_direction_topleft(self):
+        event = MagicMock()
+        event.scenePos = MagicMock(return_value=QtCore.QPointF(0, -10))
+        direction = self.item.get_mouse_event_direction(event)
+        assert direction == approx(QtCore.QPointF(-1, -1) / math.sqrt(2))
+
+    def test_get_mouse_event_direction_bottomright_when_rotated_180(self):
+        self.item.setRotation(180, QtCore.QPointF(50, 40))
+        event = MagicMock()
+        event.scenePos = MagicMock(return_value=QtCore.QPointF(100, 90))
+        direction = self.item.get_mouse_event_direction(event)
+        assert direction == approx(QtCore.QPointF(1, 1) / math.sqrt(2))
 
     def test_get_rotate_angle(self):
-        self.item.rotate_anchor = QtCore.QPointF(10, 20)
+        self.item.event_anchor = QtCore.QPointF(10, 20)
         event = MagicMock()
         event.scenePos = MagicMock(return_value=QtCore.QPointF(15, 25))
         assert self.item.get_rotate_angle(event) == -45
 
     def test_get_rotate_delta(self):
-        self.item.rotate_anchor = QtCore.QPointF(10, 20)
+        self.item.event_anchor = QtCore.QPointF(10, 20)
         self.item.rotate_start_angle = -3
         event = MagicMock()
         event.scenePos = MagicMock(return_value=QtCore.QPointF(15, 25))
@@ -470,28 +493,28 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
     def test_mouse_press_event_topleft_scale(self):
         self.item.setSelected(True)
         self.event.pos = MagicMock(return_value=QtCore.QPointF(2, 2))
-        self.event.scenePos = MagicMock(return_value=QtCore.QPointF(66, 99))
+        self.event.scenePos = MagicMock(return_value=QtCore.QPointF(-1, -1))
         self.event.button = MagicMock(
             return_value=Qt.MouseButtons.LeftButton)
         self.item.mousePressEvent(self.event)
         assert self.item.scale_active is True
-        assert self.item.event_start == QtCore.QPointF(66, 99)
-        assert self.item.scale_direction == QtCore.QPointF(-1, -1)
+        assert self.item.event_start == QtCore.QPointF(-1, -1)
+        assert self.item.event_direction.x() < 0
+        assert self.item.event_direction.y() < 0
         assert self.item.scale_orig_factor == 1
-        assert self.item.scale_orig_pos == QtCore.QPointF(0, 0)
 
     def test_mouse_press_event_bottomright_scale(self):
         self.item.setSelected(True)
         self.event.pos = MagicMock(return_value=QtCore.QPointF(99, 79))
-        self.event.scenePos = MagicMock(return_value=QtCore.QPointF(66, 99))
+        self.event.scenePos = MagicMock(return_value=QtCore.QPointF(101, 81))
         self.event.button = MagicMock(
             return_value=Qt.MouseButtons.LeftButton)
         self.item.mousePressEvent(self.event)
         assert self.item.scale_active is True
-        assert self.item.scale_direction == QtCore.QPointF(1, 1)
-        assert self.item.event_start == QtCore.QPointF(66, 99)
+        assert self.item.event_start == QtCore.QPointF(101, 81)
+        assert self.item.event_direction.x() > 0
+        assert self.item.event_direction.y() > 0
         assert self.item.scale_orig_factor == 1
-        assert self.item.scale_orig_pos == QtCore.QPointF(0, 0)
 
     def test_mouse_press_event_rotate(self):
         self.item.setSelected(True)
@@ -501,7 +524,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
             return_value=Qt.MouseButtons.LeftButton)
         self.item.mousePressEvent(self.event)
         assert self.item.rotate_active is True
-        assert self.item.rotate_anchor == QtCore.QPointF(50, 40)
+        assert self.item.event_anchor == QtCore.QPointF(50, 40)
         assert self.item.rotate_orig_degrees == 0
 
     def test_mouse_press_event_not_selected(self):
@@ -511,7 +534,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
             m.assert_called_once_with(self.event)
             assert self.item.scale_active is False
 
-    def test_mouse_press_not_in_handles(self):
+    def test_mouse_press_event_not_in_handles(self):
         self.item.setSelected(True)
         self.event.pos = MagicMock(return_value=QtCore.QPointF(50, 40))
         self.event.button = MagicMock(
@@ -529,21 +552,20 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
     def test_mouse_move_event_when_scale_action(self):
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(20, 90))
         self.item.scale_active = True
-        self.item.scale_direction = QtCore.QPointF(1, 1)
-        self.item.scale_anchor = QtCore.QPointF(100, 80)
+        self.item.event_direction = QtCore.QPointF(1, 1) / math.sqrt(2)
+        self.item.event_anchor = QtCore.QPointF(100, 80)
         self.item.event_start = QtCore.QPointF(10, 10)
         self.item.scale_orig_factor = 1
-        self.item.scale_orig_pos = QtCore.QPointF(0, 0)
 
         self.item.mouseMoveEvent(self.event)
-        assert self.item.scale() == 1.5
+        assert self.item.scale() == approx(1.5, 0.01)
 
     def test_mouse_move_event_when_rotate_action(self):
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(15, 25))
         self.item.rotate_active = True
         self.item.rotate_orig_degrees = 0
         self.item.rotate_start_angle = -3
-        self.item.rotate_anchor = QtCore.QPointF(10, 20)
+        self.item.event_anchor = QtCore.QPointF(10, 20)
         self.item.mouseMoveEvent(self.event)
         assert self.item.rotation() == -42
 
@@ -556,11 +578,10 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
     def test_mouse_release_event_when_scale_action(self):
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(20, 90))
         self.item.scale_active = True
-        self.item.scale_direction = QtCore.QPointF(1, 1)
-        self.item.scale_anchor = QtCore.QPointF(100, 80)
+        self.item.event_direction = QtCore.QPointF(1, 1) / math.sqrt(2)
+        self.item.event_anchor = QtCore.QPointF(100, 80)
         self.item.event_start = QtCore.QPointF(10, 10)
         self.item.scale_orig_factor = 1
-        self.item.scale_orig_pos = QtCore.QPointF(0, 0)
         self.scene.undo_stack = MagicMock(push=MagicMock())
 
         self.item.mouseReleaseEvent(self.event)
@@ -568,11 +589,8 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         args = self.scene.undo_stack.push.call_args_list[0][0]
         cmd = args[0]
         assert cmd.items == [self.item]
-        assert cmd.factor == 1.5
-        assert cmd.item_data == [{
-            'anchor': QtCore.QPointF(100, 80),
-            'orig_factor': 1,
-            'orig_pos': QtCore.QPointF(0, 0)}]
+        assert cmd.factor == approx(1.5, 0.01)
+        assert cmd.anchor == QtCore.QPointF(100, 80)
         assert cmd.ignore_first_redo is True
         assert self.item.scale_active is False
 
@@ -581,7 +599,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.rotate_active = True
         self.item.rotate_orig_degrees = 0
         self.item.rotate_start_angle = -3
-        self.item.rotate_anchor = QtCore.QPointF(10, 20)
+        self.item.event_anchor = QtCore.QPointF(10, 20)
         self.scene.undo_stack = MagicMock(push=MagicMock())
 
         self.item.mouseReleaseEvent(self.event)

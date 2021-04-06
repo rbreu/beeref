@@ -74,37 +74,31 @@ class MoveItemsBy(QtGui.QUndoCommand):
 
 
 class ScaleItemsBy(QtGui.QUndoCommand):
-    """Scale items by a given factor around the given anchor point."""
+    """Scale items by a given factor around the given anchor."""
 
-    def __init__(self, items, factor, ignore_first_redo=False):
+    def __init__(self, items, factor, anchor, ignore_first_redo=False):
         super().__init__('Scale items')
         self.ignore_first_redo = ignore_first_redo
         self.items = items
         self.factor = factor
-        self.item_data = [
-            {'anchor': item.scale_anchor,
-             'orig_factor': item.scale_orig_factor,
-             'orig_pos': item.scale_orig_pos} for item in items]
+        self.anchor = anchor
 
     def redo(self):
         if self.ignore_first_redo:
             self.ignore_first_redo = False
             return
-        for item, data in zip(self.items, self.item_data):
-            item.scale_orig_factors = data['orig_factor']
-            item.scale_orig_pos = data['orig_pos']
-            item.scale_anchor = data['anchor']
-            item.setScale(item.scale() * self.factor)
-            item.translate_for_scale_anchor(self.factor)
+        for item in self.items:
+            item.setScale(item.scale() * self.factor,
+                          item.mapFromScene(self.anchor))
 
     def undo(self):
-        for item, data in zip(self.items, self.item_data):
-            item.setScale(item.scale() / self.factor)
-            item.setPos(data['orig_pos'])
+        for item in self.items:
+            item.setScale(item.scale() / self.factor,
+                          item.mapFromScene(self.anchor))
 
 
 class RotateItemsBy(QtGui.QUndoCommand):
-    """Rotate items by a given deltan around the given anchor."""
+    """Rotate items by a given delta around the given anchor."""
 
     def __init__(self, items, delta, anchor, ignore_first_redo=False):
         super().__init__('Scale items')
