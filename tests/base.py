@@ -20,7 +20,7 @@ class BeeTestCase(TestCase):
         inst = QtWidgets.QApplication.instance()
         cls.app = inst if inst else QtWidgets.QApplication([])
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.app.quit()
-        del cls.app
+    # @classmethod
+    # def tearDownClass(cls):
+    #     cls.app.quit()
+    #     del cls.app

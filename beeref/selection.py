@@ -415,11 +415,19 @@ class MultiSelectItem(SelectableMixin,
         """Updates itself to fit the given selection area."""
 
         logging.debug(f'Fit selection area to {rect}')
-        self.setRect(0, 0, rect.width(), rect.height())
-        self.setPos(rect.topLeft())
-        self.setScale(1)
-        self.setRotation(0)
-        self.setSelected(True)
+
+        # Only update when values have changed, otherwise we end up in an
+        # infinite event loop sceneChange -> itemChange -> sceneChange ...
+        if self.width != rect.width() or self.height != rect.height():
+            self.setRect(0, 0, rect.width(), rect.height())
+        if self.pos() != rect.topLeft():
+            self.setPos(rect.topLeft())
+        if self.scale() != 1:
+            self.setScale(1)
+        if self.rotation() != 0:
+            self.setRotation(0)
+        if not self.isSelected():
+            self.setSelected(True)
 
     def mousePressEvent(self, event):
         if (event.button() == Qt.MouseButtons.LeftButton
