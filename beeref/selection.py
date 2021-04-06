@@ -229,15 +229,20 @@ class SelectableMixin(BaseItemMixin):
             return
 
         for corner in self.corners:
-            # See if we need to change the cursor for scale areas
+            # See if we need to change the cursor for interactable areas
             if self.get_scale_bounds(corner).contains(event.pos()):
-                direction = self.get_corner_direction(corner)
-                if direction.x() == direction.y():
+                self.event_anchor = self.center_scene_coords
+                angle = self.get_rotate_angle(self.mapToScene(corner))
+                if abs(angle) >= 157.5 or abs(angle) <= 22.5:
+                    self.setCursor(Qt.CursorShape.SizeVerCursor)
+                elif 112.5 <= angle <= 157.5 or -67.5 <= angle <= -22.5:
                     self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+                elif 67.5 <= abs(angle) <= 112.5:
+                    self.setCursor(Qt.CursorShape.SizeHorCursor)
                 else:
                     self.setCursor(Qt.CursorShape.SizeBDiagCursor)
                 return
-            if self.get_rotate_bounds(corner).contains(event.pos()):
+            elif self.get_rotate_bounds(corner).contains(event.pos()):
                 self.setCursor(BeeAssets().cursor_rotate)
                 return
 
@@ -257,11 +262,10 @@ class SelectableMixin(BaseItemMixin):
                     # Start scale action for this corner
                     self.scale_active = True
                     self.event_start = event.scenePos()
-                    self.event_direction = self.get_mouse_event_direction(
-                        event)
+                    self.event_direction = self.get_direction_from_center(
+                        event.scenePos())
                     self.event_anchor = self.mapToScene(
                         self.get_scale_anchor(corner))
-                    self.scale_direction = self.get_corner_direction(corner)
                     for item in self.selection_action_items():
                         item.scale_orig_factor = item.scale()
                     event.accept()
@@ -271,7 +275,8 @@ class SelectableMixin(BaseItemMixin):
                     # Start rotate action
                     self.rotate_active = True
                     self.event_anchor = self.center_scene_coords
-                    self.rotate_start_angle = self.get_rotate_angle(event)
+                    self.rotate_start_angle = self.get_rotate_angle(
+                        event.scenePos())
                     for item in self.selection_action_items():
                         item.rotate_orig_degrees = item.rotation()
                     event.accept()
@@ -298,23 +303,21 @@ class SelectableMixin(BaseItemMixin):
         return QtCore.QPointF(1 if corner.x() > 0 else -1,
                               1 if corner.y() > 0 else -1)
 
-    def get_mouse_event_direction(self, event):
-        """The direction of a mouse event in relation to the item's center.
-        """
-        diff = event.scenePos() - self.center_scene_coords
+    def get_direction_from_center(self, pos):
+        """The direction of a point in relation to the item's center."""
+        diff = pos - self.center_scene_coords
         length = math.sqrt(QtCore.QPointF.dotProduct(diff, diff))
         return diff / length
 
-    def get_rotate_angle(self, event):
-        """Get the angle of the current mouse position towards the
-        scale center."""
+    def get_rotate_angle(self, pos):
+        """Get the angle of the given position towards the event anchor."""
 
-        diff = event.scenePos() - self.event_anchor
+        diff = pos - self.event_anchor
         return -math.degrees(math.atan2(diff.x(), diff.y()))
 
-    def get_rotate_delta(self, event):
+    def get_rotate_delta(self, pos):
         """Get the rotate delta for the current mouse movement"""
-        return self.get_rotate_angle(event) - self.rotate_start_angle
+        return self.get_rotate_angle(pos) - self.rotate_start_angle
 
     def mouseMoveEvent(self, event):
         if self.scale_active:
@@ -324,7 +327,7 @@ class SelectableMixin(BaseItemMixin):
                               item.mapFromScene(self.event_anchor))
             event.accept()
         elif self.rotate_active:
-            delta = self.get_rotate_delta(event)
+            delta = self.get_rotate_delta(event.scenePos())
             for item in self.selection_action_items():
                 item.setRotation(item.rotate_orig_degrees + delta,
                                  item.mapFromScene(self.event_anchor))
@@ -346,7 +349,7 @@ class SelectableMixin(BaseItemMixin):
             self.scene().undo_stack.push(
                 commands.RotateItemsBy(
                     self.selection_action_items(),
-                    self.get_rotate_delta(event),
+                    self.get_rotate_delta(event.scenePos()),
                     self.event_anchor,
                     ignore_first_redo=True))
             self.rotate_active = False

@@ -352,7 +352,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             self.scene.clearSelection()
             item = BeePixmapItem(img)
             pos = self.mapToScene(self.mapFromGlobal(self.cursor().pos()))
-            item.set_pos_center(pos.x(), pos.y())
+            item.set_pos_center(pos)
             self.undo_stack.push(commands.InsertItems(self.scene, [item]))
 
     def on_selection_changed(self):

@@ -398,37 +398,30 @@ class SelectableMixinScalingTestCase(SelectableMixinBaseTestCase):
         assert self.item.get_corner_direction(
             QtCore.QPointF(0, 80)) == QtCore.QPointF(-1, 1)
 
-    def test_get_mouse_event_direction_bottomright(self):
-        event = MagicMock()
-        event.scenePos = MagicMock(return_value=QtCore.QPointF(100, 90))
-        direction = self.item.get_mouse_event_direction(event)
+    def test_get_direction_from_center_bottomright(self):
+        direction = self.item.get_direction_from_center(
+            QtCore.QPointF(100, 90))
         assert direction == approx(QtCore.QPointF(1, 1) / math.sqrt(2))
 
-    def test_get_mouse_event_direction_topleft(self):
-        event = MagicMock()
-        event.scenePos = MagicMock(return_value=QtCore.QPointF(0, -10))
-        direction = self.item.get_mouse_event_direction(event)
+    def test_get_direction_from_center_topleft(self):
+        direction = self.item.get_direction_from_center(
+            QtCore.QPointF(0, -10))
         assert direction == approx(QtCore.QPointF(-1, -1) / math.sqrt(2))
 
-    def test_get_mouse_event_direction_bottomright_when_rotated_180(self):
+    def test_get_direction_from_center_bottomright_when_rotated_180(self):
         self.item.setRotation(180, QtCore.QPointF(50, 40))
-        event = MagicMock()
-        event.scenePos = MagicMock(return_value=QtCore.QPointF(100, 90))
-        direction = self.item.get_mouse_event_direction(event)
+        direction = self.item.get_direction_from_center(
+            QtCore.QPointF(100, 90))
         assert direction == approx(QtCore.QPointF(1, 1) / math.sqrt(2))
 
     def test_get_rotate_angle(self):
         self.item.event_anchor = QtCore.QPointF(10, 20)
-        event = MagicMock()
-        event.scenePos = MagicMock(return_value=QtCore.QPointF(15, 25))
-        assert self.item.get_rotate_angle(event) == -45
+        assert self.item.get_rotate_angle(QtCore.QPointF(15, 25)) == -45
 
     def test_get_rotate_delta(self):
         self.item.event_anchor = QtCore.QPointF(10, 20)
         self.item.rotate_start_angle = -3
-        event = MagicMock()
-        event.scenePos = MagicMock(return_value=QtCore.QPointF(15, 25))
-        assert self.item.get_rotate_delta(event) == -42
+        assert self.item.get_rotate_delta(QtCore.QPointF(15, 25)) == -42
 
 
 class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
@@ -465,6 +458,30 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.hoverMoveEvent(self.event)
         self.item.setCursor.assert_called_once_with(
             Qt.CursorShape.SizeBDiagCursor)
+
+    def test_hover_move_event_topright_scale_rotated_90(self):
+        self.item.setRotation(90)
+        self.item.setSelected(True)
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(0, 0))
+        self.item.hoverMoveEvent(self.event)
+        self.item.setCursor.assert_called_once_with(
+            Qt.CursorShape.SizeBDiagCursor)
+
+    def test_hover_move_event_top_scale_rotated_45(self):
+        self.item.setRotation(45)
+        self.item.setSelected(True)
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(0, 0))
+        self.item.hoverMoveEvent(self.event)
+        self.item.setCursor.assert_called_once_with(
+            Qt.CursorShape.SizeVerCursor)
+
+    def test_hover_move_event_left_scale_rotated_45(self):
+        self.item.setRotation(45)
+        self.item.setSelected(True)
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(0, 80))
+        self.item.hoverMoveEvent(self.event)
+        self.item.setCursor.assert_called_once_with(
+            Qt.CursorShape.SizeHorCursor)
 
     def test_hover_move_event_rotate(self):
         self.item.setSelected(True)
