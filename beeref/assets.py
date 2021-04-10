@@ -38,7 +38,12 @@ class BeeAssets:
         logger.debug(f'Assets path: {self.PATH}')
 
         self.logo = QtGui.QIcon(os.path.join(self.PATH, 'logo.png'))
-        self.cursor_rotate = self.cursor_from_image('cursor_rotate', (6, 10))
+        self.cursor_rotate = self.cursor_from_image(
+            'cursor_rotate.png', (20, 20))
+        self.cursor_flip_h = self.cursor_from_image(
+            'cursor_flip_h.png', (20, 20))
+        self.cursor_flip_v = self.cursor_from_image(
+            'cursor_flip_v.png', (20, 20))
 
     def cursor_from_image(self, filename, hotspot):
         img = QtGui.QImage(os.path.join(self.PATH, filename))

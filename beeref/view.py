@@ -38,7 +38,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(60, 60, 60)))
 
         self.undo_stack = QtGui.QUndoStack(self)
-        self.undo_stack.setUndoLimit(10)
+        self.undo_stack.setUndoLimit(100)
         self.undo_stack.canRedoChanged.connect(self.on_can_redo_changed)
         self.undo_stack.canUndoChanged.connect(self.on_can_undo_changed)
 

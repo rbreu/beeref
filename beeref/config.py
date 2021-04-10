@@ -29,10 +29,20 @@ parser.add_argument(
     choices=list(logging._nameToLevel.keys()),
     help='log level for console output')
 parser.add_argument(
-    '--draw-debug-shapes',
+    '--debug-boundingrects',
     default=False,
     action='store_true',
-    help='draw debug shapes for bounding rects and interactable areas')
+    help='draw item\'s bounding rects for debugging')
+parser.add_argument(
+    '--debug-shapes',
+    default=False,
+    action='store_true',
+    help='draw item\'s mouse event shapes for debugging')
+parser.add_argument(
+    '--debug-handles',
+    default=False,
+    action='store_true',
+    help='draw item\'s transform handle areas for debugging')
 
 
 class CommandlineArgs:

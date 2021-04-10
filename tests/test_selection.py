@@ -68,7 +68,7 @@ class BaseItemMixinTestCase(BeeTestCase):
         assert item2.zValue() > item1.zValue()
         assert item2.zValue() == self.scene.max_z
 
-    def test_set_rotation_anchor(self):
+    def test_set_rotation_no_anchor(self):
         item = BeePixmapItem(QtGui.QImage())
         item.setRotation(45)
         assert item.rotation() == 45
@@ -85,9 +85,49 @@ class BaseItemMixinTestCase(BeeTestCase):
     def test_set_rotation_anchor_bottomright_ccw(self):
         item = BeePixmapItem(QtGui.QImage())
         item.setRotation(-90, QtCore.QPointF(100, 100))
-        assert item.rotation() == -90
+        assert item.rotation() == 270
         assert item.pos().x() == 0
         assert item.pos().y() == 200
+
+    def test_set_rotation_caps_above_360(self):
+        item = BeePixmapItem(QtGui.QImage())
+        item.setRotation(400)
+        assert item.rotation() == 40
+
+    def test_flip(self):
+        item = BeePixmapItem(QtGui.QImage())
+        assert item.flip() == 1
+
+    def test_flip_when_flipped(self):
+        item = BeePixmapItem(QtGui.QImage())
+        item.do_flip()
+        assert item.flip() == -1
+
+    def test_do_flip_no_anchor(self):
+        item = BeePixmapItem(QtGui.QImage())
+        item.do_flip()
+        assert item.flip() == -1
+        item.do_flip()
+        assert item.flip() == 1
+
+    def test_do_flip_vertical(self):
+        item = BeePixmapItem(QtGui.QImage())
+        item.do_flip(vertical=True)
+        assert item.flip() == -1
+        assert item.rotation() == 180
+
+    def test_do_flip_anchor(self):
+        item = BeePixmapItem(QtGui.QImage())
+        item.do_flip(anchor=QtCore.QPointF(100, 100))
+        assert item.flip() == -1
+        assert item.pos() == QtCore.QPointF(200, 0)
+
+    def test_do_flip_vertical_anchor(self):
+        item = BeePixmapItem(QtGui.QImage())
+        item.do_flip(vertical=True, anchor=QtCore.QPointF(100, 100))
+        assert item.flip() == -1
+        assert item.rotation() == 180
+        assert item.pos() == QtCore.QPointF(0, 200)
 
     def test_center_scene_coords(self):
         item = BeePixmapItem(QtGui.QImage())
@@ -195,11 +235,35 @@ class SelectableMixinTestCase(SelectableMixinBaseTestCase):
         painter.drawRect.assert_called_once()
         painter.drawPoint.assert_not_called()
 
-    def test_paint_when_draw_debug_shapes(self):
+    def test_paint_when_debug_shapes(self):
         with patch('beeref.selection.commandline_args') as args_mock:
             with patch('beeref.items.BeePixmapItem.draw_debug_shape') as m:
-                args_mock.draw_debug_shapes = True
+                args_mock.debug_shapes = True
+                args_mock.debug_boundingrects = False
+                args_mock.debug_handles = False
                 item = BeePixmapItem(QtGui.QImage())
+                item.paint(MagicMock(), None, None)
+                m.assert_called_once()
+
+    def test_paint_when_debug_boundingrects(self):
+        with patch('beeref.selection.commandline_args') as args_mock:
+            with patch('beeref.items.BeePixmapItem.draw_debug_shape') as m:
+                args_mock.debug_shapes = False
+                args_mock.debug_boundingrects = True
+                args_mock.debug_handles = False
+                item = BeePixmapItem(QtGui.QImage())
+                item.paint(MagicMock(), None, None)
+                m.assert_called_once()
+
+    def test_paint_when_debug_handles(self):
+        with patch('beeref.selection.commandline_args') as args_mock:
+            with patch('beeref.items.BeePixmapItem.draw_debug_shape') as m:
+                args_mock.debug_shapes = False
+                args_mock.debug_boundingrects = False
+                args_mock.debug_handles = True
+                item = BeePixmapItem(QtGui.QImage())
+                self.scene.addItem(item)
+                item.setSelected(True)
                 item.paint(MagicMock(), None, None)
                 m.assert_called()
 
@@ -270,6 +334,24 @@ class SelectableMixinTestCase(SelectableMixinBaseTestCase):
         assert path.boundingRect().bottomRight().y() == 5
         assert path.contains(QtCore.QPointF(-4, -4)) is False
 
+    def test_get_flip_bounds(self):
+        self.view.get_scale = MagicMock(return_value=1)
+        self.item.SELECT_RESIZE_SIZE = 10
+        self.item.SELECT_ROTATE_SIZE = 10
+        edges = self.item.get_flip_bounds()
+        assert edges[0]['rect'].topLeft() == QtCore.QPointF(5, -15)
+        assert edges[0]['rect'].bottomRight() == QtCore.QPointF(95, 5)
+        assert edges[0]['flip_v'] is True
+        assert edges[1]['rect'].topLeft() == QtCore.QPointF(5, 75)
+        assert edges[1]['rect'].bottomRight() == QtCore.QPointF(95, 95)
+        assert edges[1]['flip_v'] is True
+        assert edges[2]['rect'].topLeft() == QtCore.QPointF(-15, 5)
+        assert edges[2]['rect'].bottomRight() == QtCore.QPointF(5, 75)
+        assert edges[2]['flip_v'] is False
+        assert edges[3]['rect'].topLeft() == QtCore.QPointF(95, 5)
+        assert edges[3]['rect'].bottomRight() == QtCore.QPointF(115, 75)
+        assert edges[3]['flip_v'] is False
+
     def test_bounding_rect_when_not_selected(self):
         self.view.get_scale = MagicMock(return_value=1)
         self.item.setSelected(False)
@@ -286,22 +368,17 @@ class SelectableMixinTestCase(SelectableMixinBaseTestCase):
         self.item.SELECT_ROTATE_SIZE = 10
         self.view.get_scale = MagicMock(return_value=1)
         self.item.setSelected(True)
-        with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.boundingRect',
-                   return_value=QtCore.QRectF(0, 0, 100, 80)):
-            rect = self.item.boundingRect()
-            assert rect.topLeft().x() == -15
-            assert rect.topLeft().y() == -15
-            assert rect.bottomRight().x() == 115
-            assert rect.bottomRight().y() == 95
+        rect = self.item.boundingRect()
+        assert rect.topLeft().x() == -15
+        assert rect.topLeft().y() == -15
+        assert rect.bottomRight().x() == 115
+        assert rect.bottomRight().y() == 95
 
     def test_shape_when_not_selected(self):
         self.view.get_scale = MagicMock(return_value=1)
         self.item.setSelected(False)
-        path = QtGui.QPainterPath()
-        path.addRect(QtCore.QRectF(0, 0, 100, 80))
-
-        with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.shape',
-                   return_value=path):
+        with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.boundingRect',
+                   return_value=QtCore.QRectF(0, 0, 100, 80)):
             shape = self.item.shape().boundingRect()
             assert shape.topLeft().x() == 0
             assert shape.topLeft().y() == 0
@@ -332,11 +409,9 @@ class SelectableMixinTestCase(SelectableMixinBaseTestCase):
         self.item.SELECT_ROTATE_SIZE = 10
         self.view.get_scale = MagicMock(return_value=1)
         self.item.setSelected(True)
-        path = QtGui.QPainterPath()
-        path.addRect(QtCore.QRectF(0, 0, 100, 80))
 
-        with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.shape',
-                   return_value=path):
+        with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.boundingRect',
+                   return_value=QtCore.QRectF(0, 0, 100, 80)):
             shape = self.item.shape().boundingRect()
             assert shape.topLeft().x() == 0
             assert shape.topLeft().y() == 0
@@ -430,6 +505,22 @@ class SelectableMixinCalculationsTestCase(SelectableMixinBaseTestCase):
         assert self.item.get_rotate_delta(
             QtCore.QPointF(15, 25), snap=True) == -35
 
+    def test_edge_flips_v_when_item_horizontal(self):
+        self.item.setRotation(20)
+        assert self.item.get_edge_flips_v({'flip_v': True}) is True
+
+    def test_edge_flips_v_when_item_horizontal_upside_down(self):
+        self.item.setRotation(200)
+        assert self.item.get_edge_flips_v({'flip_v': True}) is True
+
+    def test_edge_flips_v_when_item_vertical_cw(self):
+        self.item.setRotation(80)
+        assert self.item.get_edge_flips_v({'flip_v': True}) is False
+
+    def test_edge_flips_v_when_item_vertical_ccw(self):
+        self.item.setRotation(120)
+        assert self.item.get_edge_flips_v({'flip_v': True}) is False
+
 
 class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
 
@@ -496,6 +587,50 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.hoverMoveEvent(self.event)
         self.item.setCursor.assert_called_once_with(BeeAssets().cursor_rotate)
 
+    def test_hover_flip_event_top_edge(self):
+        self.item.setSelected(True)
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(50, 0))
+        self.item.hoverMoveEvent(self.event)
+        self.item.setCursor.assert_called_once_with(
+            BeeAssets().cursor_flip_v)
+
+    def test_hover_flip_event_bottom_edge(self):
+        self.item.setSelected(True)
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(50, 80))
+        self.item.hoverMoveEvent(self.event)
+        self.item.setCursor.assert_called_once_with(
+            BeeAssets().cursor_flip_v)
+
+    def test_hover_flip_event_left_edge(self):
+        self.item.setSelected(True)
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(0, 50))
+        self.item.hoverMoveEvent(self.event)
+        self.item.setCursor.assert_called_once_with(
+            BeeAssets().cursor_flip_h)
+
+    def test_hover_flip_event_right_edge(self):
+        self.item.setSelected(True)
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(100, 50))
+        self.item.hoverMoveEvent(self.event)
+        self.item.setCursor.assert_called_once_with(
+            BeeAssets().cursor_flip_h)
+
+    def test_hover_flip_event_top_edge_rotated_90(self):
+        self.item.setSelected(True)
+        self.item.setRotation(90)
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(50, 0))
+        self.item.hoverMoveEvent(self.event)
+        self.item.setCursor.assert_called_once_with(
+            BeeAssets().cursor_flip_h)
+
+    def test_hover_flip_event_left_edge_when_rotated_90(self):
+        self.item.setSelected(True)
+        self.item.setRotation(90)
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(0, 50))
+        self.item.hoverMoveEvent(self.event)
+        self.item.setCursor.assert_called_once_with(
+            BeeAssets().cursor_flip_v)
+
     def test_hover_move_event_not_in_handles(self):
         self.item.setSelected(True)
         self.event.pos = MagicMock(return_value=QtCore.QPointF(50, 50))
@@ -514,12 +649,24 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.setCursor.assert_called_once_with(
             Qt.CursorShape.ArrowCursor)
 
+    def test_mouse_press_event_just_selected(self):
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(-100, -100))
+        with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent'):
+            self.item.mousePressEvent(self.event)
+        assert self.item.just_selected is True
+
+    def test_mouse_press_event_previously_selected(self):
+        self.item.setSelected(True)
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(-100, -100))
+        with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent'):
+            self.item.mousePressEvent(self.event)
+        assert self.item.just_selected is False
+
     def test_mouse_press_event_topleft_scale(self):
         self.item.setSelected(True)
         self.event.pos = MagicMock(return_value=QtCore.QPointF(2, 2))
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(-1, -1))
-        self.event.button = MagicMock(
-            return_value=Qt.MouseButtons.LeftButton)
+        self.event.button = MagicMock(return_value=Qt.MouseButtons.LeftButton)
         self.item.mousePressEvent(self.event)
         assert self.item.scale_active is True
         assert self.item.event_start == QtCore.QPointF(-1, -1)
@@ -531,8 +678,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.setSelected(True)
         self.event.pos = MagicMock(return_value=QtCore.QPointF(99, 79))
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(101, 81))
-        self.event.button = MagicMock(
-            return_value=Qt.MouseButtons.LeftButton)
+        self.event.button = MagicMock(return_value=Qt.MouseButtons.LeftButton)
         self.item.mousePressEvent(self.event)
         assert self.item.scale_active is True
         assert self.item.event_start == QtCore.QPointF(101, 81)
@@ -544,12 +690,19 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.setSelected(True)
         self.event.pos = MagicMock(return_value=QtCore.QPointF(111, 91))
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(66, 99))
-        self.event.button = MagicMock(
-            return_value=Qt.MouseButtons.LeftButton)
+        self.event.button = MagicMock(return_value=Qt.MouseButtons.LeftButton)
         self.item.mousePressEvent(self.event)
         assert self.item.rotate_active is True
         assert self.item.event_anchor == QtCore.QPointF(50, 40)
         assert self.item.rotate_orig_degrees == 0
+
+    def test_mouse_press_event_flip(self):
+        self.item.setSelected(True)
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(0, 40))
+        self.event.button = MagicMock(return_value=Qt.MouseButtons.LeftButton)
+        with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent'):
+            self.item.mousePressEvent(self.event)
+        assert self.item.flip_active is True
 
     def test_mouse_press_event_not_selected(self):
         self.item.setSelected(False)
@@ -557,16 +710,19 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
             self.item.mousePressEvent(self.event)
             m.assert_called_once_with(self.event)
             assert self.item.scale_active is False
+            assert self.item.rotate_active is False
+            assert self.item.flip_active is False
 
     def test_mouse_press_event_not_in_handles(self):
         self.item.setSelected(True)
         self.event.pos = MagicMock(return_value=QtCore.QPointF(50, 40))
-        self.event.button = MagicMock(
-            return_value=Qt.MouseButtons.LeftButton)
+        self.event.button = MagicMock(return_value=Qt.MouseButtons.LeftButton)
         with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent') as m:
             self.item.mousePressEvent(self.event)
             m.assert_called_once_with(self.event)
             assert self.item.scale_active is False
+            assert self.item.rotate_active is False
+            assert self.item.flip_active is False
 
     def test_mouse_move_event_when_no_action(self):
         with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mouseMoveEvent') as m:
@@ -581,7 +737,9 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.event_start = QtCore.QPointF(10, 10)
         self.item.scale_orig_factor = 1
 
-        self.item.mouseMoveEvent(self.event)
+        with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mouseMoveEvent') as m:
+            self.item.mouseMoveEvent(self.event)
+            m.assert_not_called()
         assert self.item.scale() == approx(1.5, 0.01)
 
     def test_mouse_move_event_when_rotate_action(self):
@@ -590,10 +748,20 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.rotate_orig_degrees = 0
         self.item.rotate_start_angle = -3
         self.item.event_anchor = QtCore.QPointF(10, 20)
-        self.item.mouseMoveEvent(self.event)
-        assert self.item.rotation() == -42
+        with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mouseMoveEvent') as m:
+            self.item.mouseMoveEvent(self.event)
+            m.assert_not_called()
+        assert self.item.rotation() == 318
+
+    def test_mouse_move_event_when_flip_action(self):
+        self.event.scenePos = MagicMock(return_value=QtCore.QPointF(15, 25))
+        self.item.flip_active = True
+        with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mouseMoveEvent') as m:
+            self.item.mouseMoveEvent(self.event)
+            m.assert_not_called()
 
     def test_mouse_release_event_when_no_action(self):
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(-100, -100))
         with patch('PyQt6.QtWidgets.QGraphicsPixmapItem'
                    '.mouseReleaseEvent') as m:
             self.item.mouseReleaseEvent(self.event)
@@ -634,6 +802,18 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         assert cmd.anchor == QtCore.QPointF(10, 20)
         assert cmd.ignore_first_redo is True
         assert self.item.rotate_active is False
+
+    def test_mouse_release_event_when_flip_action(self):
+        self.event.pos = MagicMock(return_value=QtCore.QPointF(0, 40))
+        self.item.flip_active = True
+        self.scene.undo_stack = MagicMock(push=MagicMock())
+
+        self.item.mouseReleaseEvent(self.event)
+        args = self.scene.undo_stack.push.call_args_list[0][0]
+        cmd = args[0]
+        assert cmd.items == [self.item]
+        assert cmd.anchor == QtCore.QPointF(50, 40)
+        assert cmd.vertical is False
 
 
 class MultiSelectItemTestCase(BeeTestCase):
@@ -695,6 +875,7 @@ class MultiSelectItemTestCase(BeeTestCase):
         item = MultiSelectItem()
         item.setScale(5)
         item.setRotation(-20)
+        item.do_flip()
         item.fit_selection_area(QtCore.QRectF(-10, -20, 100, 80))
         assert item.pos().x() == -10
         assert item.pos().y() == -20
@@ -702,6 +883,7 @@ class MultiSelectItemTestCase(BeeTestCase):
         assert item.height == 80
         assert item.scale() == 1
         assert item.rotation() == 0
+        assert item.flip() == 1
         assert item.isSelected() is True
 
     @patch('PyQt6.QtWidgets.QGraphicsRectItem.mousePressEvent')

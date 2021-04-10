@@ -39,13 +39,19 @@ def with_anchor(func):
     The anchor is given in item coordinates.
     """
 
-    def wrapper(self, value, anchor=None):
+    def wrapper(self, *args, **kwargs):
         # We caculate where the anchor is before and after the transformation
         # and then move the item accordingly to keep the anchor fixed
 
-        anchor = anchor if anchor else QtCore.QPointF(0, 0)
+        anchor = kwargs.pop('anchor', None)
+        if not anchor:
+            if args and isinstance(args[-1], QtCore.QPointF):
+                anchor = args[-1]
+                args = args[:-1]
+
+        anchor = anchor or QtCore.QPointF(0, 0)
         prev = self.mapToScene(anchor)
-        func(self, value)
+        func(self, *args, **kwargs)
         diff = self.mapToScene(anchor) - prev
         self.setPos(self.pos() - diff)
 
@@ -74,7 +80,20 @@ class BaseItemMixin:
     @with_anchor
     def setRotation(self, value):
         logger.debug(f'Setting rotation for {self} to {value}')
-        super().setRotation(value)
+        super().setRotation(value % 360)
+
+    def flip(self):
+        """Returns the flip value (1 or -1)"""
+        # We use the transformation matrix only for flipping, so checking
+        # the x scale is enough
+        return self.transform().m11()
+
+    @with_anchor
+    def do_flip(self, vertical=False):
+        """Flips the item."""
+        self.setTransform(QtGui.QTransform.fromScale(-self.flip(), 1))
+        if vertical:
+            self.setRotation(self.rotation() + 180)
 
     @property
     def center_scene_coords(self):
@@ -98,8 +117,9 @@ class SelectableMixin(BaseItemMixin):
 
         self.scale_active = False
         self.rotate_active = False
+        self.flip_active = False
+        self.just_selected = False
         self.viewport_scale = 1
-        self.conf_debug_shapes = commandline_args.draw_debug_shapes
 
     def fixed_length_for_viewport(self, value):
         """The interactable areas need to stay the same size on the
@@ -131,9 +151,18 @@ class SelectableMixin(BaseItemMixin):
             painter.fillPath(shape, color)
 
     def paint_selectable(self, painter, option, widget):
-        if self.conf_debug_shapes:
-            self.draw_debug_shape(painter, self.boundingRect(), 0, 255, 0)
+        if commandline_args.debug_shapes:
             self.draw_debug_shape(painter, self.shape(), 255, 0, 0)
+        if commandline_args.debug_boundingrects:
+            self.draw_debug_shape(painter, self.boundingRect(), 0, 255, 0)
+        if (commandline_args.debug_handles and self.has_selection_handles()):
+            for corner in self.corners:
+                self.draw_debug_shape(
+                    painter, self.get_scale_bounds(corner), 0, 0, 255)
+                self.draw_debug_shape(
+                    painter, self.get_rotate_bounds(corner), 0, 255, 255)
+            for edge in self.get_flip_bounds():
+                self.draw_debug_shape(painter, edge['rect'], 255, 255, 0)
 
         if not self.has_selection_outline():
             return
@@ -158,9 +187,9 @@ class SelectableMixin(BaseItemMixin):
     def corners(self):
         """The corners of the item. Used for scale and rotate handles."""
         return (QtCore.QPointF(0, 0),
-                QtCore.QPointF(0, self.height),
                 QtCore.QPointF(self.width, 0),
-                QtCore.QPointF(self.width, self.height))
+                QtCore.QPointF(self.width, self.height),
+                QtCore.QPointF(0, self.height))
 
     @property
     def corners_scene_coords(self):
@@ -169,7 +198,8 @@ class SelectableMixin(BaseItemMixin):
         return [self.mapToScene(corner) for corner in self.corners]
 
     def get_scale_bounds(self, corner, margin=0):
-        """The interactable shape of the scale handles."""
+        """The interactable shape of the scale handles. The scale handles sit
+        centered around the visible handle."""
         path = QtGui.QPainterPath()
         path.addRect(QtCore.QRectF(
             corner.x() - self.select_resize_size/2 - margin,
@@ -202,26 +232,75 @@ class SelectableMixin(BaseItemMixin):
         # https://bugreports.qt.io/browse/QTBUG-57567
         return path - self.get_scale_bounds(corner, margin=0.001)
 
-    def boundingRect(self):
-        bounds = super().boundingRect()
-        if not self.has_selection_outline():
-            return bounds
+    def get_flip_bounds(self):
+        """The interactactable shape of the flip handles.
 
-        # Add extra space for scale and rotate interactive areas
+        These stretch around the edge of the item filling the areas
+        between the scale and rotate handles, e.g. for the bottom right corner:
+
+          │FFF│
+        ──┼─┬─┤
+        FF│S│R│
+        FF├─┘ │
+        FF│R R│
+        ──┴───┘
+        """
+
+        outer_margin = self.select_resize_size / 2 + self.select_rotate_size
+        inner_margin = self.select_resize_size / 2
+        return [
+            # top:
+            {
+                'rect': QtCore.QRectF(inner_margin,
+                                      -outer_margin,
+                                      self.width - 2 * inner_margin,
+                                      outer_margin + inner_margin),
+                'flip_v': True,
+            },
+            # bottom:
+            {
+                'rect': QtCore.QRectF(inner_margin,
+                                      self.height - inner_margin,
+                                      self.width - 2 * inner_margin,
+                                      outer_margin + inner_margin),
+                'flip_v': True,
+            },
+            # left:
+            {
+                'rect': QtCore.QRectF(-outer_margin,
+                                      inner_margin,
+                                      outer_margin + inner_margin,
+                                      self.height - 2 * inner_margin),
+                'flip_v': False,
+            },
+            # right:
+            {
+                'rect': QtCore.QRectF(self.width - inner_margin,
+                                      inner_margin,
+                                      outer_margin + inner_margin,
+                                      self.height - 2 * inner_margin),
+                'flip_v': False,
+            }
+        ]
+
+    def boundingRect(self):
+        if not self.has_selection_outline():
+            return super().boundingRect()
+
+        # Add extra space for the interactive areas
         margin = self.select_resize_size / 2 + self.select_rotate_size
         return QtCore.QRectF(
-            bounds.topLeft().x() - margin,
-            bounds.topLeft().y() - margin,
-            bounds.bottomRight().x() + 2 * margin,
-            bounds.bottomRight().y() + 2 * margin)
+            -margin, -margin,
+            self.width + 2 * margin,
+            self.height + 2 * margin)
 
     def shape(self):
-        path = super().shape()
+        path = QtGui.QPainterPath()
         if self.has_selection_handles():
-            # Add extra space for scale and rotate interactive areas
-            for corner in self.corners:
-                path += self.get_scale_bounds(corner)
-                path += self.get_rotate_bounds(corner)
+            rect = self.boundingRect()
+        else:
+            rect = super().boundingRect()
+        path.addRect(rect)
         return path
 
     def hoverMoveEvent(self, event):
@@ -245,6 +324,13 @@ class SelectableMixin(BaseItemMixin):
             elif self.get_rotate_bounds(corner).contains(event.pos()):
                 self.setCursor(BeeAssets().cursor_rotate)
                 return
+        for edge in self.get_flip_bounds():
+            if edge['rect'].contains(event.pos()):
+                if self.get_edge_flips_v(edge):
+                    self.setCursor(BeeAssets().cursor_flip_v)
+                else:
+                    self.setCursor(BeeAssets().cursor_flip_h)
+                return
 
         self.setCursor(Qt.CursorShape.ArrowCursor)
 
@@ -254,6 +340,8 @@ class SelectableMixin(BaseItemMixin):
             self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def mousePressEvent(self, event):
+        if not self.isSelected():
+            self.just_selected = True
         if (event.button() == Qt.MouseButtons.LeftButton
                 and self.has_selection_handles()):
             for corner in self.corners:
@@ -281,6 +369,10 @@ class SelectableMixin(BaseItemMixin):
                         item.rotate_orig_degrees = item.rotation()
                     event.accept()
                     return
+                # Check if we are in one of the flip edges:
+                for edge in self.get_flip_bounds():
+                    if edge['rect'].contains(event.pos()):
+                        self.flip_active = True
 
         super().mousePressEvent(event)
 
@@ -327,6 +419,15 @@ class SelectableMixin(BaseItemMixin):
 
         return delta
 
+    def get_edge_flips_v(self, edge):
+        """Returns ``True`` if the given edge invokes a horizontal flip,
+        ``False`` if it invokes a vertacal flip."""
+
+        if 45 < self.rotation() < 135 or 225 < self.rotation() < 315:
+            return not edge['flip_v']
+        else:
+            return edge['flip_v']
+
     def mouseMoveEvent(self, event):
         if self.scale_active:
             factor = self.get_scale_factor(event)
@@ -334,17 +435,26 @@ class SelectableMixin(BaseItemMixin):
                 item.setScale(item.scale_orig_factor * factor,
                               item.mapFromScene(self.event_anchor))
             event.accept()
-        elif self.rotate_active:
+            return
+        if self.rotate_active:
             snap = (event.modifiers() == Qt.KeyboardModifiers.ControlModifier
                     or event.modifiers() == Qt.KeyboardModifiers.ShiftModifier)
             delta = self.get_rotate_delta(event.scenePos(), snap)
             for item in self.selection_action_items():
-                item.setRotation(item.rotate_orig_degrees + delta,
-                                 item.mapFromScene(self.event_anchor))
-        else:
-            super().mouseMoveEvent(event)
+                item.setRotation(
+                    item.rotate_orig_degrees + delta * item.flip(),
+                    item.mapFromScene(self.event_anchor))
+            event.accept()
+            return
+        if self.flip_active:
+            event.accept()
+            return
+
+        super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
+        just_selected = self.just_selected
+        self.just_selected = False
         if self.scale_active:
             self.scene().undo_stack.push(
                 commands.ScaleItemsBy(
@@ -354,6 +464,7 @@ class SelectableMixin(BaseItemMixin):
                     ignore_first_redo=True))
             self.scale_active = False
             event.accept()
+            return
         elif self.rotate_active:
             self.scene().on_selection_change()
             self.scene().undo_stack.push(
@@ -364,8 +475,19 @@ class SelectableMixin(BaseItemMixin):
                     ignore_first_redo=True))
             self.rotate_active = False
             event.accept()
-        else:
-            super().mouseReleaseEvent(event)
+            return
+        elif not just_selected:
+            for edge in self.get_flip_bounds():
+                if edge['rect'].contains(event.pos()):
+                    self.scene().undo_stack.push(
+                        commands.FlipItems(
+                            self.selection_action_items(),
+                            self.center_scene_coords,
+                            vertical=self.get_edge_flips_v(edge)))
+                    event.accept()
+                    self.flip_active = False
+                    return
+        super().mouseReleaseEvent(event)
 
     def on_view_scale_change(self):
         self.prepareGeometryChange()
@@ -428,6 +550,8 @@ class MultiSelectItem(SelectableMixin,
             self.setRotation(0)
         if not self.isSelected():
             self.setSelected(True)
+        if self.flip() == -1:
+            self.setTransform(QtGui.QTransform.fromScale(1, 1))
 
     def mousePressEvent(self, event):
         if (event.button() == Qt.MouseButtons.LeftButton

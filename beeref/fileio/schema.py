@@ -8,8 +8,7 @@ SCHEMA = [
         z REAL DEFAULT 0,
         scale REAL DEFAULT 1,
         rotation REAL DEFAULT 0,
-        flip_h INTEGER DEFAULT 0,
-        flip_v INTEGER DEFAULT 0,
+        flip INTEGER DEFAULT 1,
         filename TEXT
     )
     """,

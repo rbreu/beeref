@@ -34,4 +34,4 @@ def save(filename, scene, create_new=False, progress=None):
     logger.debug(f'Create new: {create_new}')
     io = SQLiteIO(filename, scene, create_new, progress=progress)
     io.write()
-    logger.debug('Saved!')
+    logger.info('Saved!')

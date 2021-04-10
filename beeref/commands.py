@@ -101,7 +101,7 @@ class RotateItemsBy(QtGui.QUndoCommand):
     """Rotate items by a given delta around the given anchor."""
 
     def __init__(self, items, delta, anchor, ignore_first_redo=False):
-        super().__init__('Scale items')
+        super().__init__('Rotate items')
         self.ignore_first_redo = ignore_first_redo
         self.items = items
         self.delta = delta
@@ -112,12 +112,13 @@ class RotateItemsBy(QtGui.QUndoCommand):
             self.ignore_first_redo = False
             return
         for item in self.items:
-            item.setRotation(item.rotation() + self.delta,
-                             item.mapFromScene(self.anchor))
+            item.setRotation(
+                item.rotation() + self.delta * item.flip(),
+                item.mapFromScene(self.anchor))
 
     def undo(self):
         for item in self.items:
-            item.setRotation(item.rotation() - self.delta,
+            item.setRotation(item.rotation() - self.delta * item.flip(),
                              item.mapFromScene(self.anchor))
 
 
@@ -139,3 +140,19 @@ class NormalizeItems(QtGui.QUndoCommand):
         for item, factor in zip(self.items, self.old_scale_factors):
             item.setScale(factor,
                           QtCore.QPointF(item.width, item.height) / 2)
+
+
+class FlipItems(QtGui.QUndoCommand):
+
+    def __init__(self, items, anchor, vertical):
+        super().__init__('Flip items')
+        self.items = items
+        self.anchor = anchor
+        self.vertical = vertical
+
+    def redo(self):
+        for item in self.items:
+            item.do_flip(self.vertical, item.mapFromScene(self.anchor))
+
+    def undo(self):
+        self.redo()
