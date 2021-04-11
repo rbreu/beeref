@@ -114,4 +114,10 @@ actions = [
         'group': 'active_when_selection',
         'enabled': False,
     },
+    {
+        'id': 'new_scene',
+        'text': '&New Scene',
+        'shortcuts': ['Ctrl+N'],
+        'callback': 'clear_scene',
+    },
 ]

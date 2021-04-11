@@ -1,6 +1,6 @@
 import os.path
 import tempfile
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from PyQt6 import QtGui, QtWidgets
 
@@ -64,11 +64,27 @@ class BeeGraphicsViewTestCase(BeeTestCase):
         assert '*.png' in formats
         assert '*.jpg' in formats
 
-    def test_open_from_file(self):
+    def test_clear_scene(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.view.scene.addItem(item)
+        self.view.scale(2, 2)
+        self.view.translate(123, 456)
+        self.view.filename = 'test.bee'
+        self.view.undo_stack = MagicMock()
+
+        self.view.clear_scene()
+        assert not self.view.scene.items()
+        assert self.view.transform().isIdentity()
+        assert self.view.filename is None
+        self.view.undo_stack.clear.assert_called_once_with()
+
+    @patch('beeref.view.BeeGraphicsView.clear_scene')
+    def test_open_from_file(self, clear_mock):
         root = os.path.dirname(__file__)
         filename = os.path.join(root, 'assets', 'test1item.bee')
         self.view.open_from_file(filename)
         assert len(self.view.scene.items()) == 1
+        clear_mock.assert_called_once_with()
 
     @patch('PyQt6.QtWidgets.QMessageBox.warning')
     def test_open_from_file_when_error(self, warn_mock):

@@ -19,7 +19,9 @@ menu_structure = [
     {
         'menu': '&File',
         'items': [
+            'new_scene',
             'open',
+            MENU_SEPARATOR,
             'save',
             'save_as',
             MENU_SEPARATOR,

@@ -102,6 +102,13 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         return QtCore.QPoint(self.size().width() / 2,
                              self.size().height() / 2)
 
+    def clear_scene(self):
+        logging.debug('Clearing scene...')
+        self.scene.clear()
+        self.undo_stack.clear()
+        self.filename = None
+        self.setTransform(QtGui.QTransform())
+
     def on_action_undo(self):
         logger.debug('Undo: %s' % self.undo_stack.undoText())
         self.undo_stack.undo()
@@ -132,8 +139,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
     def open_from_file(self, filename):
         logger.info(f'Opening file {filename}')
-        self.scene.clear()
-        self.undo_stack.clear()
+        self.clear_scene()
         try:
             progress = BeeProgressDialog(
                 'Loading %s' % filename,
