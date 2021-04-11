@@ -37,6 +37,13 @@ menu_structure = [
         ],
     },
     {
+        'menu': '&Transform',
+        'items': [
+            'flip_horizontally',
+            'flip_vertically',
+        ],
+    },
+    {
         'menu': '&Normalize',
         'items': [
             'normalize_height',

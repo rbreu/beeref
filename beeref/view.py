@@ -124,6 +124,12 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def on_action_normalize_size(self):
         self.scene.normalize_size()
 
+    def on_action_flip_horizontally(self):
+        self.scene.flip_items(vertical=False)
+
+    def on_action_flip_vertically(self):
+        self.scene.flip_items(vertical=True)
+
     def open_from_file(self, filename):
         logger.info(f'Opening file {filename}')
         self.scene.clear()

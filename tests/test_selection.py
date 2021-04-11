@@ -6,6 +6,7 @@ from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import Qt
 
 from beeref.assets import BeeAssets
+from beeref import commands
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
 from beeref.selection import MultiSelectItem, RubberbandItem
@@ -780,6 +781,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.scene.undo_stack.push.assert_called_once()
         args = self.scene.undo_stack.push.call_args_list[0][0]
         cmd = args[0]
+        isinstance(cmd, commands.ScaleItemsBy)
         assert cmd.items == [self.item]
         assert cmd.factor == approx(1.5, 0.01)
         assert cmd.anchor == QtCore.QPointF(100, 80)
@@ -797,6 +799,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.mouseReleaseEvent(self.event)
         args = self.scene.undo_stack.push.call_args_list[0][0]
         cmd = args[0]
+        isinstance(cmd, commands.RotateItemsBy)
         assert cmd.items == [self.item]
         assert cmd.delta == -42
         assert cmd.anchor == QtCore.QPointF(10, 20)
@@ -811,6 +814,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.mouseReleaseEvent(self.event)
         args = self.scene.undo_stack.push.call_args_list[0][0]
         cmd = args[0]
+        isinstance(cmd, commands.FlipItems)
         assert cmd.items == [self.item]
         assert cmd.anchor == QtCore.QPointF(50, 40)
         assert cmd.vertical is False

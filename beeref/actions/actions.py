@@ -98,4 +98,20 @@ actions = [
         'group': 'active_when_selection',
         'enabled': False,
     },
+    {
+        'id': 'flip_horizontally',
+        'text': 'Flip &Horizontally',
+        'shortcuts': ['H'],
+        'callback': 'on_action_flip_horizontally',
+        'group': 'active_when_selection',
+        'enabled': False,
+    },
+    {
+        'id': 'flip_vertically',
+        'text': 'Flip &Vertically',
+        'shortcuts': ['V'],
+        'callback': 'on_action_flip_vertically',
+        'group': 'active_when_selection',
+        'enabled': False,
+    },
 ]

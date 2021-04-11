@@ -86,6 +86,13 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.undo_stack.push(
             commands.NormalizeItems(self.selectedItems(), scale_factors))
 
+    def flip_items(self, vertical=False):
+        """Flip selected items."""
+        self.undo_stack.push(
+            commands.FlipItems(self.selectedItems(),
+                               self.get_selection_center(),
+                               vertical=vertical))
+
     def has_selection(self):
         """Checks whether there are currently items selected."""
 
@@ -175,6 +182,10 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         return QtCore.QRectF(
             QtCore.QPointF(min(x), min(y)),
             QtCore.QPointF(max(x), max(y)))
+
+    def get_selection_center(self):
+        rect = self.get_selection_rect()
+        return (rect.topLeft() + rect.bottomRight()) / 2
 
     def on_selection_change(self):
         if self.has_multi_selection():

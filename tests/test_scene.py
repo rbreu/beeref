@@ -6,6 +6,7 @@ from pytest import approx
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
+from beeref import commands
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
 from .base import BeeTestCase
@@ -65,6 +66,21 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
 
     def test_normalize_size_when_no_items(self):
         self.scene.normalize_size()
+
+    def test_flip_items(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        item.setSelected(True)
+        self.scene.undo_stack = MagicMock(push=MagicMock())
+        with patch('beeref.scene.BeeGraphicsScene.get_selection_rect',
+                   return_value=QtCore.QRectF(10, 20, 100, 60)):
+            self.scene.flip_items(vertical=True)
+            args = self.scene.undo_stack.push.call_args_list[0][0]
+            cmd = args[0]
+            isinstance(cmd, commands.FlipItems)
+            assert cmd.items == [item]
+            assert cmd.anchor == QtCore.QPointF(60, 50)
+            assert cmd.vertical is True
 
     def test_has_selection_when_no_selection(self):
         item = BeePixmapItem(QtGui.QImage())
@@ -256,6 +272,7 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         self.scene.undo_stack.push.assert_called_once()
         args = self.scene.undo_stack.push.call_args_list[0][0]
         cmd = args[0]
+        isinstance(cmd, commands.MoveItemsBy)
         assert cmd.items == [item]
         assert cmd.ignore_first_redo is True
         assert cmd.delta.x() == 10
@@ -367,6 +384,12 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         assert rect.topLeft().y() == approx(-math.sqrt(2) * 50)
         assert rect.bottomRight().x() == approx(math.sqrt(2) * 100)
         assert rect.bottomRight().y() == approx(math.sqrt(2) * 50)
+
+    def test_get_selection_center(self):
+        with patch('beeref.scene.BeeGraphicsScene.get_selection_rect',
+                   return_value=QtCore.QRectF(10, 20, 100, 60)):
+            center = self.scene.get_selection_center()
+            assert center == QtCore.QPointF(60, 50)
 
     def test_on_selection_change_when_multi_selection_new(self):
         self.scene.has_multi_selection = MagicMock(return_value=True)
