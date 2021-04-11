@@ -18,6 +18,7 @@ import logging
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
+from beeref.actions import ActionsMixin
 from beeref import commands
 from beeref.config import CommandlineArgs
 from beeref import fileio
@@ -30,7 +31,7 @@ commandline_args = CommandlineArgs()
 logger = logging.getLogger('BeeRef')
 
 
-class BeeGraphicsView(QtWidgets.QGraphicsView):
+class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
     def __init__(self, app, parent=None):
         super().__init__(parent)
@@ -67,8 +68,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
         self.setContextMenuPolicy(
             Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.on_context_menu)
-        self.context_menu = QtWidgets.QMenu(self)
-        self.build_actions()
+        self.context_menu = self.create_menu_and_actions()
 
         self.welcome_overlay = WelcomeOverlay(self)
 
@@ -84,124 +84,11 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
             self.welcome_overlay.hide()
         self.recalc_scene_rect()
 
-    def build_actions(self):
-
-        self.actions_active_when_selection = []
-        self.actions_active_when_can_undo = []
-        self.actions_active_when_can_redo = []
-
-        def add_to_menu(menu, actions):
-            for action in actions:
-                qaction = QtGui.QAction(action['text'], self)
-                if 'shortcuts' in action:
-                    qaction.setShortcuts(action['shortcuts'])
-                qaction.triggered.connect(action['callback'])
-                self.addAction(qaction)
-                menu.addAction(qaction)
-                if 'group' in action:
-                    action['group'].append(qaction)
-                qaction.setEnabled(action.get('enabled', True))
-
-        # File menu
-        actions = [
-            {
-                'text': '&Open',
-                'shortcuts': ['Ctrl+O'],
-                'callback': self.on_action_open,
-            },
-            {
-                'text': '&Save',
-                'shortcuts': ['Ctrl+S'],
-                'callback': self.on_action_save,
-            },
-            {
-                'text': 'Save &As...',
-                'shortcuts': ['Ctrl+Shift+S'],
-                'callback': self.on_action_save_as,
-            },
-            {
-                'text': '&Quit...',
-                'shortcuts': ['Ctrl+Q'],
-                'callback': self.on_action_quit,
-            },
-        ]
-        add_to_menu(self.context_menu.addMenu('&File'), actions)
-
-        # Main menu
-        actions = [
-            {
-                'text': '&Insert Images...',
-                'shortcuts': ['Ctrl+I'],
-                'callback': self.on_action_insert_images,
-            },
-
-        ]
-        add_to_menu(self.context_menu, actions)
-
-        # Edit menu
-        actions = [
-            {
-                'text': '&Undo',
-                'shortcuts': ['Ctrl+Z'],
-                'callback': self.on_action_undo,
-                'group': self.actions_active_when_can_undo,
-                'enabled': False,
-            },
-            {
-                'text': '&Redo',
-                'shortcuts': ['Ctrl+Shift+Z'],
-                'callback': self.on_action_redo,
-                'group': self.actions_active_when_can_redo,
-                'enabled': False,
-            },
-            {
-                'text': '&Paste',
-                'shortcuts': ['Ctrl+V'],
-                'callback': self.on_action_paste,
-            },
-            {
-                'text': '&Delete',
-                'shortcuts': ['Del'],
-                'callback': self.on_action_delete_items,
-                'group': self.actions_active_when_selection,
-                'enabled': False,
-            },
-        ]
-        add_to_menu(self.context_menu.addMenu('&Edit'), actions)
-
-        items_menu = self.context_menu.addMenu('&Items')
-        actions = [
-            {
-                'text': '&Height',
-                'shortcuts': ['Shift+H'],
-                'callback': self.on_action_normalize_height,
-                'group': self.actions_active_when_selection,
-                'enabled': False,
-            },
-            {
-                'text': '&Width',
-                'shortcuts': ['Shift+W'],
-                'callback': self.on_action_normalize_width,
-                'group': self.actions_active_when_selection,
-                'enabled': False,
-            },
-            {
-                'text': '&Size',
-                'shortcuts': ['Shift+S'],
-                'callback': self.on_action_normalize_size,
-                'group': self.actions_active_when_selection,
-                'enabled': False,
-            },
-        ]
-        add_to_menu(items_menu.addMenu('&Normalize'), actions)
-
     def on_can_redo_changed(self, can_redo):
-        for action in self.actions_active_when_can_redo:
-            action.setEnabled(can_redo)
+        self.actiongroup_set_enabled('active_when_can_redo', can_redo)
 
     def on_can_undo_changed(self, can_undo):
-        for action in self.actions_active_when_can_undo:
-            action.setEnabled(can_undo)
+        self.actiongroup_set_enabled('active_when_can_undo', can_undo)
 
     def on_context_menu(self, point):
         self.context_menu.exec(self.mapToGlobal(point))
@@ -361,8 +248,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView):
     def on_selection_changed(self):
         logger.debug('Currently selected items: %s',
                      len(self.scene.selectedItems()))
-        for action in self.actions_active_when_selection:
-            action.setEnabled(self.scene.has_selection())
+        self.actiongroup_set_enabled('active_when_selection',
+                                     self.scene.has_selection())
         self.viewport().repaint()
 
     def recalc_scene_rect(self):

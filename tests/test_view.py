@@ -2,7 +2,7 @@ import os.path
 import tempfile
 from unittest.mock import patch
 
-from PyQt6 import QtGui
+from PyQt6 import QtGui, QtWidgets
 
 from beeref.items import BeePixmapItem
 from beeref import fileio
@@ -21,6 +21,13 @@ class BeeGraphicsViewTestCase(BeeTestCase):
 
     def tearDown(self):
         del self.view
+
+    def test_inits_menu(self):
+        view = BeeGraphicsView(self.app)
+        assert isinstance(view.context_menu, QtWidgets.QMenu)
+        assert len(view.actions()) > 0
+        assert view.bee_actions
+        assert view.bee_actiongroups
 
     @patch('beeref.view.BeeGraphicsView.open_from_file')
     def test_init_without_filename(self, open_file_mock):
