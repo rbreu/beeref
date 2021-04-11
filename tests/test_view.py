@@ -43,21 +43,25 @@ class BeeGraphicsViewTestCase(BeeTestCase):
         open_file_mock.assert_called_once_with('test.bee')
         del view
 
-    @patch('beeref.view.BeeGraphicsView.recalc_scene_rect')
     @patch('beeref.gui.WelcomeOverlay.hide')
-    def test_on_scene_changed_when_items(self, hide_mock, recalc_mock):
+    def test_on_scene_changed_when_items(self, hide_mock):
         item = BeePixmapItem(QtGui.QImage())
         self.view.scene.addItem(item)
-        self.view.on_scene_changed(None)
-        recalc_mock.assert_called_once_with()
-        hide_mock.assert_called_once_with()
+        self.view.scale(2, 2)
+        with patch('beeref.view.BeeGraphicsView.recalc_scene_rect') as r:
+            self.view.on_scene_changed(None)
+            r.assert_called_once_with()
+            hide_mock.assert_called_once_with()
+            assert self.view.get_scale() == 2
 
-    @patch('beeref.view.BeeGraphicsView.recalc_scene_rect')
     @patch('beeref.gui.WelcomeOverlay.show')
-    def test_on_scene_changed_when_no_items(self, show_mock, recalc_mock):
-        self.view.on_scene_changed(None)
-        recalc_mock.assert_called_once_with()
-        show_mock.assert_called_once_with()
+    def test_on_scene_changed_when_no_items(self, show_mock):
+        self.view.scale(2, 2)
+        with patch('beeref.view.BeeGraphicsView.recalc_scene_rect') as r:
+            self.view.on_scene_changed(None)
+            r.assert_called()
+            show_mock.assert_called_once_with()
+            assert self.view.get_scale() == 1
 
     def test_get_supported_image_formats_for_reading(self):
         formats = self.view.get_supported_image_formats(QtGui.QImageReader)

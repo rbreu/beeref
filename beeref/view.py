@@ -79,6 +79,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def on_scene_changed(self, region):
         if not self.scene.items():
             logger.info('No items in scene')
+            self.setTransform(QtGui.QTransform())
             self.welcome_overlay.show()
         else:
             self.welcome_overlay.hide()
@@ -314,6 +315,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         return self.transform().m11()
 
     def wheelEvent(self, event):
+        if not self.scene.items():
+            logger.debug('No items in scene; ignore zoom')
+            return
         factor = 1.2
         if event.angleDelta().y() > 0:
             if self.get_zoom_size(max) < 10000000:
@@ -344,6 +348,10 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         if (event.button() == Qt.MouseButtons.MiddleButton
             or (event.button() == Qt.MouseButtons.LeftButton
                 and event.modifiers() == Qt.KeyboardModifiers.AltModifier)):
+            if not self.scene.items():
+                logger.debug('No items in scene; ignore pan')
+                return
+
             self.pan_active = True
             self.pan_start = event.position()
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
