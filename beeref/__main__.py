@@ -30,7 +30,7 @@ logger = logging.getLogger('BeeRef')
 
 class BeeRefMainWindow(QtWidgets.QWidget):
 
-    def __init__(self, app, filename=None):
+    def __init__(self, app):
         super().__init__()
         self.setWindowTitle('BeeRef')
         self.setWindowIcon(BeeAssets().logo)
@@ -38,9 +38,9 @@ class BeeRefMainWindow(QtWidgets.QWidget):
         layout.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
         self.setLayout(layout)
         self.resize(500, 300)
-        self.show()
         self.view = BeeGraphicsView(app, self)
         layout.addWidget(self.view)
+        self.show()
 
     def __del__(self):
         del self.view
@@ -81,4 +81,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main()  # pragma: no cover

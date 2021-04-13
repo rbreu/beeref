@@ -206,6 +206,26 @@ class SelectableMixinTestCase(SelectableMixinBaseTestCase):
         self.item.SELECT_ROTATE_SIZE = 100
         assert self.item.select_rotate_size == 25
 
+    def test_draw_debug_shape_rect(self):
+        painter = MagicMock()
+        self.item.draw_debug_shape(
+            painter,
+            QtCore.QRectF(5, 6, 20, 30),
+            255, 0, 0)
+        painter.fillRect.assert_called_once()
+        painter.fillPath.assert_not_called()
+
+    def test_draw_debug_shape_path(self):
+        painter = MagicMock()
+        path = QtGui.QPainterPath()
+        path.addRect(QtCore.QRectF(5, 6, 20, 30))
+        self.item.draw_debug_shape(
+            painter,
+            path,
+            0, 255, 0)
+        painter.fillPath.assert_called_once()
+        painter.fillRect.assert_not_called()
+
     @patch('beeref.items.BeePixmapItem.draw_debug_shape')
     def test_paint_when_not_selected(self, debug_mock):
         painter = MagicMock()
