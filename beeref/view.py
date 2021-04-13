@@ -78,7 +78,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
     def on_scene_changed(self, region):
         if not self.scene.items():
-            logger.info('No items in scene')
+            logger.debug('No items in scene')
             self.setTransform(QtGui.QTransform())
             self.welcome_overlay.show()
         else:
@@ -138,22 +138,31 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def on_action_flip_vertically(self):
         self.scene.flip_items(vertical=True)
 
-    def open_from_file(self, filename):
-        logger.info(f'Opening file {filename}')
-        self.clear_scene()
-        try:
-            progress = BeeProgressDialog(
-                'Loading %s' % filename,
-                parent=self)
-            fileio.load(filename, self.scene, progress)
+    def on_items_loaded(self, value):
+        self.scene.add_delayed_items()
+
+    def on_loading_finished(self, filename, errors):
+        if filename:
             self.filename = filename
-            progress.close()
-        except fileio.BeeFileIOError:
+        if errors:
             QtWidgets.QMessageBox.warning(
                 self,
                 'Problem loading file',
                 ('<p>Problem loading file %s</p>'
                  '<p>Not accessible or not a proper bee file</p>') % filename)
+
+    def open_from_file(self, filename):
+        logger.info(f'Opening file {filename}')
+        self.clear_scene()
+        self.worker = fileio.ThreadedIO(
+            fileio.load_bee, filename, self.scene)
+        self.worker.progress.connect(self.on_items_loaded)
+        self.worker.finished.connect(self.on_loading_finished)
+        self.progress = BeeProgressDialog(
+            'Loading %s' % filename,
+            worker=self.worker,
+            parent=self)
+        self.worker.start()
 
     def on_action_open(self):
         filename, f = QtWidgets.QFileDialog.getOpenFileName(
@@ -164,43 +173,58 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             self.open_from_file(filename)
             self.filename = filename
 
+    def on_saving_finished(self, filename, errors):
+        if filename:
+            self.filename = filename
+        else:
+            QtWidgets.QMessageBox.warning(
+                self,
+                'Problem saving file',
+                ('<p>Problem saving file %s</p>'
+                 '<p>File/directory not accessible</p>') % filename)
+
+    def do_save(self, filename, create_new):
+        if not filename.endswith('.bee'):
+            filename = f'{filename}.bee'
+        self.worker = fileio.ThreadedIO(
+            fileio.save_bee, filename, self.scene, create_new=create_new)
+        self.worker.finished.connect(self.on_saving_finished)
+        self.progress = BeeProgressDialog(
+            'Saving %s' % filename,
+            worker=self.worker,
+            parent=self)
+        self.worker.start()
+
     def on_action_save_as(self):
         filename, f = QtWidgets.QFileDialog.getSaveFileName(
             parent=self,
             caption='Save file',
             filter='BeeRef File (*.bee)')
         if filename:
-            if not filename.endswith('.bee'):
-                filename = f'{filename}.bee'
-            try:
-                progress = BeeProgressDialog(
-                    'Saving %s' % filename,
-                    parent=self)
-                fileio.save(filename, self.scene, create_new=True,
-                            progress=progress)
-                self.filename = filename
-                progress.close()
-            except fileio.BeeFileIOError:
-                QtWidgets.QMessageBox.warning(
-                    self,
-                    'Problem saving file',
-                    ('<p>Problem saving file %s</p>'
-                     '<p>File/directory not accessible</p>') % filename)
+            self.do_save(filename, create_new=True)
 
     def on_action_save(self):
         if not self.filename:
             self.on_action_save_as()
         else:
-            progress = BeeProgressDialog(
-                'Saving %s' % self.filename,
-                parent=self)
-            fileio.save(self.filename, self.scene, create_new=False,
-                        progress=progress)
-            progress.close()
+            self.do_save(self.filename, create_new=False)
 
     def on_action_quit(self):
         logger.info('User quit. Exiting...')
         self.app.quit()
+
+    def on_insert_images_finished(self, filename, errors):
+        if errors:
+            errornames = [
+                f'<li>{fn}</li>' for fn in errors]
+            errornames = '<ul>%s</ul>' % '\n'.join(errornames)
+            msg = ('{errors} image(s) out of {total} '
+                   'could not be opened:'.format(
+                       errors=len(errors), total=len(errors)))
+            QtWidgets.QMessageBox.warning(
+                self,
+                'Problem loading images',
+                msg + errornames)
 
     def on_action_insert_images(self):
         formats = self.get_supported_image_formats(QtGui.QImageReader)
@@ -209,42 +233,19 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             caption='Select one ore more images to open',
             filter=f'Images ({formats})')
 
-        pos = self.mapToScene(self.get_view_center())
-        errors = []
-        items = []
-
-        progress = BeeProgressDialog(
-            'Loading images...', len(filenames), parent=self)
-
-        for i, filename in enumerate(filenames):
-            logger.info(f'Loading image from file {filename}')
-            img = QtGui.QImage(filename)
-            progress.setValue(i)
-            if progress.wasCanceled():
-                break
-            if img.isNull():
-                errors.append(filename)
-                continue
-            item = BeePixmapItem(img, filename)
-            item.set_pos_center(pos)
-            items.append(item)
-            pos.setX(pos.x() + 50)
-            pos.setY(pos.y() + 50)
-
-        progress.close()
-        self.undo_stack.push(commands.InsertItems(self.scene, items))
-
-        if errors:
-            errornames = [
-                f'<li>{fn}</li>' for fn in errors]
-            errornames = '<ul>%s</ul>' % '\n'.join(errornames)
-            msg = ('{errors} image(s) out of {total} '
-                   'could not be opened:'.format(
-                       errors=len(errors), total=len(filenames)))
-            QtWidgets.QMessageBox.warning(
-                self,
-                'Problem loading images',
-                msg + errornames)
+        self.scene.clearSelection()
+        self.worker = fileio.ThreadedIO(
+            fileio.load_images,
+            filenames,
+            self.mapToScene(self.get_view_center()),
+            self.scene)
+        self.worker.progress.connect(self.on_items_loaded)
+        self.worker.finished.connect(self.on_insert_images_finished)
+        self.progress = BeeProgressDialog(
+            'Loading images',
+            worker=self.worker,
+            parent=self)
+        self.worker.start()
 
     def on_action_paste(self):
         logger.info('Pasting from clipboard...')

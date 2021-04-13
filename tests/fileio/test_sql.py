@@ -189,14 +189,28 @@ class SQLiteIOWriteTestCase(BeeTestCase):
             assert result[0] == 1
 
     def test_updates_progress(self):
-        progress = MagicMock()
+        worker = MagicMock(canceled=False)
         io = SQLiteIO(':memory:', self.scene, create_new=True,
-                      progress=progress)
+                      worker=worker)
         item = BeePixmapItem(QtGui.QImage())
         self.scene.addItem(item)
         io.write()
-        progress.setMaximum.assert_called_once_with(1)
-        progress.setValue.assert_called_once_with(0)
+        worker.begin_processing.emit.assert_called_once_with(1)
+        worker.progress.emit.assert_called_once_with(0)
+        worker.finished.emit.assert_called_once_with(':memory:', [])
+
+    def test_canceled(self):
+        worker = MagicMock(canceled=True)
+        io = SQLiteIO(':memory:', self.scene, create_new=True,
+                      worker=worker)
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        io.write()
+        worker.begin_processing.emit.assert_called_once_with(2)
+        worker.progress.emit.assert_called_once_with(0)
+        worker.finished.emit.assert_called_once_with(':memory:', [])
 
 
 class SQLiteIOReadTestCase(BeeTestCase):
@@ -220,8 +234,8 @@ class SQLiteIOReadTestCase(BeeTestCase):
 
             io = SQLiteIO(fname, self.scene, readonly=True)
             io.read()
-            assert len(self.scene.items()) == 1
-            item = self.scene.items()[0]
+            item, selected = self.scene.items_to_add.get()
+            assert selected is False
             assert item.save_id == 1
             assert item.pos().x() == 22.2
             assert item.pos().y() == 33.3
@@ -232,11 +246,12 @@ class SQLiteIOReadTestCase(BeeTestCase):
             assert item.filename == 'bee.png'
             assert item.width == 3
             assert item.height == 3
+            assert self.scene.items_to_add.empty() is True
 
     def test_updates_progress(self):
-        progress = MagicMock()
+        worker = MagicMock(canceled=False)
         io = SQLiteIO(':memory:', self.scene, create_new=True,
-                      progress=progress)
+                      worker=worker)
 
         io.create_schema_on_new()
         io.ex('INSERT INTO items (type, x, y, z, scale, filename) '
@@ -245,8 +260,29 @@ class SQLiteIOReadTestCase(BeeTestCase):
         io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)', (1, b''))
         io.connection.commit()
         io.read()
-        progress.setMaximum.assert_called_once_with(1)
-        progress.setValue.assert_called_once_with(0)
+        worker.begin_processing.emit.assert_called_once_with(1)
+        worker.progress.emit.assert_called_once_with(0)
+        worker.finished.emit.assert_called_once_with(':memory:', [])
+
+    def test_canceled(self):
+        worker = MagicMock(canceled=True)
+        io = SQLiteIO(':memory:', self.scene, create_new=True,
+                      worker=worker)
+
+        io.create_schema_on_new()
+        io.ex('INSERT INTO items (type, x, y, z, scale, filename) '
+              'VALUES (?, ?, ?, ?, ?, ?) ',
+              ('pixmap', 0, 0, 0, 1, 'bee.png'))
+        io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)', (1, b''))
+        io.ex('INSERT INTO items (type, x, y, z, scale, filename) '
+              'VALUES (?, ?, ?, ?, ?, ?) ',
+              ('pixmap', 50, 50, 0, 1, 'bee2.png'))
+        io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)', (1, b''))
+        io.connection.commit()
+        io.read()
+        worker.begin_processing.emit.assert_called_once_with(2)
+        worker.progress.emit.assert_called_once_with(0)
+        worker.finished.emit.assert_called_once_with('', [])
 
     def test_raises_error_when_file_borked(self):
         with tempfile.TemporaryDirectory() as dirname:
@@ -258,6 +294,20 @@ class SQLiteIOReadTestCase(BeeTestCase):
             with pytest.raises(BeeFileIOError) as exinfo:
                 io.read()
             assert exinfo.value.filename == fname
+
+    def test_emits_error_message_when_file_borked(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            fname = os.path.join(dirname, 'test.bee')
+            with open(fname, 'w') as f:
+                f.write('foobar')
+
+            worker = MagicMock()
+            io = SQLiteIO(fname, self.scene, readonly=True, worker=worker)
+            io.read()
+            worker.finished.emit.assert_called_once()
+            args = worker.finished.emit.call_args_list[0][0]
+            assert args[0] == ''
+            assert len(args[1]) == 1
 
     def test_reads_raises_error_when_file_empty(self):
         with tempfile.TemporaryDirectory() as dirname:

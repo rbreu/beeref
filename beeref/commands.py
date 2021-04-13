@@ -18,12 +18,16 @@ from PyQt6 import QtCore, QtGui
 
 class InsertItems(QtGui.QUndoCommand):
 
-    def __init__(self, scene, items):
+    def __init__(self, scene, items, ignore_first_redo=False):
         super().__init__('Insert items')
         self.scene = scene
         self.items = items
+        self.ignore_first_redo = ignore_first_redo
 
     def redo(self):
+        if self.ignore_first_redo:
+            self.ignore_first_redo = False
+            return
         self.scene.clearSelection()
         for item in self.items:
             self.scene.addItem(item)

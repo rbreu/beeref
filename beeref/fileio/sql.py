@@ -43,9 +43,10 @@ def handle_sqlite_errors(func):
             func(self, *args, **kwargs)
         except sqlite3.Error as e:
             logger.exception(f'Error while reading/writing {self.filename}')
-            if self.progress:
-                self.progress.setValue(self.progress.maximum())
-            raise BeeFileIOError(msg=str(e), filename=self.filename) from e
+            if self.worker:
+                self.worker.finished.emit('', [str(e)])
+            else:
+                raise BeeFileIOError(msg=str(e), filename=self.filename) from e
 
     return wrapper
 
@@ -55,12 +56,12 @@ class SQLiteIO:
     APPLICATION_ID = 2060242126
 
     def __init__(self, filename, scene, create_new=False, readonly=False,
-                 progress=None):
+                 worker=None):
         self.scene = scene
         self.create_new = create_new
         self.filename = filename
         self.readonly = readonly
-        self.progress = progress
+        self.worker = worker
 
     def __del__(self):
         self._close_connection()
@@ -130,24 +131,27 @@ class SQLiteIO:
             'SELECT items.id, x, y, z, scale, rotation, flip, filename, '
             'sqlar.data '
             'FROM items INNER JOIN sqlar on sqlar.item_id = items.id')
-        if self.progress:
-            self.progress.setMaximum(len(rows))
+        if self.worker:
+            self.worker.begin_processing.emit(len(rows))
 
         for i, row in enumerate(rows):
             item = BeePixmapItem(QtGui.QImage(), filename=row[7])
             item.save_id = row[0]
             item.pixmap_from_bytes(row[8])
             item.setPos(row[1], row[2])
-            self.scene.addItem(item)
+            self.scene.add_item_later(item)
             item.setZValue(row[3])
             item.setScale(row[4])
             item.setRotation(row[5])
             if row[6] == -1:
                 item.do_flip()
-            if self.progress:
-                self.progress.setValue(i)
-                if self.progress.wasCanceled():
-                    break
+            if self.worker:
+                self.worker.progress.emit(i)
+                if self.worker.canceled:
+                    self.worker.finished.emit('', [])
+                    return
+        if self.worker:
+            self.worker.finished.emit(self.filename, [])
 
     @handle_sqlite_errors
     def write(self):
@@ -168,8 +172,8 @@ class SQLiteIO:
     def write_data(self):
         to_delete = self.fetchall('SELECT id from ITEMS')
         to_save = list(self.scene.items_for_save())
-        if self.progress:
-            self.progress.setMaximum(len(to_save))
+        if self.worker:
+            self.worker.begin_processing.emit(len(to_save))
         for i, item in enumerate(to_save):
             logger.debug(f'Saving {item} with id {item.save_id}')
             if item.save_id:
@@ -177,12 +181,14 @@ class SQLiteIO:
                 to_delete.remove((item.save_id,))
             else:
                 self.insert_item(item)
-            if self.progress:
-                self.progress.setValue(i)
-                if self.progress.wasCanceled():
+            if self.worker:
+                self.worker.progress.emit(i)
+                if self.worker.canceled:
                     break
         self.delete_items(to_delete)
         self.connection.commit()
+        if self.worker:
+            self.worker.finished.emit(self.filename, [])
 
     def delete_items(self, to_delete):
         self.exmany('DELETE FROM items WHERE id=?', to_delete)

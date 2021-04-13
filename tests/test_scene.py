@@ -77,7 +77,7 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
             self.scene.flip_items(vertical=True)
             args = self.scene.undo_stack.push.call_args_list[0][0]
             cmd = args[0]
-            isinstance(cmd, commands.FlipItems)
+            assert isinstance(cmd, commands.FlipItems)
             assert cmd.items == [item]
             assert cmd.anchor == QtCore.QPointF(60, 50)
             assert cmd.vertical is True
@@ -272,7 +272,7 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         self.scene.undo_stack.push.assert_called_once()
         args = self.scene.undo_stack.push.call_args_list[0][0]
         cmd = args[0]
-        isinstance(cmd, commands.MoveItemsBy)
+        assert isinstance(cmd, commands.MoveItemsBy)
         assert cmd.items == [item]
         assert cmd.ignore_first_redo is True
         assert cmd.delta.x() == 10
@@ -473,3 +473,26 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         self.scene.multi_select_item.rotate_active = True
         self.scene.on_change(None)
         self.scene.multi_select_item.fit_selection_area.assert_not_called()
+
+    def test_add_delayed_items_unselected(self):
+        item = BeePixmapItem(QtGui.QImage())
+        item.setZValue(0.33)
+        self.scene.add_item_later(item, selected=False)
+        self.scene.add_delayed_items()
+        assert self.scene.items() == [item]
+        assert item.isSelected() is False
+        assert self.scene.max_z == 0.33
+
+    def test_add_delayed_items_selected(self):
+        self.scene.max_z = 0.6
+        item = BeePixmapItem(QtGui.QImage())
+        item.setZValue(0.33)
+        self.scene.add_item_later(item, selected=True)
+        self.scene.add_delayed_items()
+        assert self.scene.items() == [item]
+        assert item.isSelected() is True
+        assert item.zValue() > 0.6
+
+    def test_add_delayed_items_when_no_items(self):
+        self.scene.add_delayed_items()
+        assert self.scene.items() == []

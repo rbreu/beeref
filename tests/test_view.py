@@ -2,6 +2,8 @@ import os.path
 import tempfile
 from unittest.mock import MagicMock, patch
 
+from pytest import mark
+
 from PyQt6 import QtGui, QtWidgets
 
 from beeref.items import BeePixmapItem
@@ -87,29 +89,44 @@ class BeeGraphicsViewTestCase(BeeTestCase):
         root = os.path.dirname(__file__)
         filename = os.path.join(root, 'assets', 'test1item.bee')
         self.view.open_from_file(filename)
-        assert len(self.view.scene.items()) == 1
+        self.view.worker.wait()
+        items = self.queue2list(self.view.scene.items_to_add)
+        assert len(items) == 1
+        item, selected = items[0]
+        assert items[0][0].pixmap()
+        assert items[0][1] is False
         clear_mock.assert_called_once_with()
 
     @patch('PyQt6.QtWidgets.QMessageBox.warning')
     def test_open_from_file_when_error(self, warn_mock):
+        # FIXME: #1
+        # Can't check signal handling currently
         self.view.open_from_file('uieauiae')
+        self.view.worker.wait()
+        assert self.view.scene.items_to_add.empty() is True
         assert len(self.view.scene.items()) == 0
-        warn_mock.assert_called_once()
 
     @patch('PyQt6.QtWidgets.QFileDialog.getOpenFileName')
     def test_on_action_open(self, dialog_mock):
+        # FIXME: #1
+        # Can't check signal handling currently
         root = os.path.dirname(__file__)
         dialog_mock.return_value = (
             os.path.join(root, 'assets', 'test1item.bee'),
             None)
         self.view.on_action_open()
-        assert len(self.view.scene.items()) == 1
+        self.view.worker.wait()
+        items = self.queue2list(self.view.scene.items_to_add)
+        assert len(items) == 1
+        assert items[0][0].pixmap()
+        assert items[0][1] is False
 
     @patch('PyQt6.QtWidgets.QFileDialog.getOpenFileName')
-    def test_on_action_open_when_no_filename(self, dialog_mock):
+    @patch('beeref.view.BeeGraphicsView.on_action_open')
+    def test_on_action_open_when_no_filename(self, dialog_mock, open_mock):
         dialog_mock.return_value = (None, None)
         self.view.on_action_open()
-        assert len(self.view.scene.items()) == 0
+        open_mock.assert_not_called()
 
     @patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName')
     def test_on_action_save_as(self, dialog_mock):
@@ -120,10 +137,11 @@ class BeeGraphicsViewTestCase(BeeTestCase):
             assert os.path.exists(filename) is False
             dialog_mock.return_value = (filename, None)
             self.view.on_action_save_as()
+            self.view.worker.wait()
             assert os.path.exists(filename) is True
 
     @patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName')
-    @patch('beeref.fileio.save')
+    @patch('beeref.view.BeeGraphicsView.do_save')
     def test_on_action_save_as_when_no_filename(self, save_mock, dialog_mock):
         item = BeePixmapItem(QtGui.QImage(self.imgfilename3x3))
         self.view.scene.addItem(item)
@@ -140,8 +158,10 @@ class BeeGraphicsViewTestCase(BeeTestCase):
             assert os.path.exists(filename) is False
             dialog_mock.return_value = (filename, None)
             self.view.on_action_save_as()
+            self.view.worker.wait()
             assert os.path.exists(f'{filename}.bee') is True
 
+    @mark.skip('needs pytest-qt')
     @patch('PyQt6.QtWidgets.QMessageBox.warning')
     @patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName')
     @patch('beeref.fileio.save')
@@ -165,6 +185,7 @@ class BeeGraphicsViewTestCase(BeeTestCase):
             self.view.filename = os.path.join(tmpdir, 'test.bee')
             assert os.path.exists(self.view.filename) is False
             self.view.on_action_save()
+            self.view.worker.wait()
             assert os.path.exists(self.view.filename) is True
 
     @patch('beeref.view.BeeGraphicsView.on_action_save_as')
@@ -178,23 +199,30 @@ class BeeGraphicsViewTestCase(BeeTestCase):
     @patch('beeref.scene.BeeGraphicsScene.clearSelection')
     @patch('PyQt6.QtWidgets.QFileDialog.getOpenFileNames')
     def test_on_action_insert_images(self, dialog_mock, clear_mock):
+        # FIXME: #1
+        # Can't check signal handling currently
         dialog_mock.return_value = ([self.imgfilename3x3], None)
         self.view.on_action_insert_images()
-        assert len(self.view.scene.items()) == 1
-        assert self.view.scene.items()[0].isSelected() is True
+        self.view.worker.wait()
+        items = self.queue2list(self.view.scene.items_to_add)
+        assert len(items) == 1
+        assert items[0][0].pixmap()
+        assert items[0][1] is True
         clear_mock.assert_called_once_with()
 
     @patch('beeref.scene.BeeGraphicsScene.clearSelection')
-    @patch('PyQt6.QtWidgets.QMessageBox.warning')
     @patch('PyQt6.QtWidgets.QFileDialog.getOpenFileNames')
-    def test_on_action_insert_images_when_error(
-            self, dialog_mock, warn_mock, clear_mock):
+    def test_on_action_insert_images_when_error(self, dialog_mock, clear_mock):
+        # FIXME: #1
+        # Can't check signal handling currently
         dialog_mock.return_value = (
             [self.imgfilename3x3, 'iaeiae', 'trntrn'], None)
         self.view.on_action_insert_images()
-        assert len(self.view.scene.items()) == 1
-        assert self.view.scene.items()[0].isSelected() is True
-        warn_mock.assert_called_once()
+        self.view.worker.wait()
+        items = self.queue2list(self.view.scene.items_to_add)
+        assert len(items) == 1
+        assert items[0][0].pixmap()
+        assert items[0][1] is True
         clear_mock.assert_called_once_with()
 
     @patch('beeref.scene.BeeGraphicsScene.clearSelection')

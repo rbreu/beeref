@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
+from queue import Queue
 import logging
 import math
 
@@ -38,6 +39,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.rubberband_item = RubberbandItem()
         self.selectionChanged.connect(self.on_selection_change)
         self.changed.connect(self.on_change)
+        self.items_to_add = Queue()
 
     def normalize_width_or_height(self, mode):
         """Scale the selected images to have the same width or height, as
@@ -205,3 +207,19 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
                 and not self.multi_select_item.rotate_active):
             self.multi_select_item.fit_selection_area(
                 self.get_selection_rect())
+
+    def add_item_later(self, item, selected=False):
+        """Keep an item for adding later via ``add_delayed_items``"""
+
+        self.items_to_add.put((item, selected))
+
+    def add_delayed_items(self):
+        """Adds items added via ``add_items_later``"""
+
+        while not self.items_to_add.empty():
+            item, selected = self.items_to_add.get()
+            self.addItem(item)
+            if selected:
+                item.setSelected(True)
+                item.bring_to_front()
+            self.max_z = max(self.max_z, item.zValue())

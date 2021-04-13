@@ -72,7 +72,8 @@ class BaseItemMixin:
     def setZValue(self, value):
         logger.debug(f'Setting z-value for {self} to {value}')
         super().setZValue(value)
-        self.scene().max_z = max(self.scene().max_z, value)
+        if self.scene():
+            self.scene().max_z = max(self.scene().max_z, value)
 
     def bring_to_front(self):
         self.setZValue(self.scene().max_z + 0.001)
@@ -536,7 +537,7 @@ class MultiSelectItem(SelectableMixin,
     def fit_selection_area(self, rect):
         """Updates itself to fit the given selection area."""
 
-        logging.debug(f'Fit selection area to {rect}')
+        logger.debug(f'Fit selection area to {rect}')
 
         # Only update when values have changed, otherwise we end up in an
         # infinite event loop sceneChange -> itemChange -> sceneChange ...

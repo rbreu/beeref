@@ -15,23 +15,86 @@
 
 import logging
 
+
+from PyQt6 import QtCore, QtGui
+
+from beeref import commands
 from beeref.fileio.errors import BeeFileIOError
 from beeref.fileio.sql import SQLiteIO
+from beeref.items import BeePixmapItem
 
 
-__all__ = ['load', 'save', 'BeeFileIOError']
+__all__ = [
+    'load_bee',
+    'save_bee',
+    'load_images',
+    'ThreadedLoader',
+    'BeeFileIOError',
+]
+
 logger = logging.getLogger('BeeRef')
 
 
-def load(filename, scene, progress=None):
+def load_bee(filename, scene, worker=None):
+    """Load BeeRef native file."""
     logger.info(f'Loading from file {filename}...')
-    io = SQLiteIO(filename, scene, readonly=True, progress=progress)
+    io = SQLiteIO(filename, scene, readonly=True, worker=worker)
     return io.read()
 
 
-def save(filename, scene, create_new=False, progress=None):
+def save_bee(filename, scene, create_new=False, worker=None):
+    """Save BeeRef native file."""
     logger.info(f'Saving to file {filename}...')
     logger.debug(f'Create new: {create_new}')
-    io = SQLiteIO(filename, scene, create_new, progress=progress)
+    io = SQLiteIO(filename, scene, create_new, worker=worker)
     io.write()
     logger.info('Saved!')
+
+
+def load_images(filenames, pos, scene, worker):
+    """Add images to existing scene."""
+
+    errors = []
+    items = []
+    worker.begin_processing.emit(len(filenames))
+    for i, filename in enumerate(filenames):
+        logger.info(f'Loading image from file {filename}')
+        img = QtGui.QImage(filename)
+        worker.progress.emit(i)
+        if img.isNull():
+            errors.append(filename)
+            continue
+        item = BeePixmapItem(img, filename)
+        item.set_pos_center(pos)
+        pos.setX(pos.x() + 50)
+        pos.setY(pos.y() + 50)
+        scene.add_item_later(item, selected=True)
+        items.append(item)
+        if worker.canceled:
+            break
+
+    scene.undo_stack.push(
+        commands.InsertItems(scene, items, ignore_first_redo=True))
+    worker.finished.emit('', errors)
+
+
+class ThreadedIO(QtCore.QThread):
+    """Dedicated thread for loading and saving."""
+
+    progress = QtCore.pyqtSignal(int)
+    finished = QtCore.pyqtSignal(str, list)
+    begin_processing = QtCore.pyqtSignal(int)
+
+    def __init__(self, func, *args, **kwargs):
+        super().__init__()
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+        self.kwargs['worker'] = self
+        self.canceled = False
+
+    def run(self):
+        self.func(*self.args, **self.kwargs)
+
+    def on_canceled(self):
+        self.canceled = True

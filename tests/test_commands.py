@@ -30,6 +30,26 @@ class InsertItemsTestCase(BeeTestCase):
         assert list(scene.items_for_save()) == [item1]
         assert item1.isSelected() is False
 
+    @patch('beeref.scene.BeeGraphicsScene.views')
+    def test_ignore_first_redo(self, views_mock):
+        scene = BeeGraphicsScene(None)
+        view = MagicMock(get_scale=MagicMock(return_value=1))
+        views_mock.return_value = [view]
+        scene.update_selection = MagicMock()
+        scene.max_z = 5
+        item1 = BeePixmapItem(QtGui.QImage())
+        scene.addItem(item1)
+        item2 = BeePixmapItem(QtGui.QImage())
+        command = commands.InsertItems(scene, [item2], ignore_first_redo=True)
+        command.redo()
+        assert list(scene.items_for_save()) == [item1]
+        assert item1.isSelected() is False
+        command.redo()
+        assert list(scene.items_for_save()) == [item1, item2]
+        assert item1.isSelected() is False
+        assert item2.isSelected() is True
+        item2.zValue() > 5
+
 
 class DeleteItemsTestCase(BeeTestCase):
 
