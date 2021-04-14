@@ -120,4 +120,18 @@ actions = [
         'shortcuts': ['Ctrl+N'],
         'callback': 'clear_scene',
     },
+    {
+        'id': 'fit_scene',
+        'text': '&Fit Scene',
+        'shortcuts': ['1'],
+        'callback': 'on_action_fit_scene',
+    },
+    {
+        'id': 'fit_selection',
+        'text': 'Fit &Selection',
+        'shortcuts': ['2'],
+        'callback': 'on_action_fit_selection',
+        'group': 'active_when_selection',
+        'enabled': False,
+    },
 ]

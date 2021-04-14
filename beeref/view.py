@@ -58,6 +58,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         # self.setTransformationAnchor(
         #     QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
+        self.previous_transform = None
         self.pan_active = False
         self.scene.changed.connect(self.on_scene_changed)
         self.scene.selectionChanged.connect(self.on_selection_changed)
@@ -109,6 +110,37 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.undo_stack.clear()
         self.filename = None
         self.setTransform(QtGui.QTransform())
+
+    def reset_previous_transform(self, toggle_item=None):
+        if (self.previous_transform
+                and self.previous_transform['toggle_item'] != toggle_item):
+            self.previous_transform = None
+
+    def fit_rect(self, rect, toggle_item=None):
+        if toggle_item and self.previous_transform:
+            logger.debug('Fit view: Reset to previous')
+            self.setTransform(self.previous_transform['transform'])
+            self.horizontalScrollBar().setValue(
+                 self.previous_transform['hscroll'])
+            self.verticalScrollBar().setValue(
+                 self.previous_transform['vscroll'])
+            self.previous_transform = None
+            return
+        if toggle_item:
+            self.previous_transform = {
+                'toggle_item': toggle_item,
+                'transform': QtGui.QTransform(self.transform()),
+                'hscroll': self.horizontalScrollBar().value(),
+                'vscroll': self.verticalScrollBar().value(),
+            }
+        logger.debug(f'Fit view: {rect}')
+        self.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
+
+    def on_action_fit_scene(self):
+        self.fit_rect(self.scene.itemsBoundingRect())
+
+    def on_action_fit_selection(self):
+        self.fit_rect(self.scene.get_selection_rect())
 
     def on_action_undo(self):
         logger.debug('Undo: %s' % self.undo_stack.undoText())
@@ -334,6 +366,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
     def mouseMoveEvent(self, event):
         if self.pan_active:
+            self.reset_previous_transform()
             point = event.position()
             hscroll = self.horizontalScrollBar()
             hscroll.setValue(hscroll.value() + self.pan_start.x() - point.x())

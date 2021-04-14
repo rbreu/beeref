@@ -125,6 +125,15 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         super().mousePressEvent(event)
 
+    def mouseDoubleClickEvent(self, event):
+        item = self.itemAt(event.scenePos(), self.views()[0].transform())
+        if item:
+            self.move_active = False
+            self.views()[0].fit_rect(self.get_selection_rect(),
+                                     toggle_item=item)
+            return
+        super().mouseDoubleClickEvent(event)
+
     def mouseMoveEvent(self, event):
         if self.rubberband_active:
             if not self.rubberband_item.scene():
@@ -133,6 +142,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
                 self.rubberband_item.bring_to_front()
             self.rubberband_item.fit(self.event_start, event.scenePos())
             self.setSelectionArea(self.rubberband_item.shape())
+            self.views()[0].reset_previous_transform()
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):

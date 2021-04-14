@@ -341,6 +341,7 @@ class SelectableMixin(BaseItemMixin):
             self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def mousePressEvent(self, event):
+        self.scene().views()[0].reset_previous_transform(toggle_item=self)
         if not self.isSelected():
             self.just_selected = True
         if (event.button() == Qt.MouseButtons.LeftButton
@@ -430,6 +431,8 @@ class SelectableMixin(BaseItemMixin):
             return edge['flip_v']
 
     def mouseMoveEvent(self, event):
+        self.scene().views()[0].reset_previous_transform()
+
         if self.scale_active:
             factor = self.get_scale_factor(event)
             for item in self.selection_action_items():

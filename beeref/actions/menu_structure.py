@@ -28,7 +28,6 @@ menu_structure = [
             'quit',
         ],
     },
-    'insert_images',
     {
         'menu': '&Edit',
         'items': [
@@ -38,6 +37,14 @@ menu_structure = [
             'delete',
         ],
     },
+    {
+        'menu': '&View',
+        'items': [
+            'fit_scene',
+            'fit_selection',
+        ],
+    },
+    'insert_images',
     {
         'menu': '&Transform',
         'items': [

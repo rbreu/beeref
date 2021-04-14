@@ -4,7 +4,8 @@ from unittest.mock import MagicMock, patch
 
 from pytest import mark
 
-from PyQt6 import QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtCore import Qt
 
 from beeref.items import BeePixmapItem
 from beeref import fileio
@@ -83,6 +84,69 @@ class BeeGraphicsViewTestCase(BeeTestCase):
         assert self.view.transform().isIdentity()
         assert self.view.filename is None
         self.view.undo_stack.clear.assert_called_once_with()
+
+    def test_reset_previous_transform_when_other_item(self):
+        item1 = MagicMock()
+        item2 = MagicMock()
+        self.view.previous_transform = {
+            'transform': 'foo',
+            'toggle_item': item1,
+        }
+        self.view.reset_previous_transform(toggle_item=item2)
+        assert self.view.previous_transform is None
+
+    def test_reset_previous_transform_when_same_item(self):
+        item = MagicMock()
+        self.view.previous_transform = {
+            'transform': 'foo',
+            'toggle_item': item,
+        }
+        self.view.reset_previous_transform(toggle_item=item)
+        assert self.view.previous_transform == {
+            'transform': 'foo',
+            'toggle_item': item,
+        }
+
+    @patch('beeref.view.BeeGraphicsView.fitInView')
+    def test_fit_rect_no_toggle(self, fit_mock):
+        rect = QtCore.QRectF(30, 40, 100, 80)
+        self.view.fit_rect(rect)
+        fit_mock.assert_called_once_with(
+            rect, Qt.AspectRatioMode.KeepAspectRatio)
+
+    @patch('beeref.view.BeeGraphicsView.fitInView')
+    def test_fit_rect_toggle_when_no_previous(self, fit_mock):
+        item = MagicMock()
+        self.view.previous_transform = None
+        self.view.setSceneRect(QtCore.QRectF(-2000, -2000, 4000, 4000))
+        rect = QtCore.QRectF(30, 40, 100, 80)
+        self.view.scale(2, 2)
+        self.view.horizontalScrollBar().setValue(-40)
+        self.view.verticalScrollBar().setValue(-50)
+        self.view.fit_rect(rect, toggle_item=item)
+        fit_mock.assert_called_once_with(
+            rect, Qt.AspectRatioMode.KeepAspectRatio)
+        assert self.view.previous_transform['toggle_item'] == item
+        assert self.view.previous_transform['transform'].m11() == 2
+        assert self.view.previous_transform['hscroll'] == -40
+        assert self.view.previous_transform['vscroll'] == -50
+
+    @patch('beeref.view.BeeGraphicsView.fitInView')
+    def test_fit_rect_toggle_when_previous(self, fit_mock):
+        item = MagicMock()
+        self.view.previous_transform = {
+            'toggle_item': item,
+            'transform': QtGui.QTransform.fromScale(2, 2),
+            'hscroll': -40,
+            'vscroll': -50,
+        }
+        self.view.setSceneRect(QtCore.QRectF(-2000, -2000, 4000, 4000))
+        rect = QtCore.QRectF(30, 40, 100, 80)
+        self.view.fit_rect(rect, toggle_item=item)
+        fit_mock.assert_not_called()
+        assert self.view.get_scale() == 2
+        self.view.horizontalScrollBar().value == -40
+        self.view.verticalScrollBar().value == -50
 
     @patch('beeref.view.BeeGraphicsView.clear_scene')
     def test_open_from_file(self, clear_mock):
