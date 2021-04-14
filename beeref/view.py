@@ -182,6 +182,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
                 'Problem loading file',
                 ('<p>Problem loading file %s</p>'
                  '<p>Not accessible or not a proper bee file</p>') % filename)
+        else:
+            QtCore.QTimer.singleShot(10, self.on_action_fit_scene)
 
     def open_from_file(self, filename):
         logger.info(f'Opening file {filename}')
