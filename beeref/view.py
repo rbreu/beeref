@@ -37,6 +37,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         super().__init__(parent)
         self.app = app
         self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(60, 60, 60)))
+        self.setTransformationAnchor(
+            QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
         self.undo_stack = QtGui.QUndoStack(self)
         self.undo_stack.setUndoLimit(100)
@@ -53,10 +55,6 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
         self.setAcceptDrops(True)
-
-        # TBD: fix zoom anchor - why does this not work?
-        # self.setTransformationAnchor(
-        #     QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
         self.previous_transform = None
         self.pan_active = False
@@ -120,20 +118,23 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         if toggle_item and self.previous_transform:
             logger.debug('Fit view: Reset to previous')
             self.setTransform(self.previous_transform['transform'])
-            self.horizontalScrollBar().setValue(
-                 self.previous_transform['hscroll'])
-            self.verticalScrollBar().setValue(
-                 self.previous_transform['vscroll'])
+            self.centerOn(self.previous_transform['center'])
             self.previous_transform = None
             return
         if toggle_item:
             self.previous_transform = {
                 'toggle_item': toggle_item,
                 'transform': QtGui.QTransform(self.transform()),
-                'hscroll': self.horizontalScrollBar().value(),
-                'vscroll': self.verticalScrollBar().value(),
+                'center': self.mapToScene(self.get_view_center()),
             }
+        else:
+            self.previous_transform = None
+
         logger.debug(f'Fit view: {rect}')
+        self.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
+        self.recalc_scene_rect()
+        # It seems to be more reliable when we fit a second time
+        # Sometimes a changing scene rect can mess up the fitting
         self.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
 
     def on_action_fit_scene(self):
@@ -183,7 +184,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
                 ('<p>Problem loading file %s</p>'
                  '<p>Not accessible or not a proper bee file</p>') % filename)
         else:
-            QtCore.QTimer.singleShot(10, self.on_action_fit_scene)
+            self.on_action_fit_scene()
 
     def open_from_file(self, filename):
         logger.info(f'Opening file {filename}')

@@ -110,9 +110,10 @@ class BeeGraphicsViewTestCase(BeeTestCase):
     @patch('beeref.view.BeeGraphicsView.fitInView')
     def test_fit_rect_no_toggle(self, fit_mock):
         rect = QtCore.QRectF(30, 40, 100, 80)
+        self.view.previous_transform = {'toggle_item': MagicMock()}
         self.view.fit_rect(rect)
-        fit_mock.assert_called_once_with(
-            rect, Qt.AspectRatioMode.KeepAspectRatio)
+        fit_mock.assert_called_with(rect, Qt.AspectRatioMode.KeepAspectRatio)
+        assert self.view.previous_transform is None
 
     @patch('beeref.view.BeeGraphicsView.fitInView')
     def test_fit_rect_toggle_when_no_previous(self, fit_mock):
@@ -124,29 +125,27 @@ class BeeGraphicsViewTestCase(BeeTestCase):
         self.view.horizontalScrollBar().setValue(-40)
         self.view.verticalScrollBar().setValue(-50)
         self.view.fit_rect(rect, toggle_item=item)
-        fit_mock.assert_called_once_with(
-            rect, Qt.AspectRatioMode.KeepAspectRatio)
+        fit_mock.assert_called_with(rect, Qt.AspectRatioMode.KeepAspectRatio)
         assert self.view.previous_transform['toggle_item'] == item
         assert self.view.previous_transform['transform'].m11() == 2
-        assert self.view.previous_transform['hscroll'] == -40
-        assert self.view.previous_transform['vscroll'] == -50
+        assert isinstance(self.view.previous_transform['center'],
+                          QtCore.QPointF)
 
     @patch('beeref.view.BeeGraphicsView.fitInView')
-    def test_fit_rect_toggle_when_previous(self, fit_mock):
+    @patch('beeref.view.BeeGraphicsView.centerOn')
+    def test_fit_rect_toggle_when_previous(self, center_mock, fit_mock):
         item = MagicMock()
         self.view.previous_transform = {
             'toggle_item': item,
             'transform': QtGui.QTransform.fromScale(2, 2),
-            'hscroll': -40,
-            'vscroll': -50,
+            'center': QtCore.QPointF(30, 40)
         }
         self.view.setSceneRect(QtCore.QRectF(-2000, -2000, 4000, 4000))
         rect = QtCore.QRectF(30, 40, 100, 80)
         self.view.fit_rect(rect, toggle_item=item)
         fit_mock.assert_not_called()
+        center_mock.assert_called_once_with(QtCore.QPointF(30, 40))
         assert self.view.get_scale() == 2
-        self.view.horizontalScrollBar().value == -40
-        self.view.verticalScrollBar().value == -50
 
     @patch('beeref.view.BeeGraphicsView.clear_scene')
     def test_open_from_file(self, clear_mock):
