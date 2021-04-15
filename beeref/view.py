@@ -141,7 +141,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.fit_rect(self.scene.itemsBoundingRect())
 
     def on_action_fit_selection(self):
-        self.fit_rect(self.scene.get_selection_rect())
+        self.fit_rect(self.scene.itemsBoundingRect(selection_only=True))
 
     def on_action_undo(self):
         logger.debug('Undo: %s' % self.undo_stack.undoText())

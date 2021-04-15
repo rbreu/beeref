@@ -72,7 +72,7 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         self.scene.addItem(item)
         item.setSelected(True)
         self.scene.undo_stack = MagicMock(push=MagicMock())
-        with patch('beeref.scene.BeeGraphicsScene.get_selection_rect',
+        with patch('beeref.scene.BeeGraphicsScene.itemsBoundingRect',
                    return_value=QtCore.QRectF(10, 20, 100, 60)):
             self.scene.flip_items(vertical=True)
             args = self.scene.undo_stack.push.call_args_list[0][0]
@@ -372,7 +372,7 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         self.scene.on_view_scale_change()
         item.on_view_scale_change.assert_called_once()
 
-    def test_get_selection_rect_two_items(self):
+    def test_items_bounding_rect_two_items_selection_only(self):
         item1 = BeePixmapItem(QtGui.QImage())
         self.scene.addItem(item1)
         item1.setSelected(True)
@@ -390,32 +390,50 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
                    new_callable=PropertyMock, return_value=100):
             with patch('beeref.items.BeePixmapItem.height',
                        new_callable=PropertyMock, return_value=100):
-                rect = self.scene.get_selection_rect()
+                rect = self.scene.itemsBoundingRect(selection_only=True)
 
         assert rect.topLeft().x() == -33
         assert rect.topLeft().y() == -6
         assert rect.bottomRight().x() == 104
         assert rect.bottomRight().y() == 122
 
-    def test_get_selection_rect_rotated_item(self):
+    def test_items_bounding_rect_rotated_item(self):
         item = BeePixmapItem(QtGui.QImage())
         self.scene.addItem(item)
-        item.setSelected(True)
         item.setRotation(-45)
 
         with patch('beeref.items.BeePixmapItem.width',
                    new_callable=PropertyMock, return_value=100):
             with patch('beeref.items.BeePixmapItem.height',
                        new_callable=PropertyMock, return_value=100):
-                rect = self.scene.get_selection_rect()
+                rect = self.scene.itemsBoundingRect()
 
         assert rect.topLeft().x() == 0
         assert rect.topLeft().y() == approx(-math.sqrt(2) * 50)
         assert rect.bottomRight().x() == approx(math.sqrt(2) * 100)
         assert rect.bottomRight().y() == approx(math.sqrt(2) * 50)
 
+    def test_items_bounding_rect_flipped_item(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        item.do_flip()
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=50):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=100):
+                rect = self.scene.itemsBoundingRect()
+
+        assert rect.topLeft().x() == -50
+        assert rect.topLeft().y() == 0
+        assert rect.bottomRight().x() == 0
+        assert rect.bottomRight().y() == 100
+
+    def test_items_bounding_rect_when_no_items(self):
+        rect = self.scene.itemsBoundingRect()
+        assert rect == QtCore.QRectF(0, 0, 0, 0)
+
     def test_get_selection_center(self):
-        with patch('beeref.scene.BeeGraphicsScene.get_selection_rect',
+        with patch('beeref.scene.BeeGraphicsScene.itemsBoundingRect',
                    return_value=QtCore.QRectF(10, 20, 100, 60)):
             center = self.scene.get_selection_center()
             assert center == QtCore.QPointF(60, 50)
@@ -424,7 +442,7 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         self.scene.has_multi_selection = MagicMock(return_value=True)
         self.scene.multi_select_item.fit_selection_area = MagicMock()
         self.scene.multi_select_item.bring_to_front = MagicMock()
-        self.scene.get_selection_rect = MagicMock(
+        self.scene.itemsBoundingRect = MagicMock(
             return_value=QtCore.QRectF(0, 0, 100, 80))
         self.scene.addItem = MagicMock()
 
@@ -441,7 +459,7 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         self.scene.has_multi_selection = MagicMock(return_value=True)
         self.scene.multi_select_item.fit_selection_area = MagicMock()
         self.scene.multi_select_item.bring_to_front = MagicMock()
-        self.scene.get_selection_rect = MagicMock(
+        self.scene.itemsBoundingRect = MagicMock(
             return_value=QtCore.QRectF(0, 0, 100, 80))
         self.scene.addItem = MagicMock()
 
@@ -458,7 +476,7 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         self.scene.has_multi_selection = MagicMock(return_value=False)
         self.scene.multi_select_item.fit_selection_area = MagicMock()
         self.scene.multi_select_item.bring_to_front = MagicMock()
-        self.scene.get_selection_rect = MagicMock(
+        self.scene.itemsBoundingRect = MagicMock(
             return_value=QtCore.QRectF(0, 0, 100, 80))
         self.scene.removeItem = MagicMock()
 
@@ -471,7 +489,6 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
     def test_on_change_when_multi_select_when_no_scale_no_rotate(self):
         self.scene.addItem(self.scene.multi_select_item)
         self.scene.multi_select_item.fit_selection_area = MagicMock()
-        self.scene.get_selection_rect = MagicMock()
         self.scene.multi_select_item.scale_active = False
         self.scene.multi_select_item.rotate_active = False
         self.scene.on_change(None)
@@ -480,7 +497,6 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
     def test_on_change_when_multi_select_when_scale_active(self):
         self.scene.addItem(self.scene.multi_select_item)
         self.scene.multi_select_item.fit_selection_area = MagicMock()
-        self.scene.get_selection_rect = MagicMock()
         self.scene.multi_select_item.scale_active = True
         self.scene.multi_select_item.rotate_active = False
         self.scene.on_change(None)
@@ -489,7 +505,6 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
     def test_on_change_when_multi_select_when_rotate_active(self):
         self.scene.addItem(self.scene.multi_select_item)
         self.scene.multi_select_item.fit_selection_area = MagicMock()
-        self.scene.get_selection_rect = MagicMock()
         self.scene.multi_select_item.scale_active = False
         self.scene.multi_select_item.rotate_active = True
         self.scene.on_change(None)
@@ -497,7 +512,6 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
 
     def test_on_change_when_no_multi_select(self):
         self.scene.multi_select_item.fit_selection_area = MagicMock()
-        self.scene.get_selection_rect = MagicMock()
         self.scene.multi_select_item.scale_active = True
         self.scene.multi_select_item.rotate_active = True
         self.scene.on_change(None)

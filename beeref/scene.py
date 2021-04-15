@@ -129,8 +129,9 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         item = self.itemAt(event.scenePos(), self.views()[0].transform())
         if item:
             self.move_active = False
-            self.views()[0].fit_rect(self.get_selection_rect(),
-                                     toggle_item=item)
+            self.views()[0].fit_rect(
+                self.itemsBoundingRect(selection_only=True),
+                toggle_item=item)
             return
         super().mouseDoubleClickEvent(event)
 
@@ -178,11 +179,19 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         for item in self.selectedItems():
             item.on_view_scale_change()
 
-    def get_selection_rect(self):
-        """Returns the bounding rect of the currently selected items."""
+    def itemsBoundingRect(self, selection_only=False):
+        """Returns the bounding rect of the scene's items; either all of them
+        or only selected ones.
 
-        items = list(filter(lambda i: hasattr(i, 'save_id'),
-                            self.selectedItems()))
+        Re-implemented to not include the items's selection handles.
+        """
+
+        base = self.selectedItems() if selection_only else self.items()
+        items = list(filter(lambda i: hasattr(i, 'save_id'), base))
+
+        if not items:
+            return QtCore.QRectF(0, 0, 0, 0)
+
         x = []
         y = []
 
@@ -196,13 +205,13 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             QtCore.QPointF(max(x), max(y)))
 
     def get_selection_center(self):
-        rect = self.get_selection_rect()
+        rect = self.itemsBoundingRect(selection_only=True)
         return (rect.topLeft() + rect.bottomRight()) / 2
 
     def on_selection_change(self):
         if self.has_multi_selection():
             self.multi_select_item.fit_selection_area(
-                self.get_selection_rect())
+                self.itemsBoundingRect(selection_only=True))
         if self.has_multi_selection() and not self.multi_select_item.scene():
             logger.debug('Adding multi select outline')
             self.addItem(self.multi_select_item)
@@ -216,7 +225,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
                 and not self.multi_select_item.scale_active
                 and not self.multi_select_item.rotate_active):
             self.multi_select_item.fit_selection_area(
-                self.get_selection_rect())
+                self.itemsBoundingRect(selection_only=True))
 
     def add_item_later(self, item, selected=False):
         """Keep an item for adding later via ``add_delayed_items``"""
