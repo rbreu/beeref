@@ -196,6 +196,29 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         mouse_mock.assert_not_called()
 
     @patch('PyQt6.QtWidgets.QGraphicsScene.mouseDoubleClickEvent')
+    def test_mouse_doubleclick_event_when_item_not_selected(
+            self, mouse_mock):
+        event = MagicMock()
+        self.scene.move_active = True
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        item.setPos(30, 40)
+        item.setSelected(False)
+        self.scene.itemAt = MagicMock(return_value=item)
+
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=100):
+                self.scene.mouseDoubleClickEvent(event)
+
+        assert self.scene.move_active is False
+        self.view.fit_rect.assert_called_once_with(
+            QtCore.QRectF(30, 40, 100, 100), toggle_item=item)
+        mouse_mock.assert_not_called()
+        assert item.isSelected() is True
+
+    @patch('PyQt6.QtWidgets.QGraphicsScene.mouseDoubleClickEvent')
     def test_mouse_doubleclick_event_when_not_over_item(self, mouse_mock):
         event = MagicMock()
         self.scene.itemAt = MagicMock(return_value=None)

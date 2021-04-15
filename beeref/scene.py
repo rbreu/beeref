@@ -129,6 +129,8 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         item = self.itemAt(event.scenePos(), self.views()[0].transform())
         if item:
             self.move_active = False
+            if not item.isSelected():
+                item.setSelected(True)
             self.views()[0].fit_rect(
                 self.itemsBoundingRect(selection_only=True),
                 toggle_item=item)
