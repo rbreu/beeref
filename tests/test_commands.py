@@ -291,3 +291,107 @@ class FlipItemsTestCase(BeeTestCase):
         assert item2.flip() == -1
         assert item2.rotation() == 30
         assert item2.pos() == QtCore.QPointF(100, 100)
+
+
+class ResetScaleTestCase(BeeTestCase):
+
+    def test_redo_undo(self):
+        item = BeePixmapItem(QtGui.QImage())
+        item.setScale(2)
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=80):
+                command = commands.ResetScale([item])
+                command.redo()
+                assert item.scale() == 1
+                assert item.pos().x() == 50
+                assert item.pos().y() == 40
+                command.undo()
+                assert item.scale() == 2
+                assert item.pos().x() == 0
+                assert item.pos().y() == 0
+
+
+class ResetRotateTestCase(BeeTestCase):
+
+    def test_redo_undo(self):
+        item = BeePixmapItem(QtGui.QImage())
+        item.setRotation(180)
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=80):
+                command = commands.ResetRotation([item])
+                command.redo()
+                assert item.rotation() == 0
+                assert item.pos().x() == -100
+                assert item.pos().y() == -80
+                command.undo()
+                assert item.rotation() == 180
+                assert item.pos().x() == 0
+                assert item.pos().y() == 0
+
+
+class ResetFlipTestCase(BeeTestCase):
+
+    def test_redo_undo(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        item1.do_flip()
+        item2 = BeePixmapItem(QtGui.QImage())
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=80):
+                command = commands.ResetFlip([item1, item2])
+                command.redo()
+                assert item1.flip() == 1
+                assert item1.pos().x() == -100
+                assert item1.pos().y() == 0
+                assert item2.flip() == 1
+                assert item2.pos().x() == 0
+                assert item2.pos().y() == 0
+                command.undo()
+                assert item1.flip() == -1
+                assert item1.pos().x() == 0
+                assert item1.pos().y() == 0
+                assert item2.flip() == 1
+                assert item2.pos().x() == 0
+                assert item2.pos().y() == 0
+
+
+class ResetTransformsTestCase(BeeTestCase):
+
+    def test_redo_undo(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        item1.setScale(2)
+        item1.do_flip()
+        item2 = BeePixmapItem(QtGui.QImage())
+        item2.setRotation(180)
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=80):
+                command = commands.ResetTransforms([item1, item2])
+                command.redo()
+                assert item1.scale() == 1
+                assert item1.rotation() == 0
+                assert item1.flip() == 1
+                assert item1.pos().x() == -150
+                assert item1.pos().y() == 40
+                assert item2.scale() == 1
+                assert item2.rotation() == 0
+                assert item2.flip() == 1
+                assert item2.pos().x() == -100
+                assert item2.pos().y() == -80
+                command.undo()
+                assert item1.scale() == 2
+                assert item1.rotation() == 0
+                assert item1.flip() == -1
+                assert item1.pos().x() == 0
+                assert item1.pos().y() == 0
+                assert item2.scale() == 1
+                assert item2.rotation() == 180
+                assert item2.flip() == 1
+                assert item2.pos().x() == 0
+                assert item2.pos().y() == 0

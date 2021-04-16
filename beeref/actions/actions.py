@@ -134,4 +134,33 @@ actions = [
         'group': 'active_when_selection',
         'enabled': False,
     },
+    {
+        'id': 'reset_scale',
+        'text': 'Reset &Scale',
+        'callback': 'on_action_reset_scale',
+        'group': 'active_when_selection',
+        'enabled': False,
+    },
+    {
+        'id': 'reset_rotation',
+        'text': 'Reset &Rotation',
+        'callback': 'on_action_reset_rotation',
+        'group': 'active_when_selection',
+        'enabled': False,
+    },
+    {
+        'id': 'reset_flip',
+        'text': 'Reset &Flip',
+        'callback': 'on_action_reset_flip',
+        'group': 'active_when_selection',
+        'enabled': False,
+    },
+    {
+        'id': 'reset_transforms',
+        'text': 'Reset &All',
+        'shortcuts': ['R'],
+        'callback': 'on_action_reset_transforms',
+        'group': 'active_when_selection',
+        'enabled': False,
+    },
 ]

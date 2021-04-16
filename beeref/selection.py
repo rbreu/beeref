@@ -97,9 +97,13 @@ class BaseItemMixin:
             self.setRotation(self.rotation() + 180)
 
     @property
+    def center(self):
+        return QtCore.QPointF(self.width, self.height) / 2
+
+    @property
     def center_scene_coords(self):
         """The item's center in scene coordinates."""
-        return self.mapToScene(QtCore.QPointF(self.width, self.height) / 2)
+        return self.mapToScene(self.center)
 
 
 class SelectableMixin(BaseItemMixin):

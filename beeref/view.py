@@ -171,6 +171,22 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def on_action_flip_vertically(self):
         self.scene.flip_items(vertical=True)
 
+    def on_action_reset_scale(self):
+        self.undo_stack.push(commands.ResetScale(
+            self.scene.selectedItems()))
+
+    def on_action_reset_rotation(self):
+        self.undo_stack.push(commands.ResetRotation(
+            self.scene.selectedItems()))
+
+    def on_action_reset_flip(self):
+        self.undo_stack.push(commands.ResetFlip(
+            self.scene.selectedItems()))
+
+    def on_action_reset_transforms(self):
+        self.undo_stack.push(commands.ResetTransforms(
+            self.scene.selectedItems()))
+
     def on_items_loaded(self, value):
         self.scene.add_delayed_items()
 

@@ -50,6 +50,11 @@ menu_structure = [
         'items': [
             'flip_horizontally',
             'flip_vertically',
+            MENU_SEPARATOR,
+            'reset_scale',
+            'reset_rotation',
+            'reset_flip',
+            'reset_transforms',
         ],
     },
     {

@@ -160,3 +160,84 @@ class FlipItems(QtGui.QUndoCommand):
 
     def undo(self):
         self.redo()
+
+
+class ResetScale(QtGui.QUndoCommand):
+
+    def __init__(self, items):
+        super().__init__('Reset Scale')
+        self.items = items
+
+    def redo(self):
+        self.old_scale_factors = []
+        for item in self.items:
+            self.old_scale_factors.append(item.scale())
+            item.setScale(1, anchor=item.center)
+
+    def undo(self):
+        for item, scale_factor in zip(self.items, self.old_scale_factors):
+            item.setScale(scale_factor, anchor=item.center)
+
+
+class ResetRotation(QtGui.QUndoCommand):
+
+    def __init__(self, items):
+        super().__init__('Reset Rotation')
+        self.items = items
+
+    def redo(self):
+        self.old_rotations = []
+        for item in self.items:
+            self.old_rotations.append(item.rotation())
+            item.setRotation(0, anchor=item.center)
+
+    def undo(self):
+        for item, rotation in zip(self.items, self.old_rotations):
+            item.setRotation(rotation, anchor=item.center)
+
+
+class ResetFlip(QtGui.QUndoCommand):
+
+    def __init__(self, items):
+        super().__init__('Reset Flip')
+        self.items = items
+
+    def redo(self):
+        self.old_flips = []
+        for item in self.items:
+            self.old_flips.append(item.flip())
+            if item.flip() == -1:
+                item.do_flip(anchor=item.center)
+
+    def undo(self):
+        for item, flip in zip(self.items, self.old_flips):
+            if flip == -1:
+                item.do_flip(anchor=item.center)
+
+
+class ResetTransforms(QtGui.QUndoCommand):
+
+    def __init__(self, items):
+        super().__init__('Reset All Transformations')
+        self.items = items
+
+    def redo(self):
+        self.old_values = []
+        for item in self.items:
+            self.old_values.append({
+                'scale': item.scale(),
+                'rotation': item.rotation(),
+                'flip': item.flip(),
+            })
+
+            item.setScale(1, anchor=item.center)
+            item.setRotation(0, anchor=item.center)
+            if item.flip() == -1:
+                item.do_flip(anchor=item.center)
+
+    def undo(self):
+        for item, old in zip(self.items, self.old_values):
+            item.setScale(old['scale'], anchor=item.center)
+            item.setRotation(old['rotation'], anchor=item.center)
+            if old['flip'] == -1:
+                item.do_flip(anchor=item.center)
