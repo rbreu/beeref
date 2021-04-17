@@ -82,6 +82,30 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
             assert cmd.anchor == QtCore.QPointF(60, 50)
             assert cmd.vertical is True
 
+    def test_set_selection_all_items_when_true(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+
+        self.scene.set_selected_all_items(True)
+        assert item1.isSelected() is True
+        assert item2.isSelected() is True
+
+    def test_set_selection_all_items_when_false(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+
+        self.scene.set_selected_all_items(False)
+        assert item1.isSelected() is False
+        assert item2.isSelected() is False
+
     def test_has_selection_when_no_selection(self):
         item = BeePixmapItem(QtGui.QImage())
         self.scene.addItem(item)

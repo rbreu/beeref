@@ -33,6 +33,10 @@ menu_structure = [
         'items': [
             'undo',
             'redo',
+            MENU_SEPARATOR,
+            'select_all',
+            'deselect_all',
+            MENU_SEPARATOR,
             'paste',
             'delete',
         ],

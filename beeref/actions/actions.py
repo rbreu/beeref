@@ -163,4 +163,16 @@ actions = [
         'group': 'active_when_selection',
         'enabled': False,
     },
+    {
+        'id': 'select_all',
+        'text': '&Select All',
+        'shortcuts': ['Ctrl+A'],
+        'callback': 'on_action_select_all',
+    },
+    {
+        'id': 'deselect_all',
+        'text': 'Deselect &All',
+        'shortcuts': ['Ctrl+Shift+A'],
+        'callback': 'on_action_deselect_all',
+    },
 ]

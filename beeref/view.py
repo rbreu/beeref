@@ -151,6 +151,12 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         logger.debug('Redo: %s' % self.undo_stack.redoText())
         self.undo_stack.redo()
 
+    def on_action_select_all(self):
+        self.scene.set_selected_all_items(True)
+
+    def on_action_deselect_all(self):
+        self.scene.set_selected_all_items(False)
+
     def on_action_delete_items(self):
         logger.debug('Deleting items...')
         self.undo_stack.push(

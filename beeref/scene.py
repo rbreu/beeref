@@ -95,6 +95,11 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
                                self.get_selection_center(),
                                vertical=vertical))
 
+    def set_selected_all_items(self, value):
+        """Sets the selection mode of all items to ``value``."""
+        for item in self.items():
+            item.setSelected(value)
+
     def has_selection(self):
         """Checks whether there are currently items selected."""
 
