@@ -186,6 +186,8 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
 
     @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
     def test_mouse_press_event_when_left_click_not_over_item(self, mouse_mock):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
         self.scene.itemAt = MagicMock(return_value=None)
         event = MagicMock(
             button=MagicMock(return_value=Qt.MouseButtons.LeftButton),
@@ -197,6 +199,20 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         assert self.scene.move_active is False
         assert self.scene.rubberband_active is True
         assert self.scene.event_start == QtCore.QPointF(10, 20)
+
+    @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
+    def test_mouse_press_event_when_no_items(self, mouse_mock):
+        self.scene.itemAt = MagicMock(return_value=None)
+        event = MagicMock(
+            button=MagicMock(return_value=Qt.MouseButtons.LeftButton),
+            scenePos=MagicMock(return_value=QtCore.QPointF(10, 20)),
+        )
+        self.scene.mousePressEvent(event)
+        event.accept.assert_not_called()
+        mouse_mock.assert_called_once_with(event)
+        assert self.scene.move_active is False
+        assert self.scene.rubberband_active is False
+        mouse_mock.assert_called_once_with(event)
 
     @patch('PyQt6.QtWidgets.QGraphicsScene.mouseDoubleClickEvent')
     def test_mouse_doubleclick_event_when_over_item(self, mouse_mock):

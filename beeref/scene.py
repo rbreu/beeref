@@ -125,7 +125,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             self.event_start = event.scenePos()
             if self.itemAt(event.scenePos(), self.views()[0].transform()):
                 self.move_active = True
-            else:
+            elif self.items():
                 self.rubberband_active = True
 
         super().mousePressEvent(event)
