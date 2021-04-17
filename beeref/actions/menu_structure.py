@@ -46,6 +46,8 @@ menu_structure = [
         'items': [
             'fit_scene',
             'fit_selection',
+            MENU_SEPARATOR,
+            'show_scrollbars',
         ],
     },
     'insert_images',

@@ -42,9 +42,13 @@ class ActionsMixin:
             qaction = QtGui.QAction(action['text'], self)
             if 'shortcuts' in action:
                 qaction.setShortcuts(action['shortcuts'])
-            qaction.triggered.connect(getattr(self, action['callback']))
+            if action.get('checkable', False):
+                qaction.toggled.connect(getattr(self, action['callback']))
+            else:
+                qaction.triggered.connect(getattr(self, action['callback']))
             self.addAction(qaction)
             qaction.setEnabled(action.get('enabled', True))
+            qaction.setCheckable(action.get('checkable', False))
             self.bee_actions[action['id']] = qaction
             if 'group' in action:
                 self.bee_actiongroups[action['group']].append(qaction)

@@ -23,7 +23,9 @@ class ActionsMixinTestCase(BeeTestCase):
         self.addCleanup(actions_patcher.stop)
         self.widget = FooWidget()
 
-    def test_create_actions(self):
+    @patch('PyQt6.QtGui.QAction.triggered')
+    @patch('PyQt6.QtGui.QAction.toggled')
+    def test_create_actions(self, toggle_mock, trigger_mock):
         self.actions_mock.__iter__.return_value = [{
             'id': 'foo',
             'text': '&Foo',
@@ -31,13 +33,34 @@ class ActionsMixinTestCase(BeeTestCase):
             'callback': 'on_foo',
         }]
 
-        with patch('PyQt6.QtGui.QAction.triggered') as trigger_mock:
-            self.widget._create_actions()
-            trigger_mock.connect.assert_called_once_with(self.widget.on_foo)
+        self.widget._create_actions()
+        trigger_mock.connect.assert_called_once_with(self.widget.on_foo)
+        toggle_mock.connect.assert_not_called()
+
         assert len(self.widget.actions()) == 1
         qaction = self.widget.actions()[0]
         qaction.text() == '&Foo'
         qaction.shortcut() == 'Ctrl+F'
+        qaction.isEnabled() is True
+        assert self.widget.bee_actions['foo'] == qaction
+
+    @patch('PyQt6.QtGui.QAction.triggered')
+    @patch('PyQt6.QtGui.QAction.toggled')
+    def test_create_actions_checkable(self, toggle_mock, trigger_mock):
+        self.actions_mock.__iter__.return_value = [{
+            'id': 'foo',
+            'text': '&Foo',
+            'checkable': True,
+            'callback': 'on_foo',
+        }]
+
+        self.widget._create_actions()
+        trigger_mock.connect.assert_not_called()
+        toggle_mock.connect.assert_called_once_with(self.widget.on_foo)
+
+        assert len(self.widget.actions()) == 1
+        qaction = self.widget.actions()[0]
+        qaction.text() == '&Foo'
         qaction.isEnabled() is True
         assert self.widget.bee_actions['foo'] == qaction
 

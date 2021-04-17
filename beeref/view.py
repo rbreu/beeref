@@ -48,7 +48,6 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.scene = BeeGraphicsScene(self.undo_stack)
         self.filename = None
 
-        # TBD: make scrollbar configurable
         self.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(
@@ -142,6 +141,18 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
     def on_action_fit_selection(self):
         self.fit_rect(self.scene.itemsBoundingRect(selection_only=True))
+
+    def on_action_show_scrollbars(self, checked):
+        if checked:
+            self.setHorizontalScrollBarPolicy(
+                Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+            self.setVerticalScrollBarPolicy(
+                Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        else:
+            self.setHorizontalScrollBarPolicy(
+                Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            self.setVerticalScrollBarPolicy(
+                Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
     def on_action_undo(self):
         logger.debug('Undo: %s' % self.undo_stack.undoText())

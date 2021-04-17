@@ -181,4 +181,10 @@ actions = [
         'shortcuts': ['Ctrl+H'],
         'callback': 'on_action_help',
     },
+    {
+        'id': 'show_scrollbars',
+        'text': 'Show &Scrollbars',
+        'checkable': True,
+        'callback': 'on_action_show_scrollbars',
+    },
 ]
