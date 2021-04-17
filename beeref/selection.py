@@ -112,7 +112,7 @@ class SelectableMixin(BaseItemMixin):
     SELECT_LINE_WIDTH = 4  # line width for the selection box
     SELECT_HANDLE_SIZE = 15  # size of selection handles for scaling
     SELECT_RESIZE_SIZE = 20  # size of hover area for scaling
-    SELECT_ROTATE_SIZE = 15  # size of hover area for rotating
+    SELECT_ROTATE_SIZE = 10  # size of hover area for rotating
 
     def init_selectable(self):
         self.setAcceptHoverEvents(True)

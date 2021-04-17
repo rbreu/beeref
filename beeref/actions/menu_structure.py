@@ -69,4 +69,10 @@ menu_structure = [
             'normalize_size',
         ],
     },
+    {
+        'menu': '&Help',
+        'items': [
+            'help',
+        ],
+    },
 ]

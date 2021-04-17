@@ -175,4 +175,10 @@ actions = [
         'shortcuts': ['Ctrl+Shift+A'],
         'callback': 'on_action_deselect_all',
     },
+    {
+        'id': 'help',
+        'text': '&Help',
+        'shortcuts': ['Ctrl+H'],
+        'callback': 'on_action_help',
+    },
 ]

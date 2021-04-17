@@ -14,6 +14,7 @@
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+import os.path
 
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
@@ -61,3 +62,23 @@ class BeeProgressDialog(QtWidgets.QProgressDialog):
 
     def on_finished(self, filename, errors):
         self.close()
+
+
+class HelpDialog(QtWidgets.QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setWindowTitle('BeeRef Help')
+        docdir = os.path.join(os.path.dirname(__file__),
+                              'documentation')
+        tabs = QtWidgets.QTabWidget()
+
+        # Controls
+        with open(os.path.join(docdir, 'controls.html')) as f:
+            controls_txt = f.read()
+        controls = QtWidgets.QLabel(controls_txt)
+        tabs.addTab(controls, '&Controls')
+
+        layout = QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
+        layout.addWidget(tabs)
+        self.show()

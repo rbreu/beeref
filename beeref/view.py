@@ -22,7 +22,7 @@ from beeref.actions import ActionsMixin
 from beeref import commands
 from beeref.config import CommandlineArgs
 from beeref import fileio
-from beeref.gui import BeeProgressDialog, WelcomeOverlay
+from beeref.gui import BeeProgressDialog, WelcomeOverlay, HelpDialog
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
 
@@ -269,6 +269,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def on_action_quit(self):
         logger.info('User quit. Exiting...')
         self.app.quit()
+
+    def on_action_help(self):
+        HelpDialog(self)
 
     def on_insert_images_finished(self, filename, errors):
         if errors:
