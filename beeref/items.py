@@ -84,7 +84,7 @@ class BeePixmapItem(SelectableMixin, QtWidgets.QGraphicsPixmapItem):
         return [self]
 
     def on_selected_change(self, value):
-        if(value and self.scene()
-               and not self.scene().has_selection()
-               and not self.scene().rubberband_active):
+        if (value and self.scene()
+                and not self.scene().has_selection()
+                and not self.scene().rubberband_active):
             self.bring_to_front()
