@@ -137,7 +137,7 @@ class NormalizeItems(QtGui.QUndoCommand):
         self.old_scale_factors = []
         for item, factor in zip(self.items, self.scale_factors):
             self.old_scale_factors.append(item.scale())
-            item.setScale(factor,
+            item.setScale(item.scale() * factor,
                           QtCore.QPointF(item.width, item.height) / 2)
 
     def undo(self):

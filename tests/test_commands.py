@@ -229,8 +229,8 @@ class NormalizeItemsTestCase(BeeTestCase):
                 command.redo()
                 assert item1.scale() == 2
                 assert item1.pos() == QtCore.QPointF(-50, -40)
-                assert item2.scale() == 0.5
-                assert item2.pos() == QtCore.QPointF(125, 100)
+                assert item2.scale() == 1.5
+                assert item2.pos() == QtCore.QPointF(75, 60)
                 command.undo()
                 assert item1.scale() == 1
                 assert item1.pos() == QtCore.QPointF(0, 0)

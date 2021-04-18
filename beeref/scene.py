@@ -48,7 +48,10 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         :param mode: "width" or "height".
         """
 
-        values = [getattr(i, mode) for i in self.selectedItems(user_only=True)]
+        values = []
+        for item in self.selectedItems(user_only=True):
+            rect = self.itemsBoundingRect(items=[item])
+            values.append(getattr(rect, mode)())
         if not values:
             return
         avg = sum(values) / len(values)
@@ -57,7 +60,8 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         scale_factors = []
         for item in self.selectedItems(user_only=True):
-            scale_factors.append(avg / getattr(item, mode))
+            rect = self.itemsBoundingRect(items=[item])
+            scale_factors.append(avg / getattr(rect, mode)())
         self.undo_stack.push(
             commands.NormalizeItems(
                 self.selectedItems(user_only=True), scale_factors))
@@ -75,8 +79,11 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         Size meaning the area = widh * height.
         """
-        sizes = [i.width * i.height
-                 for i in self.selectedItems(user_only=True)]
+
+        sizes = []
+        for item in self.selectedItems(user_only=True):
+            rect = self.itemsBoundingRect(items=[item])
+            sizes.append(rect.width() * rect.height())
 
         if not sizes:
             return
@@ -86,7 +93,8 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         scale_factors = []
         for item in self.selectedItems(user_only=True):
-            scale_factors.append(math.sqrt(avg / item.width / item.height))
+            rect = self.itemsBoundingRect(items=[item])
+            scale_factors.append(math.sqrt(avg / rect.width() / rect.height()))
         self.undo_stack.push(
             commands.NormalizeItems(
                 self.selectedItems(user_only=True), scale_factors))
@@ -140,7 +148,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             if not item.isSelected():
                 item.setSelected(True)
             self.views()[0].fit_rect(
-                self.itemsBoundingRect(selection_only=True),
+                self.itemsBoundingRect(items=[item]),
                 toggle_item=item)
             return
         super().mouseDoubleClickEvent(event)
@@ -202,23 +210,30 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         for item in self.selectedItems():
             item.on_view_scale_change()
 
-    def itemsBoundingRect(self, selection_only=False):
+    def itemsBoundingRect(self, selection_only=False, items=None):
         """Returns the bounding rect of the scene's items; either all of them
-        or only selected ones.
+        or only selected ones, or the items givin in ``items``.
 
         Re-implemented to not include the items's selection handles.
         """
 
-        base = self.selectedItems() if selection_only else self.items()
-        items = list(filter(lambda i: hasattr(i, 'save_id'), base))
+        def filter_user_items(ilist):
+            return list(filter(lambda i: hasattr(i, 'save_id'), ilist))
 
-        if not items:
+        if selection_only:
+            base = filter_user_items(self.selectedItems())
+        elif items:
+            base = items
+        else:
+            base = filter_user_items(self.items())
+
+        if not base:
             return QtCore.QRectF(0, 0, 0, 0)
 
         x = []
         y = []
 
-        for item in items:
+        for item in base:
             for corner in item.corners_scene_coords:
                 x.append(corner.x())
                 y.append(corner.y())

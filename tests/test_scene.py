@@ -24,45 +24,122 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         self.addCleanup(views_patcher.stop)
 
     def test_normalize_height(self):
-        item1 = MagicMock(width=200, height=100, scale_factor=1)
-        item2 = MagicMock(width=300, height=200, scale_factor=3)
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        item2.setScale(3)
 
-        with patch.object(self.scene, 'selectedItems',
-                          return_value=[item1, item2]):
-            self.scene.normalize_height()
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=80):
+                self.scene.normalize_height()
 
-        item1.setScale.assert_called_once_with(1.5, QtCore.QPointF(100, 50))
-        item2.setScale.assert_called_once_with(0.75, QtCore.QPointF(150, 100))
+        assert item1.scale() == 2
+        assert item1.pos() == QtCore.QPointF(-50, -40)
+        assert item2.scale() == 2
+        assert item2.pos() == QtCore.QPointF(50, 40)
+
+    def test_normalize_height_with_rotation(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        item2.setRotation(90)
+
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=200):
+                self.scene.normalize_height()
+
+        assert item1.scale() == 0.75
+        assert item2.scale() == 1.5
 
     def test_normalize_height_when_no_items(self):
         self.scene.normalize_height()
 
     def test_normalize_width(self):
-        item1 = MagicMock(width=100, height=200, scale_factor=1)
-        item2 = MagicMock(width=200, height=300, scale_factor=3)
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        item2.setScale(3)
 
-        with patch.object(self.scene, 'selectedItems',
-                          return_value=[item1, item2]):
-            self.scene.normalize_width()
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=80):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=100):
+                self.scene.normalize_width()
 
-        item1.setScale.assert_called_once_with(1.5, QtCore.QPointF(50, 100))
-        item2.setScale.assert_called_once_with(0.75, QtCore.QPointF(100, 150))
+        assert item1.scale() == 2
+        assert item1.pos() == QtCore.QPointF(-40, -50)
+        assert item2.scale() == 2
+        assert item2.pos() == QtCore.QPointF(40, 50)
+
+    def test_normalize_width_with_rotation(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        item2.setRotation(90)
+
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=200):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=100):
+                self.scene.normalize_height()
+
+        assert item1.scale() == 1.5
+        assert item2.scale() == 0.75
 
     def test_normalize_width_when_no_items(self):
         self.scene.normalize_width()
 
     def test_normalize_size(self):
-        item1 = MagicMock(width=100, height=200, scale_factor=1)
-        item2 = MagicMock(width=400, height=100, scale_factor=3)
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        item2.setScale(2)
 
-        with patch.object(self.scene, 'selectedItems',
-                          return_value=[item1, item2]):
-            self.scene.normalize_size()
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=100):
+                self.scene.normalize_size()
 
-        item1.setScale.assert_called_once_with(
-            math.sqrt(1.5), QtCore.QPointF(50, 100))
-        item2.setScale.assert_called_once_with(
-            math.sqrt(0.75), QtCore.QPointF(200, 50))
+        assert item1.scale() == approx(math.sqrt(2.5))
+        assert item2.scale() == approx(math.sqrt(2.5))
+
+    def test_normalize_size_with_rotation(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        item2.setRotation(90)
+
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=200):
+                self.scene.normalize_size()
+
+        assert item1.scale() == 1
+        assert item2.scale() == 1
 
     def test_normalize_size_when_no_items(self):
         self.scene.normalize_size()
@@ -458,6 +535,31 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         item.on_view_scale_change = MagicMock()
         self.scene.on_view_scale_change()
         item.on_view_scale_change.assert_called_once()
+
+    def test_items_bounding_rect_given_items(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item1.setPos(4, -6)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        item2.setPos(-33, 22)
+        item3 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item3)
+        item3.setSelected(True)
+        item3.setPos(1000, 1000)
+
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=100):
+                rect = self.scene.itemsBoundingRect(items=[item1, item2])
+
+        assert rect.topLeft().x() == -33
+        assert rect.topLeft().y() == -6
+        assert rect.bottomRight().x() == 104
+        assert rect.bottomRight().y() == 122
 
     def test_items_bounding_rect_two_items_selection_only(self):
         item1 = BeePixmapItem(QtGui.QImage())
