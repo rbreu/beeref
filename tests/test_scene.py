@@ -402,6 +402,30 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         mouse_mock.assert_called_once_with(event)
         assert self.scene.move_active is False
 
+    def test_selected_items(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        selected = self.scene.selectedItems()
+        assert len(selected) == 3  # Multi select item!
+        assert item1 in selected
+        assert item2 in selected
+
+    def test_selected_items_user_only(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        selected = self.scene.selectedItems(user_only=True)
+        assert len(selected) == 2  # No multi select item!
+        assert item1 in selected
+        assert item2 in selected
+
     def test_items_for_save(self):
         item1 = BeePixmapItem(QtGui.QImage())
         self.scene.addItem(item1)

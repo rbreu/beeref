@@ -184,7 +184,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def on_action_delete_items(self):
         logger.debug('Deleting items...')
         self.undo_stack.push(
-            commands.DeleteItems(self.scene, self.scene.selectedItems()))
+            commands.DeleteItems(
+                self.scene, self.scene.selectedItems(user_only=True)))
 
     def on_action_normalize_height(self):
         self.scene.normalize_height()
@@ -203,19 +204,19 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
     def on_action_reset_scale(self):
         self.undo_stack.push(commands.ResetScale(
-            self.scene.selectedItems()))
+            self.scene.selectedItems(user_only=True)))
 
     def on_action_reset_rotation(self):
         self.undo_stack.push(commands.ResetRotation(
-            self.scene.selectedItems()))
+            self.scene.selectedItems(user_only=True)))
 
     def on_action_reset_flip(self):
         self.undo_stack.push(commands.ResetFlip(
-            self.scene.selectedItems()))
+            self.scene.selectedItems(user_only=True)))
 
     def on_action_reset_transforms(self):
         self.undo_stack.push(commands.ResetTransforms(
-            self.scene.selectedItems()))
+            self.scene.selectedItems(user_only=True)))
 
     def on_items_loaded(self, value):
         self.scene.add_delayed_items()
@@ -345,7 +346,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
     def on_selection_changed(self):
         logger.debug('Currently selected items: %s',
-                     len(self.scene.selectedItems()))
+                     len(self.scene.selectedItems(user_only=True)))
         self.actiongroup_set_enabled('active_when_selection',
                                      self.scene.has_selection())
         self.viewport().repaint()

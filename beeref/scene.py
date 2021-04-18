@@ -48,7 +48,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         :param mode: "width" or "height".
         """
 
-        values = [getattr(i, mode) for i in self.selectedItems()]
+        values = [getattr(i, mode) for i in self.selectedItems(user_only=True)]
         if not values:
             return
         avg = sum(values) / len(values)
@@ -56,10 +56,11 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         logger.debug(f'Calculated average {mode} {avg}')
 
         scale_factors = []
-        for item in self.selectedItems():
+        for item in self.selectedItems(user_only=True):
             scale_factors.append(avg / getattr(item, mode))
         self.undo_stack.push(
-            commands.NormalizeItems(self.selectedItems(), scale_factors))
+            commands.NormalizeItems(
+                self.selectedItems(user_only=True), scale_factors))
 
     def normalize_height(self):
         """Scale selected images to the same height."""
@@ -74,7 +75,8 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         Size meaning the area = widh * height.
         """
-        sizes = [i.width * i.height for i in self.selectedItems()]
+        sizes = [i.width * i.height
+                 for i in self.selectedItems(user_only=True)]
 
         if not sizes:
             return
@@ -83,15 +85,16 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         logger.debug(f'Calculated average size {avg}')
 
         scale_factors = []
-        for item in self.selectedItems():
+        for item in self.selectedItems(user_only=True):
             scale_factors.append(math.sqrt(avg / item.width / item.height))
         self.undo_stack.push(
-            commands.NormalizeItems(self.selectedItems(), scale_factors))
+            commands.NormalizeItems(
+                self.selectedItems(user_only=True), scale_factors))
 
     def flip_items(self, vertical=False):
         """Flip selected items."""
         self.undo_stack.push(
-            commands.FlipItems(self.selectedItems(),
+            commands.FlipItems(self.selectedItems(user_only=True),
                                self.get_selection_center(),
                                vertical=vertical))
 
@@ -103,17 +106,17 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
     def has_selection(self):
         """Checks whether there are currently items selected."""
 
-        return bool(self.selectedItems())
+        return bool(self.selectedItems(user_only=True))
 
     def has_single_selection(self):
         """Checks whether there's currently exactly one item selected."""
 
-        return len(self.selectedItems()) == 1
+        return len(self.selectedItems(user_only=True)) == 1
 
     def has_multi_selection(self):
         """Checks whether there are currently more than one items selected."""
 
-        return len(self.selectedItems()) > 1
+        return len(self.selectedItems(user_only=True)) > 1
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButtons.RightButton:
@@ -169,7 +172,20 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.move_active = False
         super().mouseReleaseEvent(event)
 
+    def selectedItems(self, user_only=False):
+        """If ``user_only`` is set to ``True``, only return items added
+        by the user (i.e. no multi select outlines and other UI items).
+
+        User items are items that have a ``save_id`` attribute.
+        """
+
+        items = super().selectedItems()
+        if user_only:
+            return list(filter(lambda i: hasattr(i, 'save_id'), items))
+        return items
+
     def items_for_save(self):
+
         """Returns the items that are to be saved.
 
         Items to be saved are items that have a save_id attribute.
