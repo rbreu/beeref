@@ -178,7 +178,7 @@ actions = [
     {
         'id': 'help',
         'text': '&Help',
-        'shortcuts': ['Ctrl+H'],
+        'shortcuts': ['F1', 'Ctrl+H'],
         'callback': 'on_action_help',
     },
     {
@@ -186,5 +186,12 @@ actions = [
         'text': 'Show &Scrollbars',
         'checkable': True,
         'callback': 'on_action_show_scrollbars',
+    },
+    {
+        'id': 'fullscreen',
+        'text': '&Fullscreen',
+        'shortcuts': ['F11'],
+        'checkable': True,
+        'callback': 'on_action_fullscreen',
     },
 ]

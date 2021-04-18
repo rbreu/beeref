@@ -47,6 +47,7 @@ menu_structure = [
             'fit_scene',
             'fit_selection',
             MENU_SEPARATOR,
+            'fullscreen',
             'show_scrollbars',
         ],
     },

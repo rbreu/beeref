@@ -142,6 +142,12 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def on_action_fit_selection(self):
         self.fit_rect(self.scene.itemsBoundingRect(selection_only=True))
 
+    def on_action_fullscreen(self, checked):
+        if checked:
+            self.parent().showFullScreen()
+        else:
+            self.parent().showNormal()
+
     def on_action_show_scrollbars(self, checked):
         if checked:
             self.setHorizontalScrollBarPolicy(
