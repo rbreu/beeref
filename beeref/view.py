@@ -148,6 +148,13 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         else:
             self.parent().showNormal()
 
+    def on_action_always_on_top(self, checked):
+        self.parent().setWindowFlag(
+            Qt.WindowFlags.WindowStaysOnTopHint, on=checked)
+        self.parent().destroy()
+        self.parent().create()
+        self.parent().show()
+
     def on_action_show_scrollbars(self, checked):
         if checked:
             self.setHorizontalScrollBarPolicy(

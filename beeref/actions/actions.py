@@ -194,4 +194,10 @@ actions = [
         'checkable': True,
         'callback': 'on_action_fullscreen',
     },
+    {
+        'id': 'always_on_top',
+        'text': '&Always On Top',
+        'checkable': True,
+        'callback': 'on_action_always_on_top',
+    },
 ]
