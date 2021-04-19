@@ -66,8 +66,6 @@ def load_images(filenames, pos, scene, worker):
             continue
         item = BeePixmapItem(img, filename)
         item.set_pos_center(pos)
-        pos.setX(pos.x() + 50)
-        pos.setY(pos.y() + 50)
         scene.add_item_later(item, selected=True)
         items.append(item)
         if worker.canceled:

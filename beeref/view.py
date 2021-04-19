@@ -313,6 +313,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
                 self,
                 'Problem loading images',
                 msg + errornames)
+        self.scene.arrange_optimal()
+        self.undo_stack.endMacro()
 
     def on_action_insert_images(self):
         formats = self.get_supported_image_formats(QtGui.QImageReader)
@@ -322,6 +324,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             filter=f'Images ({formats})')
 
         self.scene.clearSelection()
+        self.undo_stack.beginMacro('Insert Images')
         self.worker = fileio.ThreadedIO(
             fileio.load_images,
             filenames,
