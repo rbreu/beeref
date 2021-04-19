@@ -54,7 +54,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         for item in self.selectedItems(user_only=True):
             rect = self.itemsBoundingRect(items=[item])
             values.append(getattr(rect, mode)())
-        if not values:
+        if len(values) < 2:
             return
         avg = sum(values) / len(values)
 
@@ -87,7 +87,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             rect = self.itemsBoundingRect(items=[item])
             sizes.append(rect.width() * rect.height())
 
-        if not sizes:
+        if len(sizes) < 2:
             return
 
         avg = sum(sizes) / len(sizes)
@@ -108,7 +108,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             rect = self.itemsBoundingRect(items=[item])
             sizes.append((round(rect.width()), round(rect.height())))
 
-        if not sizes:
+        if len(sizes) < 2:
             return
 
         center = self.get_selection_center()
