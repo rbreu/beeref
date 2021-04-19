@@ -99,6 +99,14 @@ actions = [
         'enabled': False,
     },
     {
+        'id': 'arrange_optimal',
+        'text': '&Optimal',
+        'shortcuts': ['Shift+O'],
+        'callback': 'on_action_arrange_optimal',
+        'group': 'active_when_selection',
+        'enabled': False,
+    },
+    {
         'id': 'flip_horizontally',
         'text': 'Flip &Horizontally',
         'shortcuts': ['H'],

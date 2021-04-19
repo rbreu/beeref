@@ -241,3 +241,25 @@ class ResetTransforms(QtGui.QUndoCommand):
             item.setRotation(old['rotation'], anchor=item.center)
             if old['flip'] == -1:
                 item.do_flip(anchor=item.center)
+
+
+class ArrangeItems(QtGui.QUndoCommand):
+
+    def __init__(self, scene, items, positions):
+        super().__init__('Arrange items')
+        self.scene = scene
+        self.items = items
+        self.positions = positions
+
+    def redo(self):
+        self.old_positions = []
+        for item, pos in zip(self.items, self.positions):
+            self.old_positions.append(item.pos())
+            orig_topleft = item.corners_scene_coords[0]
+            rect_topleft = self.scene.itemsBoundingRect(
+                items=[item]).topLeft()
+            item.setPos(pos + orig_topleft - rect_topleft)
+
+    def undo(self):
+        for item, pos in zip(self.items, self.old_positions):
+            item.setPos(pos)

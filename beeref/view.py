@@ -196,6 +196,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def on_action_normalize_size(self):
         self.scene.normalize_size()
 
+    def on_action_arrange_optimal(self):
+        self.scene.arrange_optimal()
+
     def on_action_flip_horizontally(self):
         self.scene.flip_items(vertical=False)
 

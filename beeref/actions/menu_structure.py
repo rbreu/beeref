@@ -74,6 +74,12 @@ menu_structure = [
         ],
     },
     {
+        'menu': '&Arrange',
+        'items': [
+            'arrange_optimal',
+        ],
+    },
+    {
         'menu': '&Help',
         'items': [
             'help',

@@ -395,3 +395,30 @@ class ResetTransformsTestCase(BeeTestCase):
                 assert item2.flip() == 1
                 assert item2.pos().x() == 0
                 assert item2.pos().y() == 0
+
+
+class ArrangeItemsTestCase(BeeTestCase):
+
+    def test_redo_undo(self):
+        scene = BeeGraphicsScene(None)
+        item1 = BeePixmapItem(QtGui.QImage())
+        item1.do_flip()
+        scene.addItem(item1)
+        item2 = BeePixmapItem(QtGui.QImage())
+        item2.setRotation(90)
+        scene.addItem(item2)
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=80):
+                command = commands.ArrangeItems(
+                    scene,
+                    [item1, item2],
+                    [QtCore.QPointF(1, 2), QtCore.QPointF(203, 204)])
+
+                command.redo()
+                assert item1.pos() == QtCore.QPointF(101, 2)
+                assert item2.pos() == QtCore.QPointF(283, 204)
+                command.undo()
+                assert item1.pos() == QtCore.QPointF(0, 0)
+                assert item2.pos() == QtCore.QPointF(0, 0)

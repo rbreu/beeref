@@ -20,6 +20,8 @@ import math
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
 
+import rpack
+
 from beeref import commands
 from beeref.selection import MultiSelectItem, RubberbandItem
 
@@ -98,6 +100,44 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.undo_stack.push(
             commands.NormalizeItems(
                 self.selectedItems(user_only=True), scale_factors))
+
+    def arrange_optimal(self):
+        items = self.selectedItems(user_only=True)
+        sizes = []
+        for item in items:
+            rect = self.itemsBoundingRect(items=[item])
+            sizes.append((round(rect.width()), round(rect.height())))
+
+        if not sizes:
+            return
+
+        center = self.get_selection_center()
+
+        # The minimal area the items need if they could be packed optimally;
+        # we use this as a starting shape for the packing algorithm
+        min_area = sum(map(lambda s: s[0] * s[1], sizes))
+        width = math.ceil(math.sqrt(min_area))
+
+        positions = None
+        while not positions:
+            try:
+                positions = rpack.pack(
+                    sizes, max_width=width, max_height=width)
+            except rpack.PackingImpossibleError:
+                width = math.ceil(width * 1.2)
+
+        if rpack.overlapping(sizes, positions):
+            # Bug in rpack:
+            # https://github.com/Penlect/rectangle-packer/issues/4#issuecomment-822411097
+            positions = [(p[1], p[0]) for p in positions]
+
+        # We want the items to center around the selection's center,
+        # not (0, 0)
+        bounds = rpack.bbox_size(sizes, positions)
+        diff = center - QtCore.QPointF(bounds[0]/2, bounds[1]/2)
+        positions = [QtCore.QPointF(*pos) + diff for pos in positions]
+
+        self.undo_stack.push(commands.ArrangeItems(self, items, positions))
 
     def flip_items(self, vertical=False):
         """Flip selected items."""

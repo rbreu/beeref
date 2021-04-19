@@ -144,6 +144,44 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
     def test_normalize_size_when_no_items(self):
         self.scene.normalize_size()
 
+    def test_arrange_optimal(self):
+        for i in range(4):
+            item = BeePixmapItem(QtGui.QImage())
+            self.scene.addItem(item)
+            item.setSelected(True)
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=80):
+                self.scene.arrange_optimal()
+
+        expected_positions = {(-50, -40), (50, -40), (-50, 40), (50, 40)}
+        actual_positions = {
+            (i.pos().x(), i.pos().y())
+            for i in self.scene.selectedItems(user_only=True)}
+        assert expected_positions == actual_positions
+
+    def test_arrange_optimal_when_rotated(self):
+        for i in range(4):
+            item = BeePixmapItem(QtGui.QImage())
+            self.scene.addItem(item)
+            item.setRotation(90)
+            item.setSelected(True)
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=80):
+                self.scene.arrange_optimal()
+
+        expected_positions = {(-40, -50), (40, -50), (-40, 50), (40, 50)}
+        actual_positions = {
+            (i.pos().x(), i.pos().y())
+            for i in self.scene.selectedItems(user_only=True)}
+        assert expected_positions == actual_positions
+
+    def test_arrange_optimal_when_no_items(self):
+        self.scene.arrange_optimal()
+
     def test_flip_items(self):
         item = BeePixmapItem(QtGui.QImage())
         self.scene.addItem(item)
