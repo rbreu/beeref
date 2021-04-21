@@ -410,7 +410,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         if not self.scene.items():
             logger.debug('No items in scene; ignore zoom')
             return
-        factor = 1.2
+
+        factor = 1 + abs(event.angleDelta().y() / 1000)
         if event.angleDelta().y() > 0:
             if self.get_zoom_size(max) < 10000000:
                 self.scale(factor, factor)
