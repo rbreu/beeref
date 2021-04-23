@@ -98,8 +98,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         return ' '.join(formats)
 
     def get_view_center(self):
-        return QtCore.QPoint(self.size().width() / 2,
-                             self.size().height() / 2)
+        return QtCore.QPoint(round(self.size().width() / 2),
+                             round(self.size().height() / 2))
 
     def clear_scene(self):
         logging.debug('Clearing scene...')
