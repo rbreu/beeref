@@ -107,6 +107,20 @@ actions = [
         'enabled': False,
     },
     {
+        'id': 'arrange_horizontal',
+        'text': '&Horizontal',
+        'callback': 'on_action_arrange_horizontal',
+        'group': 'active_when_selection',
+        'enabled': False,
+    },
+    {
+        'id': 'arrange_vertical',
+        'text': '&Vertical',
+        'callback': 'on_action_arrange_vertical',
+        'group': 'active_when_selection',
+        'enabled': False,
+    },
+    {
         'id': 'flip_horizontally',
         'text': 'Flip &Horizontally',
         'shortcuts': ['H'],

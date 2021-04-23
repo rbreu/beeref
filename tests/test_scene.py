@@ -144,6 +144,68 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
     def test_normalize_size_when_no_items(self):
         self.scene.normalize_size()
 
+    def test_arrange_horizontal(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item1.setPos(10, -100)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        item2.setPos(-10, 40)
+
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=80):
+                self.scene.arrange()
+
+        assert item2.pos() == QtCore.QPointF(-50, -30)
+        assert item1.pos() == QtCore.QPointF(50, -30)
+
+    def test_arrange_vertical(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item1.setPos(10, -100)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        item2.setPos(-10, 40)
+
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=80):
+                self.scene.arrange(vertical=True)
+
+        assert item1.pos() == QtCore.QPointF(0, -70)
+        assert item2.pos() == QtCore.QPointF(0, 10)
+
+    def test_arrange_when_rotated(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item1.setPos(10, -100)
+        item1.setRotation(90)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        item2.setPos(-10, 40)
+        item2.setRotation(90)
+
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=80):
+                self.scene.arrange()
+
+        assert item2.pos() == QtCore.QPointF(-40, -30)
+        assert item1.pos() == QtCore.QPointF(40, -30)
+
+    def test_arrange_when_no_items(self):
+        self.scene.arrange()
+
     def test_arrange_optimal(self):
         for i in range(4):
             item = BeePixmapItem(QtGui.QImage())

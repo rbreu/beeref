@@ -77,6 +77,8 @@ menu_structure = [
         'menu': '&Arrange',
         'items': [
             'arrange_optimal',
+            'arrange_horizontal',
+            'arrange_vertical',
         ],
     },
     {

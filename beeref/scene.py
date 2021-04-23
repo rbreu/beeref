@@ -101,15 +101,55 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             commands.NormalizeItems(
                 self.selectedItems(user_only=True), scale_factors))
 
+    def arrange(self, vertical=False):
+        """Arrange items in a line (horizontally or vertically)."""
+
+        items = self.selectedItems(user_only=True)
+        if len(items) < 2:
+            return
+
+        center = self.get_selection_center()
+        positions = []
+        rects = []
+        for item in items:
+            rects.append({
+                'rect': self.itemsBoundingRect(items=[item]),
+                'item': item})
+
+        if vertical:
+            rects.sort(key=lambda r: r['rect'].topLeft().y())
+            sum_height = sum(map(lambda r: r['rect'].height(), rects))
+            y = round(center.y() - sum_height/2)
+            for rect in rects:
+                positions.append(
+                    QtCore.QPointF(
+                        round(center.x() - rect['rect'].width()/2), y))
+                y += rect['rect'].height()
+
+        else:
+            rects.sort(key=lambda r: r['rect'].topLeft().x())
+            sum_width = sum(map(lambda r: r['rect'].width(), rects))
+            x = round(center.x() - sum_width/2)
+            for rect in rects:
+                positions.append(
+                    QtCore.QPointF(
+                        x, round(center.y() - rect['rect'].height()/2)))
+                x += rect['rect'].width()
+
+        self.undo_stack.push(
+            commands.ArrangeItems(self,
+                                  [r['item'] for r in rects],
+                                  positions))
+
     def arrange_optimal(self):
         items = self.selectedItems(user_only=True)
+        if len(items) < 2:
+            return
+
         sizes = []
         for item in items:
             rect = self.itemsBoundingRect(items=[item])
             sizes.append((round(rect.width()), round(rect.height())))
-
-        if len(sizes) < 2:
-            return
 
         center = self.get_selection_center()
 
