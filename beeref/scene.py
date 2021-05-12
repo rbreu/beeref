@@ -168,7 +168,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         if rpack.overlapping(sizes, positions):
             # Bug in rpack:
-            # https://github.com/Penlect/rectangle-packer/issues/4#issuecomment-822411097
+            # https://github.com/Penlect/rectangle-packer/issues/13
             positions = [(p[1], p[0]) for p in positions]
 
         # We want the items to center around the selection's center,

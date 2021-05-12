@@ -32,7 +32,6 @@ class BeeRefMainWindow(QtWidgets.QWidget):
 
     def __init__(self, app):
         super().__init__()
-        self.setWindowTitle('BeeRef')
         self.setWindowIcon(BeeAssets().logo)
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))

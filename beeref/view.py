@@ -14,6 +14,7 @@
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+import os
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
@@ -44,6 +45,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.undo_stack.setUndoLimit(100)
         self.undo_stack.canRedoChanged.connect(self.on_can_redo_changed)
         self.undo_stack.canUndoChanged.connect(self.on_can_undo_changed)
+        self.undo_stack.cleanChanged.connect(self.on_undo_clean_changed)
 
         self.scene = BeeGraphicsScene(self.undo_stack)
         self.filename = None
@@ -73,6 +75,26 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         # Load file given via command line
         if commandline_args.filename:
             self.open_from_file(commandline_args.filename)
+        self.update_window_title()
+
+    @property
+    def filename(self):
+        return self._filename
+
+    @filename.setter
+    def filename(self, value):
+        self._filename = value
+        self.update_window_title()
+
+    def update_window_title(self):
+        clean = self.undo_stack.isClean()
+        if clean and not self.filename:
+            title = 'BeeRef'
+        else:
+            name = os.path.basename(self.filename or '[Untitled]')
+            clean = '' if clean else '*'
+            title = f'{name}{clean} - BeeRef'
+        self.parent().setWindowTitle(title)
 
     def on_scene_changed(self, region):
         if not self.scene.items():
@@ -88,6 +110,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
     def on_can_undo_changed(self, can_undo):
         self.actiongroup_set_enabled('active_when_can_undo', can_undo)
+
+    def on_undo_clean_changed(self, clean):
+        self.update_window_title()
 
     def on_context_menu(self, point):
         self.context_menu.exec(self.mapToGlobal(point))
@@ -267,6 +292,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def on_saving_finished(self, filename, errors):
         if filename:
             self.filename = filename
+            self.undo_stack.setClean()
         else:
             QtWidgets.QMessageBox.warning(
                 self,

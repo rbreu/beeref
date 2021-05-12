@@ -13,20 +13,36 @@ from beeref.view import BeeGraphicsView
 from .base import BeeTestCase
 
 
-class BeeGraphicsViewTestCase(BeeTestCase):
+class ViewBaseTestCase(BeeTestCase):
 
     def setUp(self):
         config_patcher = patch('beeref.view.commandline_args')
         self.config_mock = config_patcher.start()
         self.config_mock.filename = None
         self.addCleanup(config_patcher.stop)
-        self.view = BeeGraphicsView(self.app)
+        self.parent = QtWidgets.QWidget()
+        self.view = BeeGraphicsView(self.app, self.parent)
+
+    def tearDown(self):
+        del self.view
+
+
+class BeeGraphicsViewTestCase(ViewBaseTestCase):
+
+    def setUp(self):
+        config_patcher = patch('beeref.view.commandline_args')
+        self.config_mock = config_patcher.start()
+        self.config_mock.filename = None
+        self.addCleanup(config_patcher.stop)
+        self.parent = QtWidgets.QWidget()
+        self.view = BeeGraphicsView(self.app, self.parent)
 
     def tearDown(self):
         del self.view
 
     def test_inits_menu(self):
-        view = BeeGraphicsView(self.app)
+        parent = QtWidgets.QWidget()
+        view = BeeGraphicsView(self.app, parent)
         assert isinstance(view.context_menu, QtWidgets.QMenu)
         assert len(view.actions()) > 0
         assert view.bee_actions
@@ -35,14 +51,17 @@ class BeeGraphicsViewTestCase(BeeTestCase):
     @patch('beeref.view.BeeGraphicsView.open_from_file')
     def test_init_without_filename(self, open_file_mock):
         self.config_mock.filename = None
-        view = BeeGraphicsView(self.app)
+        parent = QtWidgets.QWidget()
+        view = BeeGraphicsView(self.app, parent)
         open_file_mock.assert_not_called()
+        assert parent.windowTitle() == 'BeeRef'
         del view
 
     @patch('beeref.view.BeeGraphicsView.open_from_file')
     def test_init_with_filename(self, open_file_mock):
         self.config_mock.filename = 'test.bee'
-        view = BeeGraphicsView(self.app)
+        parent = QtWidgets.QWidget()
+        view = BeeGraphicsView(self.app, parent)
         open_file_mock.assert_called_once_with('test.bee')
         del view
 
@@ -84,6 +103,7 @@ class BeeGraphicsViewTestCase(BeeTestCase):
         assert self.view.transform().isIdentity()
         assert self.view.filename is None
         self.view.undo_stack.clear.assert_called_once_with()
+        assert self.parent.windowTitle() == 'BeeRef'
 
     def test_reset_previous_transform_when_other_item(self):
         item1 = MagicMock()
@@ -159,6 +179,9 @@ class BeeGraphicsViewTestCase(BeeTestCase):
         assert items[0][0].pixmap()
         assert items[0][1] is False
         clear_mock.assert_called_once_with()
+        # FIXME: #1
+        # Can't check signal handling currently
+        # assert self.parent.windowTitle() == 'test1item.bee - BeeRef'
 
     @patch('PyQt6.QtWidgets.QMessageBox.warning')
     def test_open_from_file_when_error(self, warn_mock):
@@ -183,6 +206,9 @@ class BeeGraphicsViewTestCase(BeeTestCase):
         assert len(items) == 1
         assert items[0][0].pixmap()
         assert items[0][1] is False
+        # FIXME: #1
+        # Can't check signal handling currently
+        # assert self.parent.windowTitle() == 'test1item.bee - BeeRef'
 
     @patch('PyQt6.QtWidgets.QFileDialog.getOpenFileName')
     @patch('beeref.view.BeeGraphicsView.on_action_open')
@@ -309,3 +335,30 @@ class BeeGraphicsViewTestCase(BeeTestCase):
         self.view.on_action_paste()
         assert len(self.view.scene.items()) == 0
         clear_mock.assert_not_called()
+
+
+class UpdateWindowTitleTestCase(ViewBaseTestCase):
+
+    @patch('PyQt6.QtGui.QUndoStack.isClean', return_value=True)
+    def test_update_window_title_no_changes_no_filename(self, clear_mock):
+        self.view.filename = None
+        self.view.update_window_title()
+        assert self.parent.windowTitle() == 'BeeRef'
+
+    @patch('PyQt6.QtGui.QUndoStack.isClean', return_value=False)
+    def test_update_window_title_changes_no_filename(self, clear_mock):
+        self.view.filename = None
+        self.view.update_window_title()
+        assert self.parent.windowTitle() == '[Untitled]* - BeeRef'
+
+    @patch('PyQt6.QtGui.QUndoStack.isClean', return_value=True)
+    def test_update_window_title_no_changes_filename(self, clear_mock):
+        self.view.filename = 'test.bee'
+        self.view.update_window_title()
+        assert self.parent.windowTitle() == 'test.bee - BeeRef'
+
+    @patch('PyQt6.QtGui.QUndoStack.isClean', return_value=False)
+    def test_update_window_title_changes_filename(self, clear_mock):
+        self.view.filename = 'test.bee'
+        self.view.update_window_title()
+        assert self.parent.windowTitle() == 'test.bee* - BeeRef'
