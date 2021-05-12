@@ -117,8 +117,8 @@ class SelectableMixin(BaseItemMixin):
     def init_selectable(self):
         self.setAcceptHoverEvents(True)
         self.setFlags(
-            QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsMovable
-            | QtWidgets.QGraphicsItem.GraphicsItemFlags.ItemIsSelectable)
+            QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+            | QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
 
         self.scale_active = False
         self.rotate_active = False
@@ -348,7 +348,7 @@ class SelectableMixin(BaseItemMixin):
         self.scene().views()[0].reset_previous_transform(toggle_item=self)
         if not self.isSelected():
             self.just_selected = True
-        if (event.button() == Qt.MouseButtons.LeftButton
+        if (event.button() == Qt.MouseButton.LeftButton
                 and self.has_selection_handles()):
             for corner in self.corners:
                 # Check if we are in one of the corner's scale areas
@@ -445,8 +445,8 @@ class SelectableMixin(BaseItemMixin):
             event.accept()
             return
         if self.rotate_active:
-            snap = (event.modifiers() == Qt.KeyboardModifiers.ControlModifier
-                    or event.modifiers() == Qt.KeyboardModifiers.ShiftModifier)
+            snap = (event.modifiers() == Qt.KeyboardModifier.ControlModifier
+                    or event.modifiers() == Qt.KeyboardModifier.ShiftModifier)
             delta = self.get_rotate_delta(event.scenePos(), snap)
             for item in self.selection_action_items():
                 item.setRotation(
@@ -562,8 +562,8 @@ class MultiSelectItem(SelectableMixin,
             self.setTransform(QtGui.QTransform.fromScale(1, 1))
 
     def mousePressEvent(self, event):
-        if (event.button() == Qt.MouseButtons.LeftButton
-                and event.modifiers() == Qt.KeyboardModifiers.ControlModifier):
+        if (event.button() == Qt.MouseButton.LeftButton
+                and event.modifiers() == Qt.KeyboardModifier.ControlModifier):
             # We still need to be able to select additional images
             # within/"under" the multi select rectangle, so let ctrl+click
             # events pass through

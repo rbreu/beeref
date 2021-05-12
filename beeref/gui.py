@@ -36,8 +36,8 @@ class WelcomeOverlay(QtWidgets.QWidget):
         label = QtWidgets.QLabel(self)
         label.setStyleSheet("QLabel { color: #cccccc; }")
         label.setText(self.txt)
-        label.setAlignment(Qt.Alignment.AlignVCenter
-                           | Qt.Alignment.AlignCenter)
+        label.setAlignment(Qt.AlignmentFlag.AlignVCenter
+                           | Qt.AlignmentFlag.AlignCenter)
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(label)
         self.setLayout(layout)

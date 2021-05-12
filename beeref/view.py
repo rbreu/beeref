@@ -445,9 +445,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event):
-        if (event.button() == Qt.MouseButtons.MiddleButton
-            or (event.button() == Qt.MouseButtons.LeftButton
-                and event.modifiers() == Qt.KeyboardModifiers.AltModifier)):
+        if (event.button() == Qt.MouseButton.MiddleButton
+            or (event.button() == Qt.MouseButton.LeftButton
+                and event.modifiers() == Qt.KeyboardModifier.AltModifier)):
             if not self.scene.items():
                 logger.debug('No items in scene; ignore pan')
                 return

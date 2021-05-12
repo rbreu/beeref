@@ -57,7 +57,7 @@ class BeePixmapItem(SelectableMixin, QtWidgets.QGraphicsPixmapItem):
         """Convert the pixmap data to PNG bytestring."""
         barray = QtCore.QByteArray()
         buffer = QtCore.QBuffer(barray)
-        buffer.open(QtCore.QIODevice.OpenMode.WriteOnly)
+        buffer.open(QtCore.QIODevice.OpenModeFlag.WriteOnly)
         img = self.pixmap().toImage()
         img.save(buffer, 'PNG')
         return barray.data()

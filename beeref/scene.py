@@ -207,12 +207,12 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         return len(self.selectedItems(user_only=True)) > 1
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButtons.RightButton:
+        if event.button() == Qt.MouseButton.RightButton:
             # Right-click invokes the context menu on the
             # GraphicsView. We don't need it here.
             return
 
-        if event.button() == Qt.MouseButtons.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self.event_start = event.scenePos()
             if self.itemAt(event.scenePos(), self.views()[0].transform()):
                 self.move_active = True

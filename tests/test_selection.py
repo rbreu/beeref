@@ -687,7 +687,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.setSelected(True)
         self.event.pos = MagicMock(return_value=QtCore.QPointF(2, 2))
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(-1, -1))
-        self.event.button = MagicMock(return_value=Qt.MouseButtons.LeftButton)
+        self.event.button = MagicMock(return_value=Qt.MouseButton.LeftButton)
         self.item.mousePressEvent(self.event)
         assert self.item.scale_active is True
         assert self.item.event_start == QtCore.QPointF(-1, -1)
@@ -699,7 +699,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.setSelected(True)
         self.event.pos = MagicMock(return_value=QtCore.QPointF(99, 79))
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(101, 81))
-        self.event.button = MagicMock(return_value=Qt.MouseButtons.LeftButton)
+        self.event.button = MagicMock(return_value=Qt.MouseButton.LeftButton)
         self.item.mousePressEvent(self.event)
         assert self.item.scale_active is True
         assert self.item.event_start == QtCore.QPointF(101, 81)
@@ -711,7 +711,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.item.setSelected(True)
         self.event.pos = MagicMock(return_value=QtCore.QPointF(111, 91))
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(66, 99))
-        self.event.button = MagicMock(return_value=Qt.MouseButtons.LeftButton)
+        self.event.button = MagicMock(return_value=Qt.MouseButton.LeftButton)
         self.item.mousePressEvent(self.event)
         assert self.item.rotate_active is True
         assert self.item.event_anchor == QtCore.QPointF(50, 40)
@@ -720,7 +720,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
     def test_mouse_press_event_flip(self):
         self.item.setSelected(True)
         self.event.pos = MagicMock(return_value=QtCore.QPointF(0, 40))
-        self.event.button = MagicMock(return_value=Qt.MouseButtons.LeftButton)
+        self.event.button = MagicMock(return_value=Qt.MouseButton.LeftButton)
         with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent'):
             self.item.mousePressEvent(self.event)
         assert self.item.flip_active is True
@@ -737,7 +737,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
     def test_mouse_press_event_not_in_handles(self):
         self.item.setSelected(True)
         self.event.pos = MagicMock(return_value=QtCore.QPointF(50, 40))
-        self.event.button = MagicMock(return_value=Qt.MouseButtons.LeftButton)
+        self.event.button = MagicMock(return_value=Qt.MouseButton.LeftButton)
         with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent') as m:
             self.item.mousePressEvent(self.event)
             m.assert_called_once_with(self.event)
@@ -915,9 +915,9 @@ class MultiSelectItemTestCase(BeeTestCase):
         item = MultiSelectItem()
         item.fit_selection_area(QtCore.QRectF(0, 0, 100, 80))
         event = MagicMock(
-            button=MagicMock(return_value=Qt.MouseButtons.LeftButton),
+            button=MagicMock(return_value=Qt.MouseButton.LeftButton),
             modifiers=MagicMock(
-                return_value=Qt.KeyboardModifiers.ControlModifier))
+                return_value=Qt.KeyboardModifier.ControlModifier))
         item.mousePressEvent(event)
         event.ignore.assert_called_once()
         mouse_mock.assert_not_called()
@@ -927,7 +927,7 @@ class MultiSelectItemTestCase(BeeTestCase):
         item = MultiSelectItem()
         item.fit_selection_area(QtCore.QRectF(0, 0, 100, 80))
         event = MagicMock(
-            button=MagicMock(return_value=Qt.MouseButtons.LeftButton))
+            button=MagicMock(return_value=Qt.MouseButton.LeftButton))
         item.mousePressEvent(event)
         event.ignore.assert_not_called()
         mouse_mock.assert_called_once_with(event)

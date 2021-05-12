@@ -341,7 +341,7 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
     @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
     def test_mouse_press_event_when_right_click(self, mouse_mock):
         event = MagicMock(
-            button=MagicMock(return_value=Qt.MouseButtons.RightButton))
+            button=MagicMock(return_value=Qt.MouseButton.RightButton))
         self.scene.mousePressEvent(event)
         event.accept.assert_not_called()
         mouse_mock.assert_not_called()
@@ -351,7 +351,7 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         self.scene.itemAt = MagicMock(
             return_value=BeePixmapItem(QtGui.QImage()))
         event = MagicMock(
-            button=MagicMock(return_value=Qt.MouseButtons.LeftButton),
+            button=MagicMock(return_value=Qt.MouseButton.LeftButton),
             scenePos=MagicMock(return_value=QtCore.QPointF(10, 20)),
         )
         self.scene.mousePressEvent(event)
@@ -367,7 +367,7 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         self.scene.addItem(item)
         self.scene.itemAt = MagicMock(return_value=None)
         event = MagicMock(
-            button=MagicMock(return_value=Qt.MouseButtons.LeftButton),
+            button=MagicMock(return_value=Qt.MouseButton.LeftButton),
             scenePos=MagicMock(return_value=QtCore.QPointF(10, 20)),
         )
         self.scene.mousePressEvent(event)
@@ -381,7 +381,7 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
     def test_mouse_press_event_when_no_items(self, mouse_mock):
         self.scene.itemAt = MagicMock(return_value=None)
         event = MagicMock(
-            button=MagicMock(return_value=Qt.MouseButtons.LeftButton),
+            button=MagicMock(return_value=Qt.MouseButton.LeftButton),
             scenePos=MagicMock(return_value=QtCore.QPointF(10, 20)),
         )
         self.scene.mousePressEvent(event)
