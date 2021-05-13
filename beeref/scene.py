@@ -52,22 +52,21 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         """
 
         values = []
-        for item in self.selectedItems(user_only=True):
+        items = self.selectedItems(user_only=True)
+        for item in items:
             rect = self.itemsBoundingRect(items=[item])
             values.append(getattr(rect, mode)())
         if len(values) < 2:
             return
         avg = sum(values) / len(values)
-
         logger.debug(f'Calculated average {mode} {avg}')
 
         scale_factors = []
-        for item in self.selectedItems(user_only=True):
+        for item in items:
             rect = self.itemsBoundingRect(items=[item])
             scale_factors.append(avg / getattr(rect, mode)())
         self.undo_stack.push(
-            commands.NormalizeItems(
-                self.selectedItems(user_only=True), scale_factors))
+            commands.NormalizeItems(items, scale_factors))
 
     def normalize_height(self):
         """Scale selected images to the same height."""
@@ -84,7 +83,8 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         """
 
         sizes = []
-        for item in self.selectedItems(user_only=True):
+        items = self.selectedItems(user_only=True)
+        for item in items:
             rect = self.itemsBoundingRect(items=[item])
             sizes.append(rect.width() * rect.height())
 
@@ -95,12 +95,11 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         logger.debug(f'Calculated average size {avg}')
 
         scale_factors = []
-        for item in self.selectedItems(user_only=True):
+        for item in items:
             rect = self.itemsBoundingRect(items=[item])
             scale_factors.append(math.sqrt(avg / rect.width() / rect.height()))
         self.undo_stack.push(
-            commands.NormalizeItems(
-                self.selectedItems(user_only=True), scale_factors))
+            commands.NormalizeItems(items, scale_factors))
 
     def arrange(self, vertical=False):
         """Arrange items in a line (horizontally or vertically)."""
