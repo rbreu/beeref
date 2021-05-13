@@ -22,6 +22,7 @@ from PyQt6.QtCore import Qt
 from beeref.actions import ActionsMixin
 from beeref import commands
 from beeref.config import CommandlineArgs
+from beeref import constants
 from beeref import fileio
 from beeref.gui import BeeProgressDialog, WelcomeOverlay, HelpDialog
 from beeref.items import BeePixmapItem
@@ -29,7 +30,7 @@ from beeref.scene import BeeGraphicsScene
 
 
 commandline_args = CommandlineArgs()
-logger = logging.getLogger('BeeRef')
+logger = logging.getLogger(constants.APPNAME)
 
 
 class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
@@ -89,11 +90,11 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def update_window_title(self):
         clean = self.undo_stack.isClean()
         if clean and not self.filename:
-            title = 'BeeRef'
+            title = constants.APPNAME
         else:
             name = os.path.basename(self.filename or '[Untitled]')
             clean = '' if clean else '*'
-            title = f'{name}{clean} - BeeRef'
+            title = f'{name}{clean} - {constants.APPNAME}'
         self.parent().setWindowTitle(title)
 
     def on_scene_changed(self, region):
@@ -284,7 +285,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         filename, f = QtWidgets.QFileDialog.getOpenFileName(
             parent=self,
             caption='Open file',
-            filter='BeeRef File (*.bee)')
+            filter=f'{constants.APPNAME} File (*.bee)')
         if filename:
             self.open_from_file(filename)
             self.filename = filename
@@ -316,7 +317,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         filename, f = QtWidgets.QFileDialog.getSaveFileName(
             parent=self,
             caption='Save file',
-            filter='BeeRef File (*.bee)')
+            filter=f'{constants.APPNAME} File (*.bee)')
         if filename:
             self.do_save(filename, create_new=True)
 

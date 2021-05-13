@@ -23,15 +23,18 @@ from PyQt6 import QtCore, QtWidgets
 
 from beeref.assets import BeeAssets
 from beeref.config import CommandlineArgs
+from beeref import constants
 from beeref.view import BeeGraphicsView
 
-logger = logging.getLogger('BeeRef')
+logger = logging.getLogger(constants.APPNAME)
 
 
 class BeeRefMainWindow(QtWidgets.QWidget):
 
     def __init__(self, app):
         super().__init__()
+        app.setOrganizationName(constants.APPNAME)
+        app.setApplicationName(constants.APPNAME)
         self.setWindowIcon(BeeAssets().logo)
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))

@@ -30,11 +30,12 @@ import sqlite3
 from PyQt6 import QtGui
 
 from beeref.items import BeePixmapItem
+from beeref import constants
 from .errors import BeeFileIOError
 from .schema import SCHEMA
 
 
-logger = logging.getLogger('BeeRef')
+logger = logging.getLogger(constants.APPNAME)
 
 
 def handle_sqlite_errors(func):

@@ -19,8 +19,10 @@ import os.path
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
 
+from beeref import constants
 
-logger = logging.getLogger('BeeRef')
+
+logger = logging.getLogger(constants.APPNAME)
 
 
 class WelcomeOverlay(QtWidgets.QWidget):
@@ -67,7 +69,7 @@ class BeeProgressDialog(QtWidgets.QProgressDialog):
 class HelpDialog(QtWidgets.QDialog):
     def __init__(self, parent):
         super().__init__(parent)
-        self.setWindowTitle('BeeRef Help')
+        self.setWindowTitle(f'{constants.APPNAME} Help')
         docdir = os.path.join(os.path.dirname(__file__),
                               'documentation')
         tabs = QtWidgets.QTabWidget()

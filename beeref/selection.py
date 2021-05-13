@@ -25,11 +25,12 @@ from PyQt6.QtWidgets import QGraphicsItem
 from beeref.assets import BeeAssets
 from beeref import commands
 from beeref.config import CommandlineArgs
+from beeref import constants
 from beeref import utils
 
 
 commandline_args = CommandlineArgs()
-logger = logging.getLogger('BeeRef')
+logger = logging.getLogger(constants.APPNAME)
 SELECT_COLOR = QtGui.QColor(116, 234, 231, 255)
 
 
