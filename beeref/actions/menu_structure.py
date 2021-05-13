@@ -21,6 +21,10 @@ menu_structure = [
         'items': [
             'new_scene',
             'open',
+            {
+                'menu': 'Open &Recent',
+                'items': '_build_recent_files',
+            },
             MENU_SEPARATOR,
             'save',
             'save_as',

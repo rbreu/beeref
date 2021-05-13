@@ -21,7 +21,7 @@ from PyQt6.QtCore import Qt
 
 from beeref.actions import ActionsMixin
 from beeref import commands
-from beeref.config import CommandlineArgs
+from beeref.config import CommandlineArgs, BeeSettings
 from beeref import constants
 from beeref import fileio
 from beeref.gui import BeeProgressDialog, WelcomeOverlay, HelpDialog
@@ -38,6 +38,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def __init__(self, app, parent=None):
         super().__init__(parent)
         self.app = app
+        self.settings = BeeSettings()
         self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(60, 60, 60)))
         self.setTransformationAnchor(
             QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -69,7 +70,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.setContextMenuPolicy(
             Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.on_context_menu)
-        self.context_menu = self.create_menu_and_actions()
+        self.context_menu = self.build_menu_and_actions()
 
         self.welcome_overlay = WelcomeOverlay(self)
 
@@ -86,6 +87,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def filename(self, value):
         self._filename = value
         self.update_window_title()
+        if value:
+            self.settings.update_recent_files(value)
+            self.build_menu_and_actions(self.context_menu)
 
     def update_window_title(self):
         clean = self.undo_stack.isClean()

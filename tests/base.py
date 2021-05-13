@@ -1,7 +1,10 @@
 import os.path
-from unittest import TestCase
+import tempfile
+from unittest import mock, TestCase
 
 from PyQt6 import QtWidgets
+
+from beeref.config import BeeSettings
 
 
 root = os.path.dirname(__file__)
@@ -17,16 +20,24 @@ class BeeTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._settings_dir = tempfile.TemporaryDirectory()
+        settings_dir_patcher = mock.patch(
+            'beeref.config.BeeSettings.get_settings_dir',
+            return_value=cls._settings_dir.name)
+        cls._settings_dir_mock = settings_dir_patcher.start()
         inst = QtWidgets.QApplication.instance()
         cls.app = inst if inst else QtWidgets.QApplication([])
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._settings_dir_mock.stop()
+        cls._settings_dir.cleanup()
+
+    def tearDown(self):
+        BeeSettings().clear()
 
     def queue2list(self, queue):
         qlist = []
         while not queue.empty():
             qlist.append(queue.get())
         return qlist
-
-    # @classmethod
-    # def tearDownClass(cls):
-    #     cls.app.quit()
-    #     del cls.app

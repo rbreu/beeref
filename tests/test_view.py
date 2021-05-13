@@ -23,9 +23,6 @@ class ViewBaseTestCase(BeeTestCase):
         self.parent = QtWidgets.QWidget()
         self.view = BeeGraphicsView(self.app, self.parent)
 
-    def tearDown(self):
-        del self.view
-
 
 class BeeGraphicsViewTestCase(ViewBaseTestCase):
 
@@ -36,9 +33,6 @@ class BeeGraphicsViewTestCase(ViewBaseTestCase):
         self.addCleanup(config_patcher.stop)
         self.parent = QtWidgets.QWidget()
         self.view = BeeGraphicsView(self.app, self.parent)
-
-    def tearDown(self):
-        del self.view
 
     def test_inits_menu(self):
         parent = QtWidgets.QWidget()

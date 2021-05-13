@@ -14,11 +14,15 @@
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
 from collections import defaultdict
+from functools import partial
+import os.path
 
 from PyQt6 import QtGui, QtWidgets
 
 from .actions import actions
 from .menu_structure import menu_structure, MENU_SEPARATOR
+
+from beeref import config
 
 
 class ActionsMixin:
@@ -27,17 +31,25 @@ class ActionsMixin:
         for action in self.bee_actiongroups[group]:
             action.setEnabled(value)
 
-    def create_menu_and_actions(self):
+    def build_menu_and_actions(self, menu=None):
+        """Creates a new menu or rebuilds the given menu."""
+        if not menu:
+            menu = QtWidgets.QMenu(self)
+        self.clear_actions(menu)
         self._create_actions()
-        menu = QtWidgets.QMenu(self)
-        menu = self._create_menu(
-            self.bee_actions, QtWidgets.QMenu(self), menu_structure)
+        menu = self._create_menu(self.bee_actions, menu, menu_structure)
         return menu
 
-    def _create_actions(self):
+    def clear_actions(self, menu):
+        if hasattr(self, 'bee_actions'):
+            for action in self.bee_actions.values():
+                self.removeAction(action)
+        if menu:
+            menu.clear()
         self.bee_actions = {}
         self.bee_actiongroups = defaultdict(list)
 
+    def _create_actions(self):
         for action in actions:
             qaction = QtGui.QAction(action['text'], self)
             if 'shortcuts' in action:
@@ -54,6 +66,8 @@ class ActionsMixin:
                 self.bee_actiongroups[action['group']].append(qaction)
 
     def _create_menu(self, actions, menu, items):
+        if isinstance(items, str):
+            items = getattr(self, items)()
         for item in items:
             if isinstance(item, str):
                 menu.addAction(actions[item])
@@ -64,3 +78,17 @@ class ActionsMixin:
                 self._create_menu(actions, submenu, item['items'])
 
         return menu
+
+    def _build_recent_files(self):
+        files = config.BeeSettings().get_recent_files(existing_only=True)
+        items = []
+        for i, filename in enumerate(files):
+            qaction = QtGui.QAction(os.path.basename(filename), self)
+            key = 0 if i == 9 else i + 1
+            if key < 10:
+                qaction.setShortcuts([f'Ctrl+{key}'])
+            qaction.triggered.connect(partial(self.open_from_file, filename))
+            self.addAction(qaction)
+            self.bee_actions[f'recent_files_{i}'] = qaction
+            items.append(f'recent_files_{i}')
+        return items

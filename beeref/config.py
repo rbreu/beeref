@@ -13,16 +13,30 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
+"""Handling of command line args and Qt settings."""
+
 import argparse
 import logging
+import os.path
+
+from PyQt6 import QtCore
+
+from beeref import constants
 
 
-parser = argparse.ArgumentParser(description='BeeRef referance image viewer')
+logger = logging.getLogger(constants.APPNAME)
+
+
+parser = argparse.ArgumentParser(
+    description=f'{constants.APPNAME} referance image viewer')
 parser.add_argument(
     'filename',
     nargs='?',
     default=None,
     help='Bee file to open')
+parser.add_argument(
+    '--settings-dir',
+    help='settings directory to use instead of default location')
 parser.add_argument(
     '-l', '--loglevel',
     default='INFO',
@@ -50,15 +64,17 @@ class CommandlineArgs:
 
     Checking for unknown arugments is configurable so that it can be
     deliberately enabled from the main() function while ignored for
-    other imports. This is a singleton so that arguments are only
-    parsed once.
+    other imports so that unit tests won't fail.
+
+    This is a singleton so that arguments are only parsed once, unless
+    ``with_check`` is ``True``.
     """
 
     _instance = None
 
     def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super().__new__(cls, *args, **kwargs)
+        if not cls._instance or kwargs.get('with_check'):
+            cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self, with_check=False):
@@ -73,3 +89,49 @@ class CommandlineArgs:
             return super().__getattribute__(name)
         else:
             return getattr(self._args, name)
+
+
+class BeeSettings(QtCore.QSettings):
+
+    def __init__(self):
+        settings_format = QtCore.QSettings.Format.IniFormat
+        settings_scope = QtCore.QSettings.Scope.UserScope
+        settings_dir = self.get_settings_dir()
+        if settings_dir:
+            QtCore.QSettings.setPath(
+                settings_format, settings_scope, settings_dir)
+        super().__init__(
+            settings_format,
+            settings_scope,
+            constants.APPNAME,
+            constants.APPNAME)
+        logger.info(f'Using settings: {self.fileName()}')
+
+    def get_settings_dir(self):  # pragma: no cover
+        args = CommandlineArgs()
+        return args.settings_dir
+
+    def update_recent_files(self, filename):
+        filename = os.path.abspath(filename)
+        values = self.get_recent_files()
+        if filename in values:
+            values.remove(filename)
+        values.insert(0, filename)
+
+        self.beginWriteArray('RecentFiles')
+        for i, filename in enumerate(values[:10]):
+            self.setArrayIndex(i)
+            self.setValue('path', filename)
+        self.endArray()
+
+    def get_recent_files(self, existing_only=False):
+        values = []
+        size = self.beginReadArray('RecentFiles')
+        for i in range(size):
+            self.setArrayIndex(i)
+            values.append(self.value('path'))
+        self.endArray()
+
+        if existing_only:
+            values = [f for f in values if os.path.exists(f)]
+        return values
