@@ -25,8 +25,12 @@ class BeeRefMainWindowTestCase(BeeTestCase):
 class BeeRefMainTestCase(BeeTestCase):
 
     @patch('PyQt6.QtWidgets.QApplication')
-    def test_run(self, app_mock):
+    @patch('beeref.__main__.CommandlineArgs')
+    def test_run(self, args_mock, app_mock):
         app_mock.return_value = self.app
+        args_mock.return_value.filename = None
+        args_mock.return_value.loglevel = 'WARN'
         with patch.object(self.app, 'exec') as exec_mock:
             main()
+            args_mock.assert_called_once_with(with_check=True)
             exec_mock.assert_called_once_with()
