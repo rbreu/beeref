@@ -806,25 +806,25 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         self.scene.on_change(None)
         self.scene.multi_select_item.fit_selection_area.assert_not_called()
 
-    def test_add_delayed_items_unselected(self):
+    def test_add_queued_items_unselected(self):
         item = BeePixmapItem(QtGui.QImage())
         item.setZValue(0.33)
         self.scene.add_item_later(item, selected=False)
-        self.scene.add_delayed_items()
+        self.scene.add_queued_items()
         assert self.scene.items() == [item]
         assert item.isSelected() is False
         assert self.scene.max_z == 0.33
 
-    def test_add_delayed_items_selected(self):
+    def test_add_queued_items_selected(self):
         self.scene.max_z = 0.6
         item = BeePixmapItem(QtGui.QImage())
         item.setZValue(0.33)
         self.scene.add_item_later(item, selected=True)
-        self.scene.add_delayed_items()
+        self.scene.add_queued_items()
         assert self.scene.items() == [item]
         assert item.isSelected() is True
         assert item.zValue() > 0.6
 
-    def test_add_delayed_items_when_no_items(self):
-        self.scene.add_delayed_items()
+    def test_add_queued_items_when_no_items(self):
+        self.scene.add_queued_items()
         assert self.scene.items() == []

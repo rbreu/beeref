@@ -340,11 +340,11 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
                 self.itemsBoundingRect(selection_only=True))
 
     def add_item_later(self, item, selected=False):
-        """Keep an item for adding later via ``add_delayed_items``"""
+        """Keep an item for adding later via ``add_queued_items``"""
 
         self.items_to_add.put((item, selected))
 
-    def add_delayed_items(self):
+    def add_queued_items(self):
         """Adds items added via ``add_items_later``"""
 
         while not self.items_to_add.empty():

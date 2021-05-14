@@ -255,7 +255,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
     def on_items_loaded(self, value):
         logger.debug('On items loded: add queued images')
-        self.scene.add_delayed_items()
+        self.scene.add_queued_items()
 
     def on_loading_finished(self, filename, errors):
         if filename:
@@ -267,7 +267,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
                 ('<p>Problem loading file %s</p>'
                  '<p>Not accessible or not a proper bee file</p>') % filename)
         else:
-            self.scene.add_delayed_items()
+            self.scene.add_queued_items()
             self.on_action_fit_scene()
 
     def open_from_file(self, filename):
@@ -362,7 +362,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
                 self,
                 'Problem loading images',
                 msg + errornames)
-        self.scene.add_delayed_items()
+        self.scene.add_queued_items()
         self.scene.arrange_optimal()
         self.undo_stack.endMacro()
 
