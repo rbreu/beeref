@@ -20,10 +20,8 @@ import os.path
 
 from PyQt6 import QtGui
 
-from beeref import constants
 
-
-logger = logging.getLogger(constants.APPNAME)
+logger = logging.getLogger(__name__)
 
 
 class BeeAssets:

@@ -21,11 +21,10 @@ import logging
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-from beeref import constants
 from beeref.selection import SelectableMixin
 
 
-logger = logging.getLogger(constants.APPNAME)
+logger = logging.getLogger(__name__)
 
 
 class BeePixmapItem(SelectableMixin, QtWidgets.QGraphicsPixmapItem):

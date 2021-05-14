@@ -204,6 +204,11 @@ actions = [
         'callback': 'on_action_help',
     },
     {
+        'id': 'debuglog',
+        'text': 'Show &Debug Log',
+        'callback': 'on_action_debuglog',
+    },
+    {
         'id': 'show_scrollbars',
         'text': 'Show &Scrollbars',
         'checkable': True,

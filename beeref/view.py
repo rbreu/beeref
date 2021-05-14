@@ -24,13 +24,13 @@ from beeref import commands
 from beeref.config import CommandlineArgs, BeeSettings
 from beeref import constants
 from beeref import fileio
-from beeref.gui import BeeProgressDialog, WelcomeOverlay, HelpDialog
+from beeref import gui
 from beeref.items import BeePixmapItem
 from beeref.scene import BeeGraphicsScene
 
 
 commandline_args = CommandlineArgs()
-logger = logging.getLogger(constants.APPNAME)
+logger = logging.getLogger(__name__)
 
 
 class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
@@ -72,7 +72,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.customContextMenuRequested.connect(self.on_context_menu)
         self.context_menu = self.build_menu_and_actions()
 
-        self.welcome_overlay = WelcomeOverlay(self)
+        self.welcome_overlay = gui.WelcomeOverlay(self)
 
         # Load file given via command line
         if commandline_args.filename:
@@ -279,7 +279,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             fileio.load_bee, filename, self.scene)
         self.worker.progress.connect(self.on_items_loaded)
         self.worker.finished.connect(self.on_loading_finished)
-        self.progress = BeeProgressDialog(
+        self.progress = gui.BeeProgressDialog(
             'Loading %s' % filename,
             worker=self.worker,
             parent=self)
@@ -311,7 +311,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.worker = fileio.ThreadedIO(
             fileio.save_bee, filename, self.scene, create_new=create_new)
         self.worker.finished.connect(self.on_saving_finished)
-        self.progress = BeeProgressDialog(
+        self.progress = gui.BeeProgressDialog(
             'Saving %s' % filename,
             worker=self.worker,
             parent=self)
@@ -336,7 +336,10 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.app.quit()
 
     def on_action_help(self):
-        HelpDialog(self)
+        gui.HelpDialog(self)
+
+    def on_action_debuglog(self):
+        gui.DebugLogDialog(self)
 
     def on_insert_images_finished(self, filename, errors):
         if errors:
@@ -369,7 +372,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             self.scene)
         self.worker.progress.connect(self.on_items_loaded)
         self.worker.finished.connect(self.on_insert_images_finished)
-        self.progress = BeeProgressDialog(
+        self.progress = gui.BeeProgressDialog(
             'Loading images',
             worker=self.worker,
             parent=self)

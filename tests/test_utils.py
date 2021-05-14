@@ -1,4 +1,6 @@
+import os.path
 import pytest
+import tempfile
 
 from PyQt6 import QtCore
 
@@ -32,3 +34,22 @@ class GetRectFromPointsTestCase(BeeTestCase):
                           (3.1, 0.5, 3.0)])
 def test_round_to(number, base, expected):
     assert utils.round_to(number, base) == expected
+
+
+class BeeRotatingFileHandler(BeeTestCase):
+
+    def test_creates_new_dir(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            logfile = os.path.join(tmpdir, 'foo', 'bar.log')
+            handler = utils.BeeRotatingFileHandler(logfile)
+            handler.emit('foo')
+            handler.close()
+            assert os.path.exists(logfile)
+
+    def test_uses_existing_dir(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            logfile = os.path.join(tmpdir, 'bar.log')
+            handler = utils.BeeRotatingFileHandler(logfile)
+            handler.emit('foo')
+            handler.close()
+            assert os.path.exists(logfile)

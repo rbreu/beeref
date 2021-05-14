@@ -19,7 +19,6 @@ import logging
 from PyQt6 import QtCore, QtGui
 
 from beeref import commands
-from beeref import constants
 from beeref.fileio.errors import BeeFileIOError
 from beeref.fileio.sql import SQLiteIO
 from beeref.items import BeePixmapItem
@@ -33,7 +32,7 @@ __all__ = [
     'BeeFileIOError',
 ]
 
-logger = logging.getLogger(constants.APPNAME)
+logger = logging.getLogger(__name__)
 
 
 def load_bee(filename, scene, worker=None):

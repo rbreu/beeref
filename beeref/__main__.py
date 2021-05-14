@@ -26,7 +26,7 @@ from beeref.config import CommandlineArgs
 from beeref import constants
 from beeref.view import BeeGraphicsView
 
-logger = logging.getLogger(constants.APPNAME)
+logger = logging.getLogger(__name__)
 
 
 class BeeRefMainWindow(QtWidgets.QWidget):
@@ -66,15 +66,23 @@ def handle_sigint(signum, frame):
     QtWidgets.QApplication.quit()
 
 
+def handle_uncaught_exception(exc_type, value, traceback):
+    logger.critical('Unhandled exception',
+                    exc_info=(exc_type, value, traceback))
+
+
+sys.excepthook = handle_uncaught_exception
+
+
 def main():
-    commandline_args = CommandlineArgs(with_check=True)
-    logging.basicConfig(level=getattr(logging, commandline_args.loglevel))
+    logger.info(f'Starting {constants.APPNAME} version {constants.VERSION}')
+    CommandlineArgs(with_check=True)  # Force checking
     app = QtWidgets.QApplication(sys.argv)
     bee = BeeRefMainWindow(app)  # NOQA:F841
 
     signal.signal(signal.SIGINT, handle_sigint)
     # Repeatedly run python-noop to give the interpreter time to
-    # handel signals
+    # handle signals
     safe_timer(50, lambda: None)
 
     app.exec()

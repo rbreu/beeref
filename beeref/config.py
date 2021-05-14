@@ -17,6 +17,7 @@
 
 import argparse
 import logging
+import logging.config
 import os.path
 
 from PyQt6 import QtCore
@@ -24,7 +25,7 @@ from PyQt6 import QtCore
 from beeref import constants
 
 
-logger = logging.getLogger(constants.APPNAME)
+logger = logging.getLogger(__name__)
 
 
 parser = argparse.ArgumentParser(
@@ -135,3 +136,51 @@ class BeeSettings(QtCore.QSettings):
         if existing_only:
             values = [f for f in values if os.path.exists(f)]
         return values
+
+
+logfile_name = os.path.join(
+    os.path.dirname(BeeSettings().fileName()), f'{constants.APPNAME}.log')
+
+logging_conf = {
+    'version': 1,
+    'formatters': {
+        'verbose': {
+            'format': ('{asctime} {name} {process:d} {thread:d} {message}'),
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+            'level': CommandlineArgs().loglevel,
+        },
+        'file': {
+            'class': 'beeref.utils.BeeRotatingFileHandler',
+            'formatter': 'verbose',
+            'filename': logfile_name,
+            'maxBytes': 1024 * 1000 * 50,
+            'backupCount': 1,
+            'level': 'DEBUG',
+            'delay': True,
+        }
+    },
+    'loggers': {
+        'beeref': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'DEBUG',
+    },
+}
+
+
+logging.config.dictConfig(logging_conf)

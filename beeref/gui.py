@@ -20,9 +20,10 @@ from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
 
 from beeref import constants
+from beeref.config import logfile_name
 
 
-logger = logging.getLogger(constants.APPNAME)
+logger = logging.getLogger(__name__)
 
 
 class WelcomeOverlay(QtWidgets.QWidget):
@@ -78,9 +79,44 @@ class HelpDialog(QtWidgets.QDialog):
         with open(os.path.join(docdir, 'controls.html')) as f:
             controls_txt = f.read()
         controls = QtWidgets.QLabel(controls_txt)
+        controls.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse)
         tabs.addTab(controls, '&Controls')
 
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
         layout.addWidget(tabs)
         self.show()
+
+
+class DebugLogDialog(QtWidgets.QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setWindowTitle(f'{constants.APPNAME} Debug Log')
+        with open(logfile_name) as f:
+            self.log_txt = f.read()
+
+        log = QtWidgets.QLabel(self.log_txt)
+        log.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse)
+        scroll = QtWidgets.QScrollArea(self)
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(log)
+
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(self.reject)
+        copy_button = QtWidgets.QPushButton('Co&py To Clipboard')
+        copy_button.released.connect(self.copy_to_clipboard)
+        buttons.addButton(
+            copy_button, QtWidgets.QDialogButtonBox.ButtonRole.ActionRole)
+
+        layout = QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
+        layout.addWidget(scroll)
+        layout.addWidget(buttons)
+        self.show()
+
+    def copy_to_clipboard(self):
+        clipboard = QtWidgets.QApplication.clipboard()
+        clipboard.setText(self.log_txt)

@@ -13,6 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
+import logging.handlers
+import os
+import os.path
 
 from PyQt6 import QtCore
 
@@ -37,3 +40,11 @@ def round_to(number, base):
     """
 
     return base * round(number / base)
+
+
+class BeeRotatingFileHandler(logging.handlers.RotatingFileHandler):
+    """RotatingFileHandler that creates log directory if necessary."""
+
+    def __init__(self, filename, **kwargs):
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        super().__init__(filename, **kwargs)

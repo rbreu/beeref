@@ -23,11 +23,10 @@ from PyQt6.QtCore import Qt
 import rpack
 
 from beeref import commands
-from beeref import constants
 from beeref.selection import MultiSelectItem, RubberbandItem
 
 
-logger = logging.getLogger(constants.APPNAME)
+logger = logging.getLogger(__name__)
 
 
 class BeeGraphicsScene(QtWidgets.QGraphicsScene):

@@ -284,6 +284,11 @@ class BeeGraphicsViewTestCase(ViewBaseTestCase):
         self.view.on_action_help()
         show_mock.assert_called_once()
 
+    @patch('beeref.gui.DebugLogDialog.show')
+    def test_on_action_debuglog(self, show_mock):
+        self.view.on_action_debuglog()
+        show_mock.assert_called_once()
+
     @patch('beeref.scene.BeeGraphicsScene.clearSelection')
     @patch('PyQt6.QtWidgets.QFileDialog.getOpenFileNames')
     def test_on_action_insert_images(self, dialog_mock, clear_mock):

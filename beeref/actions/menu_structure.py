@@ -89,6 +89,7 @@ menu_structure = [
         'menu': '&Help',
         'items': [
             'help',
+            'debuglog',
         ],
     },
 ]
