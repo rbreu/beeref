@@ -1,3 +1,4 @@
-flake8
-pytest
 coverage
+flake8
+httpretty
+pytest

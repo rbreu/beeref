@@ -254,6 +254,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             self.scene.selectedItems(user_only=True)))
 
     def on_items_loaded(self, value):
+        logger.debug('On items loded: add queued images')
         self.scene.add_delayed_items()
 
     def on_loading_finished(self, filename, errors):
@@ -266,6 +267,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
                 ('<p>Problem loading file %s</p>'
                  '<p>Not accessible or not a proper bee file</p>') % filename)
         else:
+            self.scene.add_delayed_items()
             self.on_action_fit_scene()
 
     def open_from_file(self, filename):
@@ -348,6 +350,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         gui.DebugLogDialog(self)
 
     def on_insert_images_finished(self, filename, errors):
+        logger.debug('Insert images finished')
         if errors:
             errornames = [
                 f'<li>{fn}</li>' for fn in errors]
@@ -359,22 +362,19 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
                 self,
                 'Problem loading images',
                 msg + errornames)
+        self.scene.add_delayed_items()
         self.scene.arrange_optimal()
         self.undo_stack.endMacro()
 
-    def on_action_insert_images(self):
-        formats = self.get_supported_image_formats(QtGui.QImageReader)
-        filenames, f = QtWidgets.QFileDialog.getOpenFileNames(
-            parent=self,
-            caption='Select one ore more images to open',
-            filter=f'Images ({formats})')
-
+    def do_insert_images(self, filenames, pos=None):
+        if not pos:
+            pos = self.get_view_center()
         self.scene.clearSelection()
         self.undo_stack.beginMacro('Insert Images')
         self.worker = fileio.ThreadedIO(
             fileio.load_images,
             filenames,
-            self.mapToScene(self.get_view_center()),
+            self.mapToScene(pos),
             self.scene)
         self.worker.progress.connect(self.on_items_loaded)
         self.worker.finished.connect(self.on_insert_images_finished)
@@ -383,6 +383,14 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             worker=self.worker,
             parent=self)
         self.worker.start()
+
+    def on_action_insert_images(self):
+        formats = self.get_supported_image_formats(QtGui.QImageReader)
+        filenames, f = QtWidgets.QFileDialog.getOpenFileNames(
+            parent=self,
+            caption='Select one ore more images to open',
+            filter=f'Images ({formats})')
+        self.do_insert_images(filenames)
 
     def on_action_paste(self):
         logger.info('Pasting from clipboard...')
@@ -515,12 +523,11 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.welcome_overlay.resize(self.size())
 
     def dragEnterEvent(self, event):
-        logger.debug('Received drag enter event')
-
-        # tbd: always empty???
-        print(event.mimeData().formats())
-        print(dir(event))
-        if event.mimeData().hasImage():
+        mimedata = event.mimeData()
+        logger.debug(f'Drag enter event: {mimedata.formats()}')
+        if mimedata.hasUrls():
+            event.acceptProposedAction()
+        elif mimedata.hasImage():
             event.acceptProposedAction()
         else:
             logger.info('Attempted drop not an image')
@@ -529,6 +536,16 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         event.acceptProposedAction()
 
     def dropEvent(self, event):
-        logger.info('Handling file drop...')
-        print(event.mimeData().formats())
-        # tbd
+        mimedata = event.mimeData()
+        logger.debug(f'Handling file drop: {mimedata.formats()}')
+        pos = QtCore.QPoint(round(event.position().x()),
+                            round(event.position().y()))
+        if mimedata.hasUrls():
+            self.do_insert_images(mimedata.urls(), pos)
+        elif mimedata.hasImage():
+            img = QtGui.QImage(mimedata.imageData())
+            item = BeePixmapItem(img)
+            pos = self.mapToScene(pos)
+            item.set_pos_center(pos)
+            self.undo_stack.push(commands.InsertItems(self.scene, [item]))
+        logger.info('Drop not an image')

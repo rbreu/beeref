@@ -66,9 +66,10 @@ def handle_sigint(signum, frame):
     QtWidgets.QApplication.quit()
 
 
-def handle_uncaught_exception(exc_type, value, traceback):
+def handle_uncaught_exception(exc_type, exc, traceback):
     logger.critical('Unhandled exception',
-                    exc_info=(exc_type, value, traceback))
+                    exc_info=(exc_type, exc, traceback))
+    QtWidgets.QApplication.quit()
 
 
 sys.excepthook = handle_uncaught_exception

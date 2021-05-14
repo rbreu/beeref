@@ -15,11 +15,11 @@
 
 import logging
 
-
-from PyQt6 import QtCore, QtGui
+from PyQt6 import QtCore
 
 from beeref import commands
 from beeref.fileio.errors import BeeFileIOError
+from beeref.fileio.image import load_image
 from beeref.fileio.sql import SQLiteIO
 from beeref.items import BeePixmapItem
 
@@ -59,9 +59,10 @@ def load_images(filenames, pos, scene, worker):
     worker.begin_processing.emit(len(filenames))
     for i, filename in enumerate(filenames):
         logger.info(f'Loading image from file {filename}')
-        img = QtGui.QImage(filename)
+        img, filename = load_image(filename)
         worker.progress.emit(i)
         if img.isNull():
+            logger.info(f'Could not load file {filename}')
             errors.append(filename)
             continue
         item = BeePixmapItem(img, filename)

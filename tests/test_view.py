@@ -364,3 +364,63 @@ class UpdateWindowTitleTestCase(ViewBaseTestCase):
         self.view.filename = 'test.bee'
         self.view.update_window_title()
         assert self.parent.windowTitle() == 'test.bee* - BeeRef'
+
+
+class DragDropTestCase(ViewBaseTestCase):
+
+    def test_drag_enter_when_url(self):
+        url = QtCore.QUrl()
+        url.fromLocalFile(self.imgfilename3x3)
+        mimedata = QtCore.QMimeData()
+        mimedata.setUrls([url])
+        event = MagicMock()
+        event.mimeData.return_value = mimedata
+
+        self.view.dragEnterEvent(event)
+        event.acceptProposedAction.assert_called_once()
+
+    def test_drag_enter_when_img(self):
+        mimedata = QtCore.QMimeData()
+        mimedata.setImageData(QtGui.QImage(self.imgfilename3x3))
+        event = MagicMock()
+        event.mimeData.return_value = mimedata
+
+        self.view.dragEnterEvent(event)
+        event.acceptProposedAction.assert_called_once()
+
+    def test_drag_enter_when_unsupported(self):
+        mimedata = QtCore.QMimeData()
+        event = MagicMock()
+        event.mimeData.return_value = mimedata
+
+        self.view.dragEnterEvent(event)
+        event.acceptProposedAction.assert_not_called()
+
+    def test_drag_move(self):
+        event = MagicMock()
+        self.view.dragMoveEvent(event)
+        event.acceptProposedAction.assert_called_once()
+
+    @patch('beeref.view.BeeGraphicsView.do_insert_images')
+    def test_drop_when_url(self, insert_mock):
+        url = QtCore.QUrl()
+        url.fromLocalFile(self.imgfilename3x3)
+        mimedata = QtCore.QMimeData()
+        mimedata.setUrls([url])
+        event = MagicMock()
+        event.mimeData.return_value = mimedata
+        event.position.return_value = QtCore.QPointF(10, 20)
+
+        self.view.dropEvent(event)
+        insert_mock.assert_called_once_with([url], QtCore.QPoint(10, 20))
+
+    def test_drop_when_img(self):
+        mimedata = QtCore.QMimeData()
+        mimedata.setImageData(QtGui.QImage(self.imgfilename3x3))
+        event = MagicMock()
+        event.mimeData.return_value = mimedata
+        event.position.return_value = QtCore.QPointF(10, 20)
+
+        self.view.dropEvent(event)
+        assert len(self.view.scene.items()) == 1
+        assert self.view.scene.items()[0].isSelected() is True
