@@ -10,7 +10,7 @@ setup(
     description='A simple reference image viewer',
     install_requires=[
         'pyQt6>=6.1',
-        'rectangle-packer>=2.0.0',
+        'rectangle-packer>=2.0.1',
     ],
     packages=['beeref'],
     entry_points={

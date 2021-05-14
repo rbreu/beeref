@@ -165,11 +165,6 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             except rpack.PackingImpossibleError:
                 width = math.ceil(width * 1.2)
 
-        if rpack.overlapping(sizes, positions):
-            # Bug in rpack:
-            # https://github.com/Penlect/rectangle-packer/issues/13
-            positions = [(p[1], p[0]) for p in positions]
-
         # We want the items to center around the selection's center,
         # not (0, 0)
         bounds = rpack.bbox_size(sizes, positions)
