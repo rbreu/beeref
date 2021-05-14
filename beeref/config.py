@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 parser = argparse.ArgumentParser(
-    description=f'{constants.APPNAME} referance image viewer')
+    description=f'{constants.APPNAME_FULL} {constants.VERSION}')
 parser.add_argument(
     'filename',
     nargs='?',

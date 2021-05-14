@@ -204,6 +204,11 @@ actions = [
         'callback': 'on_action_help',
     },
     {
+        'id': 'about',
+        'text': '&About',
+        'callback': 'on_action_about',
+    },
+    {
         'id': 'debuglog',
         'text': 'Show &Debug Log',
         'callback': 'on_action_debuglog',
