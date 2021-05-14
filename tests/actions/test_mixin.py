@@ -1,5 +1,5 @@
 import os.path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from PyQt6 import QtWidgets
 
@@ -9,6 +9,8 @@ from ..base import BeeTestCase
 
 
 class FooWidget(QtWidgets.QWidget, ActionsMixin):
+    settings = MagicMock
+
     def on_foo(self):
         pass
 
@@ -71,7 +73,31 @@ class ActionsMixinTestCase(BeeTestCase):
         qaction = self.widget.actions()[0]
         assert qaction.text() == '&Foo'
         assert qaction.isEnabled() is True
+        assert qaction.isChecked() is False
         assert self.widget.bee_actions['foo'] == qaction
+
+    @patch.object(FooWidget, 'on_foo')
+    @patch.object(FooWidget, 'settings')
+    @patch('PyQt6.QtGui.QAction.toggled')
+    def test_create_actions_checkable_with_settings(
+            self, toggle_mock, settings_mock, callback_mock):
+        self.actions_mock.__iter__.return_value = [{
+            'id': 'foo',
+            'text': '&Foo',
+            'checkable': True,
+            'callback': 'on_foo',
+            'settings': 'foo/bar',
+        }]
+
+        self.menu_mock.__iter__.return_value = ['foo']
+        settings_mock.value.return_value = True
+        self.widget.build_menu_and_actions()
+        settings_mock.value.assert_called_once_with(
+            'foo/bar', False, type=bool)
+        qaction = self.widget.actions()[0]
+        assert qaction.isChecked() is True
+        assert toggle_mock.connect.call_count == 2
+        callback_mock.assert_called_once_with(True)
 
     def test_create_actions_enabled_false(self):
         self.actions_mock.__iter__.return_value = [{

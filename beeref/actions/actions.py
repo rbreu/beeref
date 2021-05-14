@@ -212,6 +212,7 @@ actions = [
         'id': 'show_scrollbars',
         'text': 'Show &Scrollbars',
         'checkable': True,
+        'settings': 'View/show_scrollbars',
         'callback': 'on_action_show_scrollbars',
     },
     {

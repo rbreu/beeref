@@ -49,18 +49,32 @@ class ActionsMixin:
         self.bee_actions = {}
         self.bee_actiongroups = defaultdict(list)
 
+    def _store_checkable_setting(self, key, value):
+        self.settings.setValue(key, value)
+
+    def _init_action_checkable(self, actiondef, qaction):
+        qaction.setCheckable(True)
+        callback = getattr(self, actiondef['callback'])
+        qaction.toggled.connect(callback)
+        settings_key = actiondef.get('settings')
+        if settings_key:
+            val = self.settings.value(settings_key, False, type=bool)
+            qaction.setChecked(val)
+            callback(val)
+            qaction.toggled.connect(
+                partial(self._store_checkable_setting, settings_key))
+
     def _create_actions(self):
         for action in actions:
             qaction = QtGui.QAction(action['text'], self)
             if 'shortcuts' in action:
                 qaction.setShortcuts(action['shortcuts'])
             if action.get('checkable', False):
-                qaction.toggled.connect(getattr(self, action['callback']))
+                self._init_action_checkable(action, qaction)
             else:
                 qaction.triggered.connect(getattr(self, action['callback']))
             self.addAction(qaction)
             qaction.setEnabled(action.get('enabled', True))
-            qaction.setCheckable(action.get('checkable', False))
             self.bee_actions[action['id']] = qaction
             if 'group' in action:
                 self.bee_actiongroups[action['group']].append(qaction)

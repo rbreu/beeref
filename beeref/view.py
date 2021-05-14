@@ -52,10 +52,6 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.scene = BeeGraphicsScene(self.undo_stack)
         self.filename = None
 
-        self.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
         self.setAcceptDrops(True)
 
