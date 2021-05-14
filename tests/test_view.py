@@ -286,7 +286,7 @@ class BeeGraphicsViewTestCase(ViewBaseTestCase):
 
     @patch('beeref.gui.DebugLogDialog.show')
     def test_on_action_debuglog(self, show_mock):
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode='r') as f:
             with patch('beeref.gui.logfile_name', return_value=f.name):
                 self.view.on_action_debuglog()
                 show_mock.assert_called_once()

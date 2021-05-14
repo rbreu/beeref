@@ -40,7 +40,7 @@ class BeeSettingsRecentFilesTestCase(BeeTestCase):
         self.settings.get_recent_files() == []
 
     def test_get_existing_only(self):
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode='r') as f:
             self.settings.update_recent_files('foo.bee')
             self.settings.update_recent_files(f.name)
         self.settings.get_recent_files(existing_only=True) == [f.name]

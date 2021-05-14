@@ -1,3 +1,4 @@
+import logging
 import os.path
 import pytest
 import tempfile
@@ -36,13 +37,14 @@ def test_round_to(number, base, expected):
     assert utils.round_to(number, base) == expected
 
 
-class BeeRotatingFileHandler(BeeTestCase):
+class BeeRotatingFileHandlerTestCase(BeeTestCase):
 
     def test_creates_new_dir(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             logfile = os.path.join(tmpdir, 'foo', 'bar.log')
             handler = utils.BeeRotatingFileHandler(logfile)
-            handler.emit('foo')
+            handler.emit(logging.LogRecord(
+                'foo', logging.INFO, 'bar', 66, 'baz', [], None))
             handler.close()
             assert os.path.exists(logfile)
 
@@ -50,6 +52,7 @@ class BeeRotatingFileHandler(BeeTestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             logfile = os.path.join(tmpdir, 'bar.log')
             handler = utils.BeeRotatingFileHandler(logfile)
-            handler.emit('foo')
+            handler.emit(logging.LogRecord(
+                'foo', logging.INFO, 'bar', 66, 'baz', [], None))
             handler.close()
             assert os.path.exists(logfile)
