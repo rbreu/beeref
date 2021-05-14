@@ -1,12 +1,13 @@
 import os.path
 import tempfile
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, mock_open
 
 from pytest import mark
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
+from beeref.config import logfile_name
 from beeref.items import BeePixmapItem
 from beeref import fileio
 from beeref.view import BeeGraphicsView
@@ -284,13 +285,12 @@ class BeeGraphicsViewTestCase(ViewBaseTestCase):
         self.view.on_action_help()
         show_mock.assert_called_once()
 
-    @mark.skip('fails on github')
     @patch('beeref.gui.DebugLogDialog.show')
     def test_on_action_debuglog(self, show_mock):
-        with tempfile.NamedTemporaryFile() as f:
-            with patch('beeref.gui.logfile_name', return_value=f.name):
-                self.view.on_action_debuglog()
-                show_mock.assert_called_once()
+        with patch('builtins.open', mock_open(read_data='log')) as open_mock:
+            self.view.on_action_debuglog()
+            show_mock.assert_called_once()
+            open_mock.assert_called_once_with(logfile_name)
 
     @patch('beeref.scene.BeeGraphicsScene.clearSelection')
     @patch('PyQt6.QtWidgets.QFileDialog.getOpenFileNames')
