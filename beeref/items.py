@@ -88,3 +88,14 @@ class BeePixmapItem(SelectableMixin, QtWidgets.QGraphicsPixmapItem):
                 and not self.scene().has_selection()
                 and not self.scene().rubberband_active):
             self.bring_to_front()
+
+    def create_copy(self):
+        item = BeePixmapItem(QtGui.QImage(), self.filename)
+        item.setPixmap(self.pixmap())
+        item.setPos(self.pos())
+        item.setZValue(self.zValue())
+        item.setScale(self.scale())
+        item.setRotation(self.rotation())
+        if self.flip() == -1:
+            item.do_flip()
+        return item

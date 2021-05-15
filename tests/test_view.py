@@ -321,10 +321,35 @@ class BeeGraphicsViewTestCase(ViewBaseTestCase):
         assert items[0][1] is True
         clear_mock.assert_called_once_with()
 
+    @patch('PyQt6.QtWidgets.QApplication.clipboard')
+    def test_on_action_copy(self, clipboard_mock):
+        item = BeePixmapItem(QtGui.QImage(self.imgfilename3x3))
+        self.view.scene.addItem(item)
+        item.setSelected(True)
+        mimedata = QtCore.QMimeData()
+        clipboard_mock.return_value.mimeData.return_value = mimedata
+        self.view.on_action_copy()
+
+        clipboard_mock.return_value.setPixmap.assert_called_once()
+        self.view.scene.internal_clipboard == [item]
+        assert mimedata.data('beeref/items') == b'1'
+
     @patch('beeref.scene.BeeGraphicsScene.clearSelection')
     @patch('PyQt6.QtGui.QClipboard.image')
-    def test_on_action_paste(self, clipboard_mock, clear_mock):
+    def test_on_action_paste_external(self, clipboard_mock, clear_mock):
         clipboard_mock.return_value = QtGui.QImage(self.imgfilename3x3)
+        self.view.on_action_paste()
+        assert len(self.view.scene.items()) == 1
+        assert self.view.scene.items()[0].isSelected() is True
+
+    @patch('beeref.scene.BeeGraphicsScene.clearSelection')
+    @patch('PyQt6.QtGui.QClipboard.mimeData')
+    def test_on_action_paste_internal(self, mimedata_mock, clear_mock):
+        mimedata = QtCore.QMimeData()
+        mimedata.setData('beeref/items', QtCore.QByteArray.number(1))
+        mimedata_mock.return_value = mimedata
+        item = BeePixmapItem(QtGui.QImage())
+        self.view.scene.internal_clipboard = [item]
         self.view.on_action_paste()
         assert len(self.view.scene.items()) == 1
         assert self.view.scene.items()[0].isSelected() is True
@@ -337,6 +362,24 @@ class BeeGraphicsViewTestCase(ViewBaseTestCase):
         self.view.on_action_paste()
         assert len(self.view.scene.items()) == 0
         clear_mock.assert_not_called()
+
+    @patch('beeref.view.BeeGraphicsView.on_action_copy')
+    def test_on_action_cut(self, copy_mock):
+        item = BeePixmapItem(QtGui.QImage())
+        self.view.scene.addItem(item)
+        item.setSelected(True)
+        self.view.on_action_cut()
+        copy_mock.assert_called_once_with()
+        assert self.view.scene.items() == []
+        assert self.view.undo_stack.isClean() is False
+
+    def test_on_action_delete_items(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.view.scene.addItem(item)
+        item.setSelected(True)
+        self.view.on_action_delete_items()
+        assert self.view.scene.items() == []
+        assert self.view.undo_stack.isClean() is False
 
 
 class UpdateWindowTitleTestCase(ViewBaseTestCase):

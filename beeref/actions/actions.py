@@ -61,6 +61,20 @@ actions = [
         'enabled': False,
     },
     {
+        'id': 'copy',
+        'text': '&Copy',
+        'shortcuts': ['Ctrl+C'],
+        'callback': 'on_action_copy',
+        'group': 'active_when_selection',
+    },
+    {
+        'id': 'cut',
+        'text': 'Cu&t',
+        'shortcuts': ['Ctrl+X'],
+        'callback': 'on_action_cut',
+        'group': 'active_when_selection',
+    },
+    {
         'id': 'paste',
         'text': '&Paste',
         'shortcuts': ['Ctrl+V'],

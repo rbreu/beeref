@@ -18,16 +18,24 @@ from PyQt6 import QtCore, QtGui
 
 class InsertItems(QtGui.QUndoCommand):
 
-    def __init__(self, scene, items, ignore_first_redo=False):
+    def __init__(self, scene, items, position=None, ignore_first_redo=False):
         super().__init__('Insert items')
         self.scene = scene
         self.items = items
+        self.position = position
+        self.old_positions = []
         self.ignore_first_redo = ignore_first_redo
 
     def redo(self):
         if self.ignore_first_redo:
             self.ignore_first_redo = False
             return
+        if self.position:
+            rect = self.scene.itemsBoundingRect(items=self.items)
+            center = (rect.topLeft() + rect.bottomRight()) / 2
+            for item in self.items:
+                self.old_positions.append(item.pos())
+                item.setPos(item.pos() + self.position - center)
         self.scene.clearSelection()
         for item in self.items:
             self.scene.addItem(item)
@@ -37,6 +45,9 @@ class InsertItems(QtGui.QUndoCommand):
         self.scene.clearSelection()
         for item in self.items:
             self.scene.removeItem(item)
+        if self.position:
+            for item, pos in zip(self.items, self.old_positions):
+                item.setPos(pos)
 
 
 class DeleteItems(QtGui.QUndoCommand):

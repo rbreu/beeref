@@ -121,3 +121,20 @@ class BeePixmapItemTestCase(BeeTestCase):
     def test_selection_action_items(self):
         item = BeePixmapItem(QtGui.QImage())
         assert item.selection_action_items() == [item]
+
+    def test_create_copy(self):
+        item = BeePixmapItem(QtGui.QImage(self.imgfilename3x3), 'foo.png')
+        item.setPos(20, 30)
+        item.setRotation(33)
+        item.do_flip()
+        item.setZValue(0.5)
+        item.setScale(2.2)
+
+        copy = item.create_copy()
+        assert copy.pixmap_to_bytes() == item.pixmap_to_bytes()
+        assert copy.filename == 'foo.png'
+        assert copy.pos() == QtCore.QPointF(20, 30)
+        assert copy.rotation() == 33
+        assert item.flip() == -1
+        assert item.zValue() == 0.5
+        assert item.scale() == 2.2

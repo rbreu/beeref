@@ -42,6 +42,20 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.selectionChanged.connect(self.on_selection_change)
         self.changed.connect(self.on_change)
         self.items_to_add = Queue()
+        self.internal_clipboard = []
+
+    def copy_selection_to_internal_clipboard(self):
+        self.internal_clipboard = []
+        for item in self.selectedItems(user_only=True):
+            self.internal_clipboard.append(item)
+
+    def paste_from_internal_clipboard(self, position):
+        self.set_selected_all_items(False)
+        copies = []
+        for item in self.internal_clipboard:
+            copy = item.create_copy()
+            copies.append(copy)
+        self.undo_stack.push(commands.InsertItems(self, copies, position))
 
     def normalize_width_or_height(self, mode):
         """Scale the selected images to have the same width or height, as

@@ -41,6 +41,8 @@ menu_structure = [
             'select_all',
             'deselect_all',
             MENU_SEPARATOR,
+            'cut',
+            'copy',
             'paste',
             'delete',
         ],

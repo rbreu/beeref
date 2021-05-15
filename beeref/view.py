@@ -213,6 +213,13 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             commands.DeleteItems(
                 self.scene, self.scene.selectedItems(user_only=True)))
 
+    def on_action_cut(self):
+        logger.debug('Cutting items...')
+        self.on_action_copy()
+        self.undo_stack.push(
+            commands.DeleteItems(
+                self.scene, self.scene.selectedItems(user_only=True)))
+
     def on_action_normalize_height(self):
         self.scene.normalize_height()
 
@@ -392,17 +399,42 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             filter=f'Images ({formats})')
         self.do_insert_images(filenames)
 
-    def on_action_paste(self):
-        logger.info('Pasting from clipboard...')
+    def on_action_copy(self):
+        logger.debug('Copying to clipboard...')
         clipboard = QtWidgets.QApplication.clipboard()
+        items = self.scene.selectedItems(user_only=True)
+
+        # At the moment, we can only copy one image to the global
+        # clipboard. (Later, we might create an image of the whole
+        # selection for external copying.)
+        clipboard.setPixmap(items[0].pixmap())
+
+        # However, we can copy all items to the internal clipboard:
+        self.scene.copy_selection_to_internal_clipboard()
+
+        # We set a marker for ourselves in the global clipboard so
+        # that we know to look up the internal clipboard when pasting:
+        clipboard.mimeData().setData(
+            'beeref/items', QtCore.QByteArray.number(len(items)))
+
+    def on_action_paste(self):
+        logger.debug('Pasting from clipboard...')
+        clipboard = QtWidgets.QApplication.clipboard()
+        pos = self.mapToScene(self.mapFromGlobal(self.cursor().pos()))
+
+        # See if we need to look up the internal clipboard:
+        data = clipboard.mimeData().data('beeref/items')
+        logger.debug(f'Custom data in clipboard: {data}')
+        if data:
+            self.scene.paste_from_internal_clipboard(pos)
+            return
+
         img = clipboard.image()
-        if img.isNull():
-            logger.info('No image data in clipboard')
-        else:
+        if not img.isNull():
             item = BeePixmapItem(img)
-            pos = self.mapToScene(self.mapFromGlobal(self.cursor().pos()))
-            item.set_pos_center(pos)
-            self.undo_stack.push(commands.InsertItems(self.scene, [item]))
+            self.undo_stack.push(commands.InsertItems(self.scene, [item], pos))
+            return
+        logger.info('No image data in clipboard')
 
     def on_selection_changed(self):
         logger.debug('Currently selected items: %s',
@@ -546,6 +578,5 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             img = QtGui.QImage(mimedata.imageData())
             item = BeePixmapItem(img)
             pos = self.mapToScene(pos)
-            item.set_pos_center(pos)
-            self.undo_stack.push(commands.InsertItems(self.scene, [item]))
+            self.undo_stack.push(commands.InsertItems(self.scene, [item], pos))
         logger.info('Drop not an image')

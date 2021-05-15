@@ -20,15 +20,47 @@ class InsertItemsTestCase(BeeTestCase):
         item1 = BeePixmapItem(QtGui.QImage())
         scene.addItem(item1)
         item2 = BeePixmapItem(QtGui.QImage())
+        item2.setPos(50, 40)
         command = commands.InsertItems(scene, [item2])
         command.redo()
         assert list(scene.items_for_save()) == [item1, item2]
         assert item1.isSelected() is False
         assert item2.isSelected() is True
+        assert item2.pos() == QtCore.QPointF(50, 40)
         item2.zValue() > 5
         command.undo()
         assert list(scene.items_for_save()) == [item1]
         assert item1.isSelected() is False
+        assert item2.pos() == QtCore.QPointF(50, 40)
+
+    @patch('beeref.scene.BeeGraphicsScene.views')
+    def test_redo_undo_with_position(self, views_mock):
+        scene = BeeGraphicsScene(None)
+        view = MagicMock(get_scale=MagicMock(return_value=1))
+        views_mock.return_value = [view]
+        scene.update_selection = MagicMock()
+
+        item1 = BeePixmapItem(QtGui.QImage())
+        item1.setPos(10, 20)
+        scene.addItem(item1)
+        item2 = BeePixmapItem(QtGui.QImage())
+        item2.setPos(50, 40)
+        scene.addItem(item2)
+
+        with patch('beeref.items.BeePixmapItem.width',
+                   new_callable=PropertyMock, return_value=100):
+            with patch('beeref.items.BeePixmapItem.height',
+                       new_callable=PropertyMock, return_value=80):
+                command = commands.InsertItems(
+                    scene, [item1, item2], QtCore.QPointF(100, 200))
+                command.redo()
+                assert set(scene.items_for_save()) == {item1, item2}
+                assert item1.pos() == QtCore.QPointF(30, 150)
+                assert item2.pos() == QtCore.QPointF(70, 170)
+                command.undo()
+                assert list(scene.items_for_save()) == []
+                assert item1.pos() == QtCore.QPointF(10, 20)
+                assert item2.pos() == QtCore.QPointF(50, 40)
 
     @patch('beeref.scene.BeeGraphicsScene.views')
     def test_ignore_first_redo(self, views_mock):

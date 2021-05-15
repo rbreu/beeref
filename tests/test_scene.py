@@ -828,3 +828,32 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
     def test_add_queued_items_when_no_items(self):
         self.scene.add_queued_items()
         assert self.scene.items() == []
+
+    def test_copy_selection_to_internal_clipboard(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        item3 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item3)
+
+        self.scene.copy_selection_to_internal_clipboard()
+        assert set(self.scene.internal_clipboard) == {item1, item2}
+        assert set(self.scene.items_for_save()) == {item1, item2, item3}
+
+    def test_paste_from_internal_clipboard(self):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        item2.setScale(3.3)
+        self.scene.internal_clipboard = [item2]
+
+        self.scene.paste_from_internal_clipboard(None)
+        assert len(list(self.scene.items_for_save())) == 2
+        assert item1.isSelected() is False
+        new_item = self.scene.selectedItems(user_only=True)[0]
+        assert new_item.scale() == 3.3
+        assert new_item is not item2
