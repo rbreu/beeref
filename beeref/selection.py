@@ -132,8 +132,7 @@ class SelectableMixin(BaseItemMixin):
     def is_action_active(self):
         return any((self.scale_active,
                     self.rotate_active,
-                    self.flip_active,
-                    self.just_selected))
+                    self.flip_active))
 
     def fixed_length_for_viewport(self, value):
         """The interactable areas need to stay the same size on the
