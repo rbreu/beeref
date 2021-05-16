@@ -474,23 +474,25 @@ class SelectableMixin(BaseItemMixin):
         just_selected = self.just_selected
         self.just_selected = False
         if self.scale_active:
-            self.scene().undo_stack.push(
-                commands.ScaleItemsBy(
-                    self.selection_action_items(),
-                    self.get_scale_factor(event),
-                    self.event_anchor,
-                    ignore_first_redo=True))
+            if self.get_scale_factor(event) != 1:
+                self.scene().undo_stack.push(
+                    commands.ScaleItemsBy(
+                        self.selection_action_items(),
+                        self.get_scale_factor(event),
+                        self.event_anchor,
+                        ignore_first_redo=True))
             event.accept()
             self.reset_actions()
             return
         elif self.rotate_active:
             self.scene().on_selection_change()
-            self.scene().undo_stack.push(
-                commands.RotateItemsBy(
-                    self.selection_action_items(),
-                    self.get_rotate_delta(event.scenePos()),
-                    self.event_anchor,
-                    ignore_first_redo=True))
+            if self.get_rotate_delta(event.scenePos()) != 0:
+                self.scene().undo_stack.push(
+                    commands.RotateItemsBy(
+                        self.selection_action_items(),
+                        self.get_rotate_delta(event.scenePos()),
+                        self.event_anchor,
+                        ignore_first_redo=True))
             event.accept()
             self.reset_actions()
             return

@@ -827,6 +827,19 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         assert cmd.ignore_first_redo is True
         assert self.item.scale_active is False
 
+    def test_mouse_release_event_when_scale_action_zero(self):
+        self.event.scenePos = MagicMock(return_value=QtCore.QPointF(20, 90))
+        self.item.scale_active = True
+        self.item.event_direction = QtCore.QPointF(1, 1) / math.sqrt(2)
+        self.item.event_anchor = QtCore.QPointF(100, 80)
+        self.item.event_start = QtCore.QPointF(20, 90)
+        self.item.scale_orig_factor = 1
+        self.scene.undo_stack = MagicMock(push=MagicMock())
+
+        self.item.mouseReleaseEvent(self.event)
+        self.scene.undo_stack.push.assert_not_called()
+        assert self.item.scale_active is False
+
     def test_mouse_release_event_when_rotate_action(self):
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(15, 25))
         self.item.rotate_active = True
@@ -836,6 +849,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         self.scene.undo_stack = MagicMock(push=MagicMock())
 
         self.item.mouseReleaseEvent(self.event)
+        self.scene.undo_stack.push.assert_called_once()
         args = self.scene.undo_stack.push.call_args_list[0][0]
         cmd = args[0]
         isinstance(cmd, commands.RotateItemsBy)
@@ -843,6 +857,18 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         assert cmd.delta == -42
         assert cmd.anchor == QtCore.QPointF(10, 20)
         assert cmd.ignore_first_redo is True
+        assert self.item.rotate_active is False
+
+    def test_mouse_release_event_when_rotate_action_zero(self):
+        self.event.scenePos = MagicMock(return_value=QtCore.QPointF(15, 25))
+        self.item.rotate_active = True
+        self.item.rotate_orig_degrees = 0
+        self.item.rotate_start_angle = -45
+        self.item.event_anchor = QtCore.QPointF(10, 20)
+        self.scene.undo_stack = MagicMock(push=MagicMock())
+
+        self.item.mouseReleaseEvent(self.event)
+        self.scene.undo_stack.push.assert_not_called()
         assert self.item.rotate_active is False
 
     def test_mouse_release_event_when_flip_action(self):
