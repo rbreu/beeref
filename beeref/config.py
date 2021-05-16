@@ -106,7 +106,6 @@ class BeeSettings(QtCore.QSettings):
             settings_scope,
             constants.APPNAME,
             constants.APPNAME)
-        logger.info(f'Using settings: {self.fileName()}')
 
     def get_settings_dir(self):  # pragma: no cover
         args = CommandlineArgs()

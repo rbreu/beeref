@@ -276,6 +276,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         else:
             self.scene.add_queued_items()
             self.on_action_fit_scene()
+        self.progress.deleteLater()
 
     def open_from_file(self, filename):
         logger.info(f'Opening file {filename}')
@@ -309,6 +310,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
                 'Problem saving file',
                 ('<p>Problem saving file %s</p>'
                  '<p>File/directory not accessible</p>') % filename)
+        self.progress.deleteLater()
 
     def do_save(self, filename, create_new):
         if not filename.endswith('.bee'):
@@ -372,6 +374,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.scene.add_queued_items()
         self.scene.arrange_optimal()
         self.undo_stack.endMacro()
+        self.progress.deleteLater()
 
     def do_insert_images(self, filenames, pos=None):
         if not pos:

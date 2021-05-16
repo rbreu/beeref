@@ -22,7 +22,7 @@ import sys
 from PyQt6 import QtCore, QtWidgets
 
 from beeref.assets import BeeAssets
-from beeref.config import CommandlineArgs
+from beeref.config import CommandlineArgs, BeeSettings, logfile_name
 from beeref import constants
 from beeref.view import BeeGraphicsView
 
@@ -77,8 +77,12 @@ sys.excepthook = handle_uncaught_exception
 
 def main():
     logger.info(f'Starting {constants.APPNAME} version {constants.VERSION}')
+    settings = BeeSettings()
+    logger.info(f'Using settings: {settings.fileName()}')
+    logger.info(f'Logging to: {logfile_name}')
     CommandlineArgs(with_check=True)  # Force checking
     app = QtWidgets.QApplication(sys.argv)
+
     bee = BeeRefMainWindow(app)  # NOQA:F841
 
     signal.signal(signal.SIGINT, handle_sigint)
