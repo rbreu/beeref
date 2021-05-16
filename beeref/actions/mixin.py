@@ -38,6 +38,14 @@ class ActionsMixin:
         self.clear_actions(menu)
         self._create_actions()
         menu = self._create_menu(self.bee_actions, menu, menu_structure)
+
+        self.actiongroup_set_enabled(
+            'active_when_can_redo', self.undo_stack.canRedo())
+        self.actiongroup_set_enabled(
+            'active_when_can_undo', self.undo_stack.canUndo())
+        self.actiongroup_set_enabled(
+            'active_when_selection', self.scene.has_selection())
+
         return menu
 
     def clear_actions(self, menu):

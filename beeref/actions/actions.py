@@ -50,7 +50,6 @@ actions = [
         'shortcuts': ['Ctrl+Z'],
         'callback': 'on_action_undo',
         'group': 'active_when_can_undo',
-        'enabled': False,
     },
     {
         'id': 'redo',
@@ -58,7 +57,6 @@ actions = [
         'shortcuts': ['Ctrl+Shift+Z'],
         'callback': 'on_action_redo',
         'group': 'active_when_can_redo',
-        'enabled': False,
     },
     {
         'id': 'copy',
@@ -86,7 +84,6 @@ actions = [
         'shortcuts': ['Del'],
         'callback': 'on_action_delete_items',
         'group': 'active_when_selection',
-        'enabled': False,
     },
     {
         'id': 'normalize_height',
@@ -94,7 +91,6 @@ actions = [
         'shortcuts': ['Shift+H'],
         'callback': 'on_action_normalize_height',
         'group': 'active_when_selection',
-        'enabled': False,
     },
     {
         'id': 'normalize_width',
@@ -102,7 +98,6 @@ actions = [
         'shortcuts': ['Shift+W'],
         'callback': 'on_action_normalize_width',
         'group': 'active_when_selection',
-        'enabled': False,
     },
     {
         'id': 'normalize_size',
@@ -110,7 +105,6 @@ actions = [
         'shortcuts': ['Shift+S'],
         'callback': 'on_action_normalize_size',
         'group': 'active_when_selection',
-        'enabled': False,
     },
     {
         'id': 'arrange_optimal',
@@ -118,21 +112,18 @@ actions = [
         'shortcuts': ['Shift+O'],
         'callback': 'on_action_arrange_optimal',
         'group': 'active_when_selection',
-        'enabled': False,
     },
     {
         'id': 'arrange_horizontal',
         'text': '&Horizontal',
         'callback': 'on_action_arrange_horizontal',
         'group': 'active_when_selection',
-        'enabled': False,
     },
     {
         'id': 'arrange_vertical',
         'text': '&Vertical',
         'callback': 'on_action_arrange_vertical',
         'group': 'active_when_selection',
-        'enabled': False,
     },
     {
         'id': 'flip_horizontally',
@@ -140,7 +131,6 @@ actions = [
         'shortcuts': ['H'],
         'callback': 'on_action_flip_horizontally',
         'group': 'active_when_selection',
-        'enabled': False,
     },
     {
         'id': 'flip_vertically',
@@ -148,7 +138,6 @@ actions = [
         'shortcuts': ['V'],
         'callback': 'on_action_flip_vertically',
         'group': 'active_when_selection',
-        'enabled': False,
     },
     {
         'id': 'new_scene',
@@ -168,28 +157,24 @@ actions = [
         'shortcuts': ['2'],
         'callback': 'on_action_fit_selection',
         'group': 'active_when_selection',
-        'enabled': False,
     },
     {
         'id': 'reset_scale',
         'text': 'Reset &Scale',
         'callback': 'on_action_reset_scale',
         'group': 'active_when_selection',
-        'enabled': False,
     },
     {
         'id': 'reset_rotation',
         'text': 'Reset &Rotation',
         'callback': 'on_action_reset_rotation',
         'group': 'active_when_selection',
-        'enabled': False,
     },
     {
         'id': 'reset_flip',
         'text': 'Reset &Flip',
         'callback': 'on_action_reset_flip',
         'group': 'active_when_selection',
-        'enabled': False,
     },
     {
         'id': 'reset_transforms',
@@ -197,7 +182,6 @@ actions = [
         'shortcuts': ['R'],
         'callback': 'on_action_reset_transforms',
         'group': 'active_when_selection',
-        'enabled': False,
     },
     {
         'id': 'select_all',

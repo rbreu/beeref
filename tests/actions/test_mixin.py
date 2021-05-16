@@ -9,7 +9,9 @@ from ..base import BeeTestCase
 
 
 class FooWidget(QtWidgets.QWidget, ActionsMixin):
-    settings = MagicMock
+    settings = MagicMock()
+    undo_stack = MagicMock()
+    scene = MagicMock()
 
     def on_foo(self):
         pass
@@ -120,8 +122,8 @@ class ActionsMixinTestCase(BeeTestCase):
         }]
         self.menu_mock.__iter__.return_value = ['foo']
         self.widget.build_menu_and_actions()
+        assert len(self.widget.actions()) == 1
         qaction = self.widget.actions()[0]
-        assert len(self.widget.bee_actiongroups) == 1
         assert self.widget.bee_actiongroups['bar'] == [qaction]
 
     def test_build_menu_and_actions_with_actions(self):
@@ -184,6 +186,38 @@ class ActionsMixinTestCase(BeeTestCase):
         assert self.widget.bee_actions['foo'].isEnabled() is False
         assert self.widget.bee_actions['bar'].isEnabled() is True
 
+    def test_build_menu_and_actions_enables_actiongroups(self):
+        self.widget.scene.has_selection.return_value = True
+        self.actions_mock.__iter__.return_value = [
+            {
+                'id': 'foo',
+                'text': '&Foo',
+                'callback': 'on_foo',
+                'group': 'active_when_selection',
+            },
+        ]
+
+        self.menu_mock.__iter__.return_value = ['foo']
+        self.widget.build_menu_and_actions()
+        qaction = self.widget.actions()[0]
+        assert qaction.isEnabled() is True
+
+    def test_build_menu_and_actions_disables_actiongroups(self):
+        self.widget.scene.has_selection.return_value = False
+        self.actions_mock.__iter__.return_value = [
+            {
+                'id': 'foo',
+                'text': '&Foo',
+                'callback': 'on_foo',
+                'group': 'active_when_selection',
+            },
+        ]
+
+        self.menu_mock.__iter__.return_value = ['foo']
+        self.widget.build_menu_and_actions()
+        qaction = self.widget.actions()[0]
+        assert qaction.isEnabled() is False
+
     @patch('beeref.config.BeeSettings.get_recent_files')
     @patch('PyQt6.QtGui.QAction.triggered')
     def test_recent_files(self, triggered_mock, files_mock):
@@ -240,7 +274,7 @@ class ActionsMixinTestCase(BeeTestCase):
         qaction = self.widget.actions()[0]
         assert qaction.text() == '&Bar'
         assert self.widget.bee_actions == {'bar': qaction}
-        assert self.widget.bee_actiongroups == {'bar': [qaction]}
+        assert self.widget.bee_actiongroups['bar'] == [qaction]
 
     def test_clear_actions(self):
         self.actions_mock.__iter__.return_value = [{
