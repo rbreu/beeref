@@ -23,6 +23,13 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         views_patcher.start()
         self.addCleanup(views_patcher.stop)
 
+    def test_add_remove_item(self):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        assert self.scene.items() == [item]
+        self.scene.removeItem(item)
+        assert self.scene.items() == []
+
     def test_normalize_height(self):
         item1 = BeePixmapItem(QtGui.QImage())
         self.scene.addItem(item1)
@@ -572,6 +579,42 @@ class BeeGraphicsSceneTestCase(BeeTestCase):
         event = MagicMock(
             scenePos=MagicMock(return_value=QtCore.QPoint(10, 20)))
         self.scene.move_active = True
+        self.scene.undo_stack = MagicMock(push=MagicMock())
+
+        self.scene.mouseReleaseEvent(event)
+        self.scene.undo_stack.push.assert_not_called()
+        mouse_mock.assert_called_once_with(event)
+        assert self.scene.move_active is False
+
+    @patch('PyQt6.QtWidgets.QGraphicsScene.mouseReleaseEvent')
+    def test_mouse_release_event_when_item_action_active(self, mouse_mock):
+        item = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item)
+        item.setSelected(True)
+        event = MagicMock(
+            scenePos=MagicMock(return_value=QtCore.QPoint(10, 20)))
+        self.scene.move_active = True
+        item.scale_active = True
+        self.scene.undo_stack = MagicMock(push=MagicMock())
+
+        self.scene.mouseReleaseEvent(event)
+        self.scene.undo_stack.push.assert_not_called()
+        mouse_mock.assert_called_once_with(event)
+        assert self.scene.move_active is False
+
+    @patch('PyQt6.QtWidgets.QGraphicsScene.mouseReleaseEvent')
+    def test_mouse_release_event_when_multiselect_action_active(
+            self, mouse_mock):
+        item1 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item1)
+        item1.setSelected(True)
+        item2 = BeePixmapItem(QtGui.QImage())
+        self.scene.addItem(item2)
+        item2.setSelected(True)
+        event = MagicMock(
+            scenePos=MagicMock(return_value=QtCore.QPoint(10, 20)))
+        self.scene.move_active = True
+        self.scene.multi_select_item.scale_active = True
         self.scene.undo_stack = MagicMock(push=MagicMock())
 
         self.scene.mouseReleaseEvent(event)

@@ -44,6 +44,14 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.items_to_add = Queue()
         self.internal_clipboard = []
 
+    def addItem(self, item):
+        logger.debug(f'Adding item {item}')
+        super().addItem(item)
+
+    def removeItem(self, item):
+        logger.debug(f'Removing item {item}')
+        super().removeItem(item)
+
     def copy_selection_to_internal_clipboard(self):
         self.internal_clipboard = []
         for item in self.selectedItems(user_only=True):
@@ -258,7 +266,10 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
                 logger.debug('Ending rubberband selection')
                 self.removeItem(self.rubberband_item)
             self.rubberband_active = False
-        if self.move_active and self.has_selection():
+        if (self.move_active
+                and self.has_selection()
+                and not self.multi_select_item.is_action_active()
+                and not self.selectedItems()[0].is_action_active()):
             delta = event.scenePos() - self.event_start
             if not delta.isNull():
                 self.undo_stack.push(
@@ -339,11 +350,9 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             self.multi_select_item.fit_selection_area(
                 self.itemsBoundingRect(selection_only=True))
         if self.has_multi_selection() and not self.multi_select_item.scene():
-            logger.debug('Adding multi select outline')
             self.addItem(self.multi_select_item)
             self.multi_select_item.bring_to_front()
         if not self.has_multi_selection() and self.multi_select_item.scene():
-            logger.debug('Removing multi select outline')
             self.removeItem(self.multi_select_item)
 
     def on_change(self, region):

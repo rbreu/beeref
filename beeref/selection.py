@@ -120,11 +120,20 @@ class SelectableMixin(BaseItemMixin):
             QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable
             | QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
 
+        self.viewport_scale = 1
+        self.reset_actions()
+
+    def reset_actions(self):
         self.scale_active = False
         self.rotate_active = False
         self.flip_active = False
         self.just_selected = False
-        self.viewport_scale = 1
+
+    def is_action_active(self):
+        return any((self.scale_active,
+                    self.rotate_active,
+                    self.flip_active,
+                    self.just_selected))
 
     def fixed_length_for_viewport(self, value):
         """The interactable areas need to stay the same size on the
@@ -379,6 +388,8 @@ class SelectableMixin(BaseItemMixin):
                 for edge in self.get_flip_bounds():
                     if edge['rect'].contains(event.pos()):
                         self.flip_active = True
+                        event.accept()
+                        return
 
         super().mousePressEvent(event)
 
@@ -470,8 +481,8 @@ class SelectableMixin(BaseItemMixin):
                     self.get_scale_factor(event),
                     self.event_anchor,
                     ignore_first_redo=True))
-            self.scale_active = False
             event.accept()
+            self.reset_actions()
             return
         elif self.rotate_active:
             self.scene().on_selection_change()
@@ -481,10 +492,10 @@ class SelectableMixin(BaseItemMixin):
                     self.get_rotate_delta(event.scenePos()),
                     self.event_anchor,
                     ignore_first_redo=True))
-            self.rotate_active = False
             event.accept()
+            self.reset_actions()
             return
-        elif not just_selected:
+        elif self.flip_active and not just_selected:
             for edge in self.get_flip_bounds():
                 if edge['rect'].contains(event.pos()):
                     self.scene().undo_stack.push(
@@ -493,8 +504,9 @@ class SelectableMixin(BaseItemMixin):
                             self.center_scene_coords,
                             vertical=self.get_edge_flips_v(edge)))
                     event.accept()
-                    self.flip_active = False
+                    self.reset_actions()
                     return
+        self.reset_actions()
         super().mouseReleaseEvent(event)
 
     def on_view_scale_change(self):
@@ -514,6 +526,7 @@ class MultiSelectItem(SelectableMixin,
 
     def __init__(self):
         super().__init__()
+        logger.debug(f'Initialized {self}')
         self.init_selectable()
 
     def __str__(self):

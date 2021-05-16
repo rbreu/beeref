@@ -167,6 +167,23 @@ class SelectableMixinBaseTestCase(BeeTestCase):
 
 class SelectableMixinTestCase(SelectableMixinBaseTestCase):
 
+    def test_init_selectable(self):
+        item = BeePixmapItem(QtGui.QImage())
+        assert item.viewport_scale == 1
+        assert item.scale_active is False
+        assert item.rotate_active is False
+        assert item.flip_active is False
+        assert item.just_selected is False
+
+    def test_is_action_active_when_no_action(self):
+        item = BeePixmapItem(QtGui.QImage())
+        assert item.is_action_active() is False
+
+    def test_is_action_active_when_action(self):
+        item = BeePixmapItem(QtGui.QImage())
+        item.scale_active = True
+        assert item.is_action_active() is True
+
     def test_on_view_scale_change(self):
         item = BeePixmapItem(QtGui.QImage())
         with patch('beeref.items.BeePixmapItem.prepareGeometryChange') as m:
@@ -782,11 +799,13 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
             m.assert_not_called()
 
     def test_mouse_release_event_when_no_action(self):
+        self.item.flip_active = True
         self.event.pos = MagicMock(return_value=QtCore.QPointF(-100, -100))
         with patch('PyQt6.QtWidgets.QGraphicsPixmapItem'
                    '.mouseReleaseEvent') as m:
             self.item.mouseReleaseEvent(self.event)
             m.assert_called_once_with(self.event)
+            self.item.flip_active is False
 
     def test_mouse_release_event_when_scale_action(self):
         self.event.scenePos = MagicMock(return_value=QtCore.QPointF(20, 90))
@@ -838,6 +857,7 @@ class SelectableMixinMouseEventsTestCase(SelectableMixinBaseTestCase):
         assert cmd.items == [self.item]
         assert cmd.anchor == QtCore.QPointF(50, 40)
         assert cmd.vertical is False
+        assert self.item.flip_active is False
 
 
 class MultiSelectItemTestCase(BeeTestCase):
