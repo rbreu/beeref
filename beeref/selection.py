@@ -353,6 +353,7 @@ class SelectableMixin(BaseItemMixin):
             self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def mousePressEvent(self, event):
+        self.event_start = event.scenePos()
         self.scene().views()[0].reset_previous_transform(toggle_item=self)
         if not self.isSelected():
             self.just_selected = True
@@ -363,7 +364,6 @@ class SelectableMixin(BaseItemMixin):
                 if self.get_scale_bounds(corner).contains(event.pos()):
                     # Start scale action for this corner
                     self.scale_active = True
-                    self.event_start = event.scenePos()
                     self.event_direction = self.get_direction_from_center(
                         event.scenePos())
                     self.event_anchor = self.mapToScene(
@@ -445,7 +445,8 @@ class SelectableMixin(BaseItemMixin):
             return edge['flip_v']
 
     def mouseMoveEvent(self, event):
-        self.scene().views()[0].reset_previous_transform()
+        if (event.scenePos() - self.event_start).manhattanLength() > 5:
+            self.scene().views()[0].reset_previous_transform()
 
         if self.scale_active:
             factor = self.get_scale_factor(event)
