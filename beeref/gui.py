@@ -81,7 +81,10 @@ class HelpDialog(QtWidgets.QDialog):
         controls = QtWidgets.QLabel(controls_txt)
         controls.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse)
-        tabs.addTab(controls, '&Controls')
+        scroll = QtWidgets.QScrollArea(self)
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(controls)
+        tabs.addTab(scroll, '&Controls')
 
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
