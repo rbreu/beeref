@@ -40,7 +40,7 @@ actions = [
     },
     {
         'id': 'insert_images',
-        'text': '&Insert Images...',
+        'text': '&Images...',
         'shortcuts': ['Ctrl+I'],
         'callback': 'on_action_insert_images',
     },
@@ -217,6 +217,13 @@ actions = [
         'checkable': True,
         'settings': 'View/show_scrollbars',
         'callback': 'on_action_show_scrollbars',
+    },
+    {
+        'id': 'show_menubar',
+        'text': 'Show &Menu Bar',
+        'checkable': True,
+        'settings': 'View/show_menubar',
+        'callback': 'on_action_show_menubar',
     },
     {
         'id': 'fullscreen',

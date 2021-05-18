@@ -31,31 +31,27 @@ class ActionsMixin:
         for action in self.bee_actiongroups[group]:
             action.setEnabled(value)
 
-    def build_menu_and_actions(self, menu=None):
+    def build_menu_and_actions(self):
         """Creates a new menu or rebuilds the given menu."""
-        if not menu:
-            menu = QtWidgets.QMenu(self)
-        self.clear_actions(menu)
-        self._create_actions()
-        menu = self._create_menu(self.bee_actions, menu, menu_structure)
-
-        self.actiongroup_set_enabled(
-            'active_when_can_redo', self.undo_stack.canRedo())
-        self.actiongroup_set_enabled(
-            'active_when_can_undo', self.undo_stack.canUndo())
-        self.actiongroup_set_enabled(
-            'active_when_selection', self.scene.has_selection())
-
-        return menu
-
-    def clear_actions(self, menu):
-        if hasattr(self, 'bee_actions'):
-            for action in self.bee_actions.values():
-                self.removeAction(action)
-        if menu:
-            menu.clear()
+        self.context_menu = QtWidgets.QMenu(self)
+        self.toplevel_menus = []
         self.bee_actions = {}
         self.bee_actiongroups = defaultdict(list)
+        self._post_create_functions = []
+        self._create_actions()
+        self._create_menu(self.bee_actions, self.context_menu, menu_structure)
+        for func, arg in self._post_create_functions:
+            func(arg)
+        del self._post_create_functions
+
+    def update_menu_and_actions(self):
+        self._build_recent_files()
+
+    def create_menubar(self):
+        menu_bar = QtWidgets.QMenuBar()
+        for menu in self.toplevel_menus:
+            menu_bar.addMenu(menu)
+        return menu_bar
 
     def _store_checkable_setting(self, key, value):
         self.settings.setValue(key, value)
@@ -68,7 +64,7 @@ class ActionsMixin:
         if settings_key:
             val = self.settings.value(settings_key, False, type=bool)
             qaction.setChecked(val)
-            callback(val)
+            self._post_create_functions.append((callback, val))
             qaction.toggled.connect(
                 partial(self._store_checkable_setting, settings_key))
 
@@ -86,10 +82,12 @@ class ActionsMixin:
             self.bee_actions[action['id']] = qaction
             if 'group' in action:
                 self.bee_actiongroups[action['group']].append(qaction)
+                qaction.setEnabled(False)
 
     def _create_menu(self, actions, menu, items):
         if isinstance(items, str):
-            items = getattr(self, items)()
+            getattr(self, items)(menu)
+            return menu
         for item in items:
             if isinstance(item, str):
                 menu.addAction(actions[item])
@@ -97,11 +95,17 @@ class ActionsMixin:
                 menu.addSeparator()
             if isinstance(item, dict):
                 submenu = menu.addMenu(item['menu'])
+                if menu == self.context_menu:
+                    self.toplevel_menus.append(submenu)
                 self._create_menu(actions, submenu, item['items'])
 
         return menu
 
-    def _build_recent_files(self):
+    def _build_recent_files(self, menu=None):
+        if menu:
+            self._recent_files_submenu = menu
+        self._clear_recent_files()
+
         files = config.BeeSettings().get_recent_files(existing_only=True)
         items = []
         for i, filename in enumerate(files):
@@ -111,6 +115,14 @@ class ActionsMixin:
                 qaction.setShortcuts([f'Ctrl+{key}'])
             qaction.triggered.connect(partial(self.open_from_file, filename))
             self.addAction(qaction)
+            self._recent_files_submenu.addAction(qaction)
             self.bee_actions[f'recent_files_{i}'] = qaction
             items.append(f'recent_files_{i}')
-        return items
+
+    def _clear_recent_files(self):
+        for action in self._recent_files_submenu.actions():
+            self.removeAction(action)
+        self._recent_files_submenu.clear()
+        for key in list(self.bee_actions.keys()):
+            if key.startswith('recent_files_'):
+                self.bee_actions.pop(key)

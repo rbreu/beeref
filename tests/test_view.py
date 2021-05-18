@@ -21,7 +21,7 @@ class ViewBaseTestCase(BeeTestCase):
         self.config_mock = config_patcher.start()
         self.config_mock.filename = None
         self.addCleanup(config_patcher.stop)
-        self.parent = QtWidgets.QWidget()
+        self.parent = QtWidgets.QMainWindow()
         self.view = BeeGraphicsView(self.app, self.parent)
 
 
@@ -32,11 +32,11 @@ class BeeGraphicsViewTestCase(ViewBaseTestCase):
         self.config_mock = config_patcher.start()
         self.config_mock.filename = None
         self.addCleanup(config_patcher.stop)
-        self.parent = QtWidgets.QWidget()
+        self.parent = QtWidgets.QMainWindow()
         self.view = BeeGraphicsView(self.app, self.parent)
 
     def test_inits_menu(self):
-        parent = QtWidgets.QWidget()
+        parent = QtWidgets.QMainWindow()
         view = BeeGraphicsView(self.app, parent)
         assert isinstance(view.context_menu, QtWidgets.QMenu)
         assert len(view.actions()) > 0
@@ -46,7 +46,7 @@ class BeeGraphicsViewTestCase(ViewBaseTestCase):
     @patch('beeref.view.BeeGraphicsView.open_from_file')
     def test_init_without_filename(self, open_file_mock):
         self.config_mock.filename = None
-        parent = QtWidgets.QWidget()
+        parent = QtWidgets.QMainWindow()
         view = BeeGraphicsView(self.app, parent)
         open_file_mock.assert_not_called()
         assert parent.windowTitle() == 'BeeRef'
@@ -55,7 +55,7 @@ class BeeGraphicsViewTestCase(ViewBaseTestCase):
     @patch('beeref.view.BeeGraphicsView.open_from_file')
     def test_init_with_filename(self, open_file_mock):
         self.config_mock.filename = 'test.bee'
-        parent = QtWidgets.QWidget()
+        parent = QtWidgets.QMainWindow()
         view = BeeGraphicsView(self.app, parent)
         open_file_mock.assert_called_once_with('test.bee')
         del view
@@ -372,6 +372,13 @@ class BeeGraphicsViewTestCase(ViewBaseTestCase):
         copy_mock.assert_called_once_with()
         assert self.view.scene.items() == []
         assert self.view.undo_stack.isClean() is False
+
+    def test_on_action_show_menubar(self):
+        self.view.toplevel_menus = [QtWidgets.QMenu('Foo')]
+        self.view.on_action_show_menubar(True)
+        assert len(self.view.parent().menuBar().actions()) == 1
+        self.view.on_action_show_menubar(False)
+        assert self.view.parent().menuBar().actions() == []
 
     def test_on_action_delete_items(self):
         item = BeePixmapItem(QtGui.QImage())

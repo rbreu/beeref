@@ -63,10 +63,10 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.setScene(self.scene)
 
         # Context menu and actions
+        self.build_menu_and_actions()
         self.setContextMenuPolicy(
             Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.on_context_menu)
-        self.context_menu = self.build_menu_and_actions()
 
         self.welcome_overlay = gui.WelcomeOverlay(self)
 
@@ -85,7 +85,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.update_window_title()
         if value:
             self.settings.update_recent_files(value)
-            self.build_menu_and_actions(self.context_menu)
+            self.update_menu_and_actions()
 
     def update_window_title(self):
         clean = self.undo_stack.isClean()
@@ -176,7 +176,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
     def on_action_always_on_top(self, checked):
         self.parent().setWindowFlag(
-            Qt.WindowFlags.WindowStaysOnTopHint, on=checked)
+            Qt.WindowType.WindowStaysOnTopHint, on=checked)
         self.parent().destroy()
         self.parent().create()
         self.parent().show()
@@ -192,6 +192,12 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
                 Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
             self.setVerticalScrollBarPolicy(
                 Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+    def on_action_show_menubar(self, checked):
+        if checked:
+            self.parent().setMenuBar(self.create_menubar())
+        else:
+            self.parent().setMenuBar(None)
 
     def on_action_undo(self):
         logger.debug('Undo: %s' % self.undo_stack.undoText())

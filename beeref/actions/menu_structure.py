@@ -56,9 +56,15 @@ menu_structure = [
             'fullscreen',
             'always_on_top',
             'show_scrollbars',
+            'show_menubar',
         ],
     },
-    'insert_images',
+    {
+        'menu': '&Insert',
+        'items': [
+            'insert_images',
+        ],
+    },
     {
         'menu': '&Transform',
         'items': [

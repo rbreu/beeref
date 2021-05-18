@@ -29,19 +29,16 @@ from beeref.view import BeeGraphicsView
 logger = logging.getLogger(__name__)
 
 
-class BeeRefMainWindow(QtWidgets.QWidget):
+class BeeRefMainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, app):
         super().__init__()
         app.setOrganizationName(constants.APPNAME)
         app.setApplicationName(constants.APPNAME)
         self.setWindowIcon(BeeAssets().logo)
-        layout = QtWidgets.QVBoxLayout()
-        layout.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
-        self.setLayout(layout)
         self.resize(500, 300)
         self.view = BeeGraphicsView(app, self)
-        layout.addWidget(self.view)
+        self.setCentralWidget(self.view)
         self.show()
 
     def __del__(self):
