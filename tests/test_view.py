@@ -415,41 +415,236 @@ class UpdateWindowTitleTestCase(ViewBaseTestCase):
         self.view.update_window_title()
         assert self.parent.windowTitle() == 'test.bee* - BeeRef'
 
+    @patch('beeref.view.BeeGraphicsView.recalc_scene_rect')
+    @patch('beeref.scene.BeeGraphicsScene.on_view_scale_change')
+    def test_scale(self, view_scale_mock, recalc_mock):
+        self.view.scale(3.3, 3.3)
+        view_scale_mock.assert_called_once_with()
+        recalc_mock.assert_called_once_with()
+        assert self.view.get_scale() == 3.3
+
+    @patch('PyQt6.QtWidgets.QScrollBar.setValue')
+    def test_pan(self, scroll_value_mock):
+        item = BeePixmapItem(QtGui.QImage())
+        self.view.scene.addItem(item)
+        self.view.pan(QtCore.QPointF(5, 10))
+        assert scroll_value_mock.call_count == 2
+
+    @patch('PyQt6.QtWidgets.QScrollBar.setValue')
+    def test_pan_when_no_items(self, scroll_value_mock):
+        self.view.pan(QtCore.QPointF(5, 10))
+        scroll_value_mock.assert_not_called()
+
+
+class ZoomTestCase(ViewBaseTestCase):
+
+    def setUp(self):
+        super().setUp()
+        pan_patcher = patch('beeref.view.BeeGraphicsView.pan')
+        self.pan_mock = pan_patcher.start()
+        self.addCleanup(pan_patcher.stop)
+        reset_patcher = patch(
+            'beeref.view.BeeGraphicsView.reset_previous_transform')
+        self.reset_mock = reset_patcher.start()
+        self.addCleanup(reset_patcher.stop)
+        self.item = BeePixmapItem(QtGui.QImage(self.imgfilename3x3))
+
+    def test_zoom_in(self):
+        self.view.scene.addItem(self.item)
+        self.view.zoom(40, QtCore.QPointF(10, 10))
+        assert self.view.get_scale() == 1.04
+        self.reset_mock.assert_called_once_with()
+        self.pan_mock.assert_called_once_with(QtCore.QPoint(-52, -15))
+
+    def test_zoom_in_max_zoom_size(self):
+        self.view.scale(10000000, 10000000)
+        self.view.scene.addItem(self.item)
+        self.view.zoom(40, QtCore.QPointF(10, 10))
+        assert self.view.get_scale() == 10000000
+        self.reset_mock.assert_not_called()
+        self.pan_mock.assert_not_called()
+
+    def test_zoom_out(self):
+        self.view.scale(100, 100)
+        self.view.scene.addItem(self.item)
+        self.view.zoom(-40, QtCore.QPointF(10, 10))
+        assert self.view.get_scale() == 100 / 1.04
+        self.reset_mock.assert_called_once_with()
+        self.pan_mock.assert_called_once_with(QtCore.QPoint(49, 14))
+
+    def test_zoom_out_min_zoom_size(self):
+        self.view.scene.addItem(self.item)
+        self.view.zoom(-40, QtCore.QPointF(10, 10))
+        assert self.view.get_scale() == 1
+        self.reset_mock.assert_not_called()
+        self.pan_mock.assert_not_called()
+
+    def test_no_items(self):
+        self.view.zoom(40, QtCore.QPointF(10, 10))
+        assert self.view.get_scale() == 1
+        self.reset_mock.assert_not_called()
+        self.pan_mock.assert_not_called()
+
+    def test_delta_zero(self):
+        self.view.scene.addItem(self.item)
+        self.view.zoom(0, QtCore.QPointF(10, 10))
+        assert self.view.get_scale() == 1
+        self.reset_mock.assert_not_called()
+        self.pan_mock.assert_not_called()
+
+
+class MouseEventsTestCase(ViewBaseTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.event = MagicMock()
+
+    @patch('beeref.view.BeeGraphicsView.zoom')
+    def test_wheel_event(self, zoom_mock):
+        self.event.angleDelta.return_value = QtCore.QPointF(0, 40)
+        self.event.position.return_value = QtCore.QPointF(10, 20)
+        self.view.wheelEvent(self.event)
+        zoom_mock.assert_called_once_with(40, QtCore.QPointF(10, 20))
+        self.event.accept.assert_called_once_with()
+
+    @patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
+    def test_mouse_press_zoom(self, mouse_event_mock):
+        self.event.position.return_value = QtCore.QPointF(10, 20)
+        self.event.button.return_value = Qt.MouseButton.MiddleButton
+        self.event.modifiers.return_value = Qt.KeyboardModifier.ControlModifier
+        self.view.mousePressEvent(self.event)
+        assert self.view.zoom_active is True
+        assert self.view.pan_active is False
+        assert self.view.event_start == QtCore.QPointF(10, 20)
+        assert self.view.event_anchor == QtCore.QPointF(10, 20)
+        mouse_event_mock.assert_not_called()
+        self.event.accept.assert_called_once_with()
+
+    @patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
+    def test_mouse_press_pan_middle_drag(self, mouse_event_mock):
+        self.event.position.return_value = QtCore.QPointF(10, 20)
+        self.event.button.return_value = Qt.MouseButton.MiddleButton
+        self.event.modifiers.return_value = None
+        self.view.mousePressEvent(self.event)
+        assert self.view.pan_active is True
+        assert self.view.zoom_active is False
+        assert self.view.event_start == QtCore.QPointF(10, 20)
+        mouse_event_mock.assert_not_called()
+        self.view.cursor() == Qt.CursorShape.ClosedHandCursor
+        self.event.accept.assert_called_once_with()
+
+    @patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
+    def test_mouse_press_pan_alt_left_drag(self, mouse_event_mock):
+        self.event.position.return_value = QtCore.QPointF(10, 20)
+        self.event.button.return_value = Qt.MouseButton.LeftButton
+        self.event.modifiers.return_value = Qt.KeyboardModifier.AltModifier
+        self.view.mousePressEvent(self.event)
+        assert self.view.pan_active is True
+        assert self.view.zoom_active is False
+        assert self.view.event_start == QtCore.QPointF(10, 20)
+        mouse_event_mock.assert_not_called()
+        self.view.cursor() == Qt.CursorShape.ClosedHandCursor
+        self.event.accept.assert_called_once_with()
+
+    @patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
+    def test_mouse_press_unhandled(self, mouse_event_mock):
+        self.event.button.return_value = Qt.MouseButton.LeftButton
+        self.event.modifiers.return_value = None
+        self.view.mousePressEvent(self.event)
+        assert self.view.pan_active is False
+        assert self.view.zoom_active is False
+        mouse_event_mock.assert_called_once_with(self.event)
+        self.event.accept.assert_not_called()
+
+    @patch('PyQt6.QtWidgets.QGraphicsView.mouseMoveEvent')
+    @patch('beeref.view.BeeGraphicsView.pan')
+    def test_mouse_move_pan(self, pan_mock, mouse_event_mock):
+        self.view.pan_active = True
+        self.view.event_start = QtCore.QPointF(55, 66)
+        self.event.position.return_value = QtCore.QPointF(10, 20)
+        self.view.mouseMoveEvent(self.event)
+        pan_mock.assert_called_once_with(QtCore.QPointF(45, 46))
+        mouse_event_mock.assert_not_called()
+        self.event.accept.assert_called_once_with()
+
+    @patch('PyQt6.QtWidgets.QGraphicsView.mouseMoveEvent')
+    @patch('beeref.view.BeeGraphicsView.zoom')
+    def test_mouse_move_zoom(self, zoom_mock, mouse_event_mock):
+        self.view.zoom_active = True
+        self.view.event_anchor = QtCore.QPointF(55, 66)
+        self.view.event_start = QtCore.QPointF(10, 20)
+        self.event.position.return_value = QtCore.QPointF(10, 18)
+        self.view.mouseMoveEvent(self.event)
+        zoom_mock.assert_called_once_with(40, QtCore.QPointF(55, 66))
+        mouse_event_mock.assert_not_called()
+        self.event.accept.assert_called_once_with()
+
+    @patch('PyQt6.QtWidgets.QGraphicsView.mouseMoveEvent')
+    def test_mouse_move_unhandled(self, mouse_event_mock):
+        self.event.position.return_value = QtCore.QPointF(10, 20)
+        self.view.mouseMoveEvent(self.event)
+        mouse_event_mock.assert_called_once_with(self.event)
+        self.event.accept.assert_not_called()
+
+    @patch('PyQt6.QtWidgets.QGraphicsView.mouseReleaseEvent')
+    def test_mouse_release_pan(self, mouse_event_mock):
+        self.view.pan_active = True
+        self.view.setCursor(Qt.CursorShape.ClosedHandCursor)
+        self.view.mouseReleaseEvent(self.event)
+        mouse_event_mock.assert_not_called()
+        assert self.view.pan_active is False
+        self.event.accept.assert_called_once_with()
+        self.view.cursor() == Qt.CursorShape.ArrowCursor
+
+    @patch('PyQt6.QtWidgets.QGraphicsView.mouseReleaseEvent')
+    def test_mouse_release_zoom(self, mouse_event_mock):
+        self.view.zoom_active = True
+        self.view.mouseReleaseEvent(self.event)
+        mouse_event_mock.assert_not_called()
+        assert self.view.zoom_active is False
+        self.event.accept.assert_called_once_with()
+
+    @patch('PyQt6.QtWidgets.QGraphicsView.mouseReleaseEvent')
+    def test_mouse_release_unhandled(self, mouse_event_mock):
+        self.view.mouseReleaseEvent(self.event)
+        mouse_event_mock.assert_called_once_with(self.event)
+        self.event.accept.assert_not_called()
+
 
 class DragDropTestCase(ViewBaseTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.event = MagicMock()
 
     def test_drag_enter_when_url(self):
         url = QtCore.QUrl()
         url.fromLocalFile(self.imgfilename3x3)
         mimedata = QtCore.QMimeData()
         mimedata.setUrls([url])
-        event = MagicMock()
-        event.mimeData.return_value = mimedata
+        self.event.mimeData.return_value = mimedata
 
-        self.view.dragEnterEvent(event)
-        event.acceptProposedAction.assert_called_once()
+        self.view.dragEnterEvent(self.event)
+        self.event.acceptProposedAction.assert_called_once()
 
     def test_drag_enter_when_img(self):
         mimedata = QtCore.QMimeData()
         mimedata.setImageData(QtGui.QImage(self.imgfilename3x3))
-        event = MagicMock()
-        event.mimeData.return_value = mimedata
+        self.event.mimeData.return_value = mimedata
 
-        self.view.dragEnterEvent(event)
-        event.acceptProposedAction.assert_called_once()
+        self.view.dragEnterEvent(self.event)
+        self.event.acceptProposedAction.assert_called_once()
 
     def test_drag_enter_when_unsupported(self):
         mimedata = QtCore.QMimeData()
-        event = MagicMock()
-        event.mimeData.return_value = mimedata
+        self.event.mimeData.return_value = mimedata
 
-        self.view.dragEnterEvent(event)
-        event.acceptProposedAction.assert_not_called()
+        self.view.dragEnterEvent(self.event)
+        self.event.acceptProposedAction.assert_not_called()
 
     def test_drag_move(self):
-        event = MagicMock()
-        self.view.dragMoveEvent(event)
-        event.acceptProposedAction.assert_called_once()
+        self.view.dragMoveEvent(self.event)
+        self.event.acceptProposedAction.assert_called_once()
 
     @patch('beeref.view.BeeGraphicsView.do_insert_images')
     def test_drop_when_url(self, insert_mock):
@@ -457,20 +652,18 @@ class DragDropTestCase(ViewBaseTestCase):
         url.fromLocalFile(self.imgfilename3x3)
         mimedata = QtCore.QMimeData()
         mimedata.setUrls([url])
-        event = MagicMock()
-        event.mimeData.return_value = mimedata
-        event.position.return_value = QtCore.QPointF(10, 20)
+        self.event.mimeData.return_value = mimedata
+        self.event.position.return_value = QtCore.QPointF(10, 20)
 
-        self.view.dropEvent(event)
+        self.view.dropEvent(self.event)
         insert_mock.assert_called_once_with([url], QtCore.QPoint(10, 20))
 
     def test_drop_when_img(self):
         mimedata = QtCore.QMimeData()
         mimedata.setImageData(QtGui.QImage(self.imgfilename3x3))
-        event = MagicMock()
-        event.mimeData.return_value = mimedata
-        event.position.return_value = QtCore.QPointF(10, 20)
+        self.event.mimeData.return_value = mimedata
+        self.event.position.return_value = QtCore.QPointF(10, 20)
 
-        self.view.dropEvent(event)
+        self.view.dropEvent(self.event)
         assert len(self.view.scene.items()) == 1
         assert self.view.scene.items()[0].isSelected() is True

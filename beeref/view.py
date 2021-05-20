@@ -40,8 +40,6 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.app = app
         self.settings = BeeSettings()
         self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(60, 60, 60)))
-        self.setTransformationAnchor(
-            QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
         self.undo_stack = QtGui.QUndoStack(self)
         self.undo_stack.setUndoLimit(100)
@@ -57,6 +55,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
         self.previous_transform = None
         self.pan_active = False
+        self.zoom_active = False
         self.scene.changed.connect(self.on_scene_changed)
         self.scene.selectionChanged.connect(self.on_selection_changed)
 
@@ -473,6 +472,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             self.setSceneRect(QtCore.QRectF(topleft, bottomright))
         except OverflowError:
             logger.info('Maximum scene size reached')
+        logger.debug('Done recalculating scene rectangle')
 
     def get_zoom_size(self, func):
         """Calculates the size of all items' bounding box in the view's
@@ -501,58 +501,100 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def get_scale(self):
         return self.transform().m11()
 
-    def wheelEvent(self, event):
+    def pan(self, delta):
+        if not self.scene.items():
+            logger.debug('No items in scene; ignore pan')
+            return
+
+        hscroll = self.horizontalScrollBar()
+        hscroll.setValue(hscroll.value() + delta.x())
+        vscroll = self.verticalScrollBar()
+        vscroll.setValue(vscroll.value() + delta.y())
+
+    def zoom(self, delta, anchor):
         if not self.scene.items():
             logger.debug('No items in scene; ignore zoom')
             return
 
-        factor = 1 + abs(event.angleDelta().y() / 1000)
-        if event.angleDelta().y() > 0:
+        # We caculate where the anchor is before and after the zoom
+        # and then move the view accordingly to keep the anchor fixed
+        # We can't use QGraphicsView's AnchorUnderMouse since it
+        # uses the current cursor position while we need the inital mouse
+        # press position for zooming with Ctrl + Middle Drag
+        anchor = QtCore.QPoint(round(anchor.x()),
+                               round(anchor.y()))
+        ref_point = self.mapToScene(anchor)
+        if delta == 0:
+            return
+        factor = 1 + abs(delta / 1000)
+        if delta > 0:
             if self.get_zoom_size(max) < 10000000:
                 self.scale(factor, factor)
             else:
                 logger.debug('Maximum zoom size reached')
+                return
         else:
             if self.get_zoom_size(min) > 50:
                 self.scale(1/factor, 1/factor)
             else:
                 logger.debug('Minimum zoom size reached')
+                return
+
+        self.pan(self.mapFromScene(ref_point) - anchor)
+        self.reset_previous_transform()
+
+    def wheelEvent(self, event):
+        self.zoom(event.angleDelta().y(), event.position())
         event.accept()
-
-    def mouseMoveEvent(self, event):
-        if self.pan_active:
-            self.reset_previous_transform()
-            point = event.position()
-            hscroll = self.horizontalScrollBar()
-            hscroll.setValue(hscroll.value() + self.pan_start.x() - point.x())
-            vscroll = self.verticalScrollBar()
-            vscroll.setValue(vscroll.value() + self.pan_start.y() - point.y())
-            self.pan_start = point
-            event.accept()
-            return
-
-        super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event):
         if (event.button() == Qt.MouseButton.MiddleButton
+                and event.modifiers() == Qt.KeyboardModifier.ControlModifier):
+            self.zoom_active = True
+            self.event_start = event.position()
+            self.event_anchor = event.position()
+            event.accept()
+            return
+
+        if (event.button() == Qt.MouseButton.MiddleButton
             or (event.button() == Qt.MouseButton.LeftButton
                 and event.modifiers() == Qt.KeyboardModifier.AltModifier)):
-            if not self.scene.items():
-                logger.debug('No items in scene; ignore pan')
-                return
-
             self.pan_active = True
-            self.pan_start = event.position()
+            self.event_start = event.position()
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
             event.accept()
             return
 
         super().mousePressEvent(event)
 
+    def mouseMoveEvent(self, event):
+        if self.pan_active:
+            self.reset_previous_transform()
+            pos = event.position()
+            self.pan(self.event_start - pos)
+            self.event_start = pos
+            event.accept()
+            return
+
+        if self.zoom_active:
+            self.reset_previous_transform()
+            pos = event.position()
+            delta = (self.event_start - pos).y()
+            self.event_start = pos
+            self.zoom(delta * 20, self.event_anchor)
+            event.accept()
+            return
+
+        super().mouseMoveEvent(event)
+
     def mouseReleaseEvent(self, event):
         if self.pan_active:
             self.setCursor(Qt.CursorShape.ArrowCursor)
             self.pan_active = False
+            event.accept()
+            return
+        if self.zoom_active:
+            self.zoom_active = False
             event.accept()
             return
 
