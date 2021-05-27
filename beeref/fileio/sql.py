@@ -139,12 +139,12 @@ class SQLiteIO:
             item.save_id = row[0]
             item.pixmap_from_bytes(row[8])
             item.setPos(row[1], row[2])
-            self.scene.add_item_later(item)
             item.setZValue(row[3])
             item.setScale(row[4])
             item.setRotation(row[5])
             if row[6] == -1:
                 item.do_flip()
+            self.scene.add_item_later(item)
             if self.worker:
                 self.worker.progress.emit(i)
                 if self.worker.canceled:

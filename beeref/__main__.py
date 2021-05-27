@@ -90,6 +90,7 @@ def main():
     app.exec()
     del bee
     del app
+    logger.debug('BeeRef closed')
 
 
 if __name__ == '__main__':

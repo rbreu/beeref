@@ -48,23 +48,32 @@ class WelcomeOverlay(QtWidgets.QWidget):
 
 class BeeProgressDialog(QtWidgets.QProgressDialog):
 
-    def __init__(self, label, worker, maximum=100, parent=None):
+    def __init__(self, label, worker, maximum=0, parent=None):
         super().__init__(label, 'Cancel', 0, maximum, parent=parent)
+        logger.debug('Initialised progress bar')
         self.setMinimumDuration(0)
         self.setWindowModality(Qt.WindowModality.WindowModal)
+        self.setAutoReset(False)
+        self.setAutoClose(False)
         worker.begin_processing.connect(self.on_begin_processing)
         worker.progress.connect(self.on_progress)
         worker.finished.connect(self.on_finished)
         self.canceled.connect(worker.on_canceled)
 
     def on_progress(self, value):
-        self.setValue(value + 1)
+        logger.debug(f'Progress dialog: {value}')
+        self.setValue(value)
 
     def on_begin_processing(self, value):
+        logger.debug(f'Beginn progress dialog: {value}')
         self.setMaximum(value)
 
     def on_finished(self, filename, errors):
-        self.close()
+        logger.debug('Finished progress dialog')
+        self.setValue(self.maximum())
+        self.reset()
+        self.hide()
+        self.deleteLater()
 
 
 class HelpDialog(QtWidgets.QDialog):
