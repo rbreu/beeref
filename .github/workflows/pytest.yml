@@ -23,9 +23,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install .
         pip install -r requirements/dev.txt
-        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1920x1200x24 -ac +extension GLX
     - name: Run Unittests with pytest
       run: |
-        xvfb-run --server-num=99 --server-args="-screen 0 1920x1200x24" coverage run --source=beeref -m pytest -v -s
+        xvfb-run --auto-servernum --server-num=1 --server-args="-screen 1 1920x1200x24 -ac +extension GLX" coverage run --source=beeref -m pytest -v -s
     - name: Upload Coverage report to Codecov
       uses: codecov/codecov-action@v1
