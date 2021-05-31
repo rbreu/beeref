@@ -38,6 +38,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def __init__(self, app, parent=None):
         super().__init__(parent)
         self.app = app
+        self.parent = parent
         self.settings = BeeSettings()
         self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(60, 60, 60)))
 
@@ -94,7 +95,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             name = os.path.basename(self.filename or '[Untitled]')
             clean = '' if clean else '*'
             title = f'{name}{clean} - {constants.APPNAME}'
-        self.parent().setWindowTitle(title)
+        self.parent.setWindowTitle(title)
 
     def on_scene_changed(self, region):
         if not self.scene.items():
@@ -169,16 +170,16 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
     def on_action_fullscreen(self, checked):
         if checked:
-            self.parent().showFullScreen()
+            self.parent.showFullScreen()
         else:
-            self.parent().showNormal()
+            self.parent.showNormal()
 
     def on_action_always_on_top(self, checked):
-        self.parent().setWindowFlag(
+        self.parent.setWindowFlag(
             Qt.WindowType.WindowStaysOnTopHint, on=checked)
-        self.parent().destroy()
-        self.parent().create()
-        self.parent().show()
+        self.parent.destroy()
+        self.parent.create()
+        self.parent.show()
 
     def on_action_show_scrollbars(self, checked):
         if checked:
@@ -194,9 +195,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
     def on_action_show_menubar(self, checked):
         if checked:
-            self.parent().setMenuBar(self.create_menubar())
+            self.parent.setMenuBar(self.create_menubar())
         else:
-            self.parent().setMenuBar(None)
+            self.parent.setMenuBar(None)
 
     def on_action_undo(self):
         logger.debug('Undo: %s' % self.undo_stack.undoText())
@@ -270,8 +271,6 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.scene.add_queued_items()
 
     def on_loading_finished(self, filename, errors):
-        if filename:
-            self.filename = filename
         if errors:
             QtWidgets.QMessageBox.warning(
                 self,
@@ -279,6 +278,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
                 ('<p>Problem loading file %s</p>'
                  '<p>Not accessible or not a proper bee file</p>') % filename)
         else:
+            self.filename = filename
             self.scene.add_queued_items()
             self.on_action_fit_scene()
 
@@ -305,15 +305,15 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             self.filename = filename
 
     def on_saving_finished(self, filename, errors):
-        if filename:
-            self.filename = filename
-            self.undo_stack.setClean()
-        else:
+        if errors:
             QtWidgets.QMessageBox.warning(
                 self,
                 'Problem saving file',
                 ('<p>Problem saving file %s</p>'
                  '<p>File/directory not accessible</p>') % filename)
+        else:
+            self.filename = filename
+            self.undo_stack.setClean()
 
     def do_save(self, filename, create_new):
         if not filename.endswith('.bee'):

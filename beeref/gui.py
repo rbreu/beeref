@@ -105,23 +105,23 @@ class DebugLogDialog(QtWidgets.QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle(f'{constants.APPNAME} Debug Log')
-        with open(logfile_name) as f:
+        with open(logfile_name()) as f:
             self.log_txt = f.read()
 
-        log = QtWidgets.QLabel(self.log_txt)
-        log.setTextInteractionFlags(
+        self.log = QtWidgets.QLabel(self.log_txt)
+        self.log.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse)
         scroll = QtWidgets.QScrollArea(self)
         scroll.setWidgetResizable(True)
-        scroll.setWidget(log)
+        scroll.setWidget(self.log)
 
         buttons = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Close)
         buttons.rejected.connect(self.reject)
-        copy_button = QtWidgets.QPushButton('Co&py To Clipboard')
-        copy_button.released.connect(self.copy_to_clipboard)
+        self.copy_button = QtWidgets.QPushButton('Co&py To Clipboard')
+        self.copy_button.released.connect(self.copy_to_clipboard)
         buttons.addButton(
-            copy_button, QtWidgets.QDialogButtonBox.ButtonRole.ActionRole)
+            self.copy_button, QtWidgets.QDialogButtonBox.ButtonRole.ActionRole)
 
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)

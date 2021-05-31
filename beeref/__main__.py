@@ -76,7 +76,7 @@ def main():
     logger.info(f'Starting {constants.APPNAME} version {constants.VERSION}')
     settings = BeeSettings()
     logger.info(f'Using settings: {settings.fileName()}')
-    logger.info(f'Logging to: {logfile_name}')
+    logger.info(f'Logging to: {logfile_name()}')
     CommandlineArgs(with_check=True)  # Force checking
     app = QtWidgets.QApplication(sys.argv)
 

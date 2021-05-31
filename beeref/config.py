@@ -137,8 +137,10 @@ class BeeSettings(QtCore.QSettings):
         return values
 
 
-logfile_name = os.path.join(
-    os.path.dirname(BeeSettings().fileName()), f'{constants.APPNAME}.log')
+def logfile_name():
+    return os.path.join(
+        os.path.dirname(BeeSettings().fileName()), f'{constants.APPNAME}.log')
+
 
 logging_conf = {
     'version': 1,
@@ -161,7 +163,7 @@ logging_conf = {
         'file': {
             'class': 'beeref.utils.BeeRotatingFileHandler',
             'formatter': 'verbose',
-            'filename': logfile_name,
+            'filename': logfile_name(),
             'maxBytes': 1024 * 1000 * 50,
             'backupCount': 1,
             'level': 'DEBUG',

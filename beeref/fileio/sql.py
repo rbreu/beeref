@@ -43,8 +43,9 @@ def handle_sqlite_errors(func):
             func(self, *args, **kwargs)
         except sqlite3.Error as e:
             logger.exception(f'Error while reading/writing {self.filename}')
+            self._close_connection()
             if self.worker:
-                self.worker.finished.emit('', [str(e)])
+                self.worker.finished.emit(self.filename, [str(e)])
             else:
                 raise BeeFileIOError(msg=str(e), filename=self.filename) from e
 
