@@ -44,6 +44,8 @@ def main_window(qtbot):
     main = BeeRefMainWindow(app)
     qtbot.addWidget(main)
     yield main
+    # ensure pending events can be processed before things get deleted:
+    qtbot.wait(100)
 
 
 @pytest.fixture
