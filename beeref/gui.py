@@ -16,7 +16,7 @@
 import logging
 import os.path
 
-from PyQt6 import QtWidgets
+from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
 
 from beeref import constants
@@ -73,7 +73,7 @@ class BeeProgressDialog(QtWidgets.QProgressDialog):
         self.setValue(self.maximum())
         self.reset()
         self.hide()
-        self.deleteLater()
+        QtCore.QTimer.singleShot(100, self.deleteLater)
 
 
 class HelpDialog(QtWidgets.QDialog):
