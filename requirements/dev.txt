@@ -2,4 +2,4 @@ coverage
 flake8
 httpretty
 pytest
-git+https://github.com/pytest-dev/pytest-qt.git
+pytest-qt>=4
