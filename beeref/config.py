@@ -25,9 +25,6 @@ from PyQt6 import QtCore
 from beeref import constants
 
 
-logger = logging.getLogger(__name__)
-
-
 parser = argparse.ArgumentParser(
     description=f'{constants.APPNAME_FULL} {constants.VERSION}')
 parser.add_argument(
@@ -185,3 +182,25 @@ logging_conf = {
 
 
 logging.config.dictConfig(logging_conf)
+
+
+# Redirect Qt logging to Python logger:
+qtlogger = logging.getLogger('Qt')
+
+
+def qt_message_handler(mode, context, message):
+    logfuncs = {
+        QtCore.QtMsgType.QtDebugMsg: qtlogger.debug,
+        QtCore.QtMsgType.QtInfoMsg: qtlogger.info,
+        QtCore.QtMsgType.QtWarningMsg: qtlogger.warning,
+        QtCore.QtMsgType.QtCriticalMsg: qtlogger.critical,
+        QtCore.QtMsgType.QtFatalMsg: qtlogger.fatal,
+    }
+    if context and (context.file or context.line or context.function):
+        message = (f'{message}: File {context.file}, line {context.line}, '
+                   f'in {context.function}')
+
+    logfuncs[mode](message)
+
+
+QtCore.qInstallMessageHandler(qt_message_handler)

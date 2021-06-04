@@ -1,10 +1,13 @@
 import os.path
 import tempfile
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
 
-from beeref.config import CommandlineArgs
+from PyQt6 import QtCore
+
+from beeref.config import CommandlineArgs, qt_message_handler
 
 
 def test_command_line_args_singleton():
@@ -71,3 +74,16 @@ def test_settings_recent_files_update_respects_max_num(settings):
     assert len(recent) == 10
     assert recent[0] == os.path.abspath('14.bee')
     assert recent[-1] == os.path.abspath('5.bee')
+
+
+@patch('beeref.config.qtlogger.info')
+def test_qt_message_handler_without(log_mock, qapp):
+    qt_message_handler(QtCore.QtMsgType.QtInfoMsg, None, 'foo')
+    log_mock.assert_called_once_with('foo')
+
+
+@patch('beeref.config.qtlogger.warning')
+def test_qt_message_handler_with_context(log_mock, qapp):
+    ctx = SimpleNamespace(file='bla.txt', line='1', function='myfunc')
+    qt_message_handler(QtCore.QtMsgType.QtWarningMsg, ctx, 'foo')
+    log_mock.assert_called_once_with('foo: File bla.txt, line 1, in myfunc')
