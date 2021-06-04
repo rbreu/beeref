@@ -526,6 +526,7 @@ def test_mouse_press_zoom(mouse_event_mock, view):
     view.mousePressEvent(event)
     assert view.zoom_active is True
     assert view.pan_active is False
+    assert view.movewin_active is False
     assert view.event_start == QtCore.QPointF(10, 20)
     assert view.event_anchor == QtCore.QPointF(10, 20)
     mouse_event_mock.assert_not_called()
@@ -541,6 +542,7 @@ def test_mouse_press_pan_middle_drag(mouse_event_mock, view):
     view.mousePressEvent(event)
     assert view.pan_active is True
     assert view.zoom_active is False
+    assert view.movewin_active is False
     assert view.event_start == QtCore.QPointF(10, 20)
     mouse_event_mock.assert_not_called()
     view.cursor() == Qt.CursorShape.ClosedHandCursor
@@ -556,9 +558,26 @@ def test_mouse_press_pan_alt_left_drag(mouse_event_mock, view):
     view.mousePressEvent(event)
     assert view.pan_active is True
     assert view.zoom_active is False
+    assert view.movewin_active is False
     assert view.event_start == QtCore.QPointF(10, 20)
     mouse_event_mock.assert_not_called()
     view.cursor() == Qt.CursorShape.ClosedHandCursor
+    event.accept.assert_called_once_with()
+
+
+@patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
+def test_mouse_press_move_window(mouse_event_mock, view):
+    event = MagicMock()
+    event.position.return_value = QtCore.QPointF(10, 20)
+    event.button.return_value = Qt.MouseButton.LeftButton
+    event.modifiers.return_value = (
+        Qt.KeyboardModifier.AltModifier | Qt.KeyboardModifier.ControlModifier)
+    view.mousePressEvent(event)
+    assert view.pan_active is False
+    assert view.zoom_active is False
+    assert view.movewin_active is True
+    assert view.event_start == view.mapToGlobal(QtCore.QPointF(10, 20))
+    mouse_event_mock.assert_not_called()
     event.accept.assert_called_once_with()
 
 
@@ -570,6 +589,7 @@ def test_mouse_press_unhandled(mouse_event_mock, view):
     view.mousePressEvent(event)
     assert view.pan_active is False
     assert view.zoom_active is False
+    assert view.movewin_active is False
     mouse_event_mock.assert_called_once_with(event)
     event.accept.assert_not_called()
 
@@ -602,6 +622,19 @@ def test_mouse_move_zoom(zoom_mock, mouse_event_mock, view):
 
 
 @patch('PyQt6.QtWidgets.QGraphicsView.mouseMoveEvent')
+@patch('PyQt6.QtWidgets.QWidget.move')
+def test_mouse_move_movewin(move_mock, mouse_event_mock, view):
+    view.movewin_active = True
+    view.event_start = QtCore.QPointF(10, 20)
+    event = MagicMock()
+    event.position.return_value = QtCore.QPointF(15, 18)
+    view.mouseMoveEvent(event)
+    move_mock.assert_called_once_with(5, -2)
+    mouse_event_mock.assert_not_called()
+    event.accept.assert_called_once_with()
+
+
+@patch('PyQt6.QtWidgets.QGraphicsView.mouseMoveEvent')
 def test_mouse_move_unhandled(mouse_event_mock, view):
     event = MagicMock()
     event.position.return_value = QtCore.QPointF(10, 20)
@@ -629,6 +662,16 @@ def test_mouse_release_zoom(mouse_event_mock, view):
     view.mouseReleaseEvent(event)
     mouse_event_mock.assert_not_called()
     assert view.zoom_active is False
+    event.accept.assert_called_once_with()
+
+
+@patch('PyQt6.QtWidgets.QGraphicsView.mouseReleaseEvent')
+def test_mouse_release_movewin(mouse_event_mock, view):
+    event = MagicMock()
+    view.movewin_active = True
+    view.mouseReleaseEvent(event)
+    mouse_event_mock.assert_not_called()
+    assert view.movewin_active is False
     event.accept.assert_called_once_with()
 
 

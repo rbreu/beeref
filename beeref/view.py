@@ -57,6 +57,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.previous_transform = None
         self.pan_active = False
         self.zoom_active = False
+        self.movewin_active = False
         self.scene.changed.connect(self.on_scene_changed)
         self.scene.selectionChanged.connect(self.on_selection_changed)
 
@@ -562,6 +563,14 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             event.accept()
             return
 
+        if (event.button() == Qt.MouseButton.LeftButton
+                and event.modifiers() == (Qt.KeyboardModifier.ControlModifier
+                                          | Qt.KeyboardModifier.AltModifier)):
+            self.movewin_active = True
+            self.event_start = self.mapToGlobal(event.position())
+            event.accept()
+            return
+
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -582,6 +591,15 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             event.accept()
             return
 
+        if self.movewin_active:
+            pos = self.mapToGlobal(event.position())
+            delta = pos - self.event_start
+            self.event_start = pos
+            self.parent.move(self.parent.x() + int(delta.x()),
+                             self.parent.y() + int(delta.y()))
+            event.accept()
+            return
+
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
@@ -592,6 +610,10 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             return
         if self.zoom_active:
             self.zoom_active = False
+            event.accept()
+            return
+        if self.movewin_active:
+            self.movewin_active = False
             event.accept()
             return
 
