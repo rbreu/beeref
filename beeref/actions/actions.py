@@ -226,6 +226,13 @@ actions = [
         'callback': 'on_action_show_menubar',
     },
     {
+        'id': 'show_titlebar',
+        'text': 'Show &Title Bar',
+        'checkable': True,
+        'checked': True,
+        'callback': 'on_action_show_titlebar',
+    },
+    {
         'id': 'fullscreen',
         'text': '&Fullscreen',
         'shortcuts': ['F11'],

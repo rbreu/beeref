@@ -57,6 +57,7 @@ menu_structure = [
             'always_on_top',
             'show_scrollbars',
             'show_menubar',
+            'show_titlebar',
         ],
     },
     {

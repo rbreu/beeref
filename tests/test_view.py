@@ -377,12 +377,60 @@ def test_on_action_cut(copy_mock, view, item):
     assert view.undo_stack.isClean() is False
 
 
+@patch('PyQt6.QtWidgets.QWidget.create')
+@patch('PyQt6.QtWidgets.QWidget.destroy')
+@patch('PyQt6.QtWidgets.QWidget.show')
+def test_on_action_always_on_top_checked(
+        show_mock, destroy_mock, create_mock, view):
+    view.on_action_always_on_top(True)
+    assert view.parent.windowFlags() & Qt.WindowType.WindowStaysOnTopHint
+    show_mock.assert_called_once()
+    destroy_mock.assert_called_once()
+    create_mock.assert_called_once()
+
+
+@patch('PyQt6.QtWidgets.QWidget.create')
+@patch('PyQt6.QtWidgets.QWidget.destroy')
+@patch('PyQt6.QtWidgets.QWidget.show')
+def test_on_action_always_on_top_unchecked(
+        show_mock, destroy_mock, create_mock, view):
+    view.on_action_always_on_top(False)
+    assert not (view.parent.windowFlags() & Qt.WindowType.WindowStaysOnTopHint)
+    show_mock.assert_called_once()
+    destroy_mock.assert_called_once()
+    create_mock.assert_called_once()
+
+
 def test_on_action_show_menubar(view):
     view.toplevel_menus = [QtWidgets.QMenu('Foo')]
     view.on_action_show_menubar(True)
     assert len(view.parent.menuBar().actions()) == 1
     view.on_action_show_menubar(False)
     assert view.parent.menuBar().actions() == []
+
+
+@patch('PyQt6.QtWidgets.QWidget.create')
+@patch('PyQt6.QtWidgets.QWidget.destroy')
+@patch('PyQt6.QtWidgets.QWidget.show')
+def test_on_action_show_titlebar_checked(
+        show_mock, destroy_mock, create_mock, view):
+    view.on_action_show_titlebar(True)
+    assert not (view.parent.windowFlags() & Qt.WindowType.FramelessWindowHint)
+    show_mock.assert_called_once()
+    destroy_mock.assert_called_once()
+    create_mock.assert_called_once()
+
+
+@patch('PyQt6.QtWidgets.QWidget.create')
+@patch('PyQt6.QtWidgets.QWidget.destroy')
+@patch('PyQt6.QtWidgets.QWidget.show')
+def test_on_action_show_titlebar_unchecked(
+        show_mock, destroy_mock, create_mock, view):
+    view.on_action_show_titlebar(False)
+    assert view.parent.windowFlags() & Qt.WindowType.FramelessWindowHint
+    show_mock.assert_called_once()
+    destroy_mock.assert_called_once()
+    create_mock.assert_called_once()
 
 
 def test_on_action_delete_items(view, item):
@@ -451,7 +499,7 @@ def test_zoom_in(pan_mock, reset_mock, view, imgfilename3x3):
     view.zoom(40, QtCore.QPointF(10, 10))
     assert view.get_scale() == 1.04
     reset_mock.assert_called_once_with()
-    pan_mock.assert_called_once_with(QtCore.QPoint(-10, -6))
+    pan_mock.assert_called_once()
 
 
 @patch('beeref.view.BeeGraphicsView.reset_previous_transform')
@@ -475,7 +523,7 @@ def test_zoom_out(pan_mock, reset_mock, view, imgfilename3x3):
     view.zoom(-40, QtCore.QPointF(10, 10))
     assert view.get_scale() == 100 / 1.04
     reset_mock.assert_called_once_with()
-    pan_mock.assert_called_once_with(QtCore.QPoint(9, 5))
+    pan_mock.assert_called_once()
 
 
 @patch('beeref.view.BeeGraphicsView.reset_previous_transform')

@@ -76,6 +76,34 @@ def test_create_actions_checkable(
     assert widget.bee_actions['foo'] == qaction
 
 
+@patch('PyQt6.QtGui.QAction.triggered')
+@patch('PyQt6.QtGui.QAction.toggled')
+@patch('beeref.actions.mixin.menu_structure')
+@patch('beeref.actions.mixin.actions')
+def test_create_actions_checkable_checked_true(
+        actions_mock, menu_mock, toggle_mock, trigger_mock, qapp):
+    widget = FooWidget()
+    actions_mock.__iter__.return_value = [{
+        'id': 'foo',
+        'text': '&Foo',
+        'checkable': True,
+        'checked': True,
+        'callback': 'on_foo',
+    }]
+
+    menu_mock.__iter__.return_value = ['foo']
+    widget.build_menu_and_actions()
+    trigger_mock.connect.assert_not_called()
+    toggle_mock.connect.assert_called_once_with(widget.on_foo)
+
+    assert len(widget.actions()) == 1
+    qaction = widget.actions()[0]
+    assert qaction.text() == '&Foo'
+    assert qaction.isEnabled() is True
+    assert qaction.isChecked() is True
+    assert widget.bee_actions['foo'] == qaction
+
+
 @patch.object(FooWidget, 'on_foo')
 @patch.object(FooWidget, 'settings')
 @patch('PyQt6.QtGui.QAction.toggled')

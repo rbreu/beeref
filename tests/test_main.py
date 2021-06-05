@@ -15,7 +15,7 @@ def test_beeref_mainwindow_init(show_mock, qapp):
     assert window.windowIcon()
     assert window.contentsMargins() == QtCore.QMargins(0, 0, 0, 0)
     assert isinstance(window.view, BeeGraphicsView)
-    show_mock.assert_called_once()
+    show_mock.assert_called()
 
 
 @patch('PyQt6.QtWidgets.QApplication')

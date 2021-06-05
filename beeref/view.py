@@ -40,7 +40,11 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.app = app
         self.parent = parent
         self.settings = BeeSettings()
+        self.welcome_overlay = gui.WelcomeOverlay(self)
+
         self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(60, 60, 60)))
+        self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+        self.setAcceptDrops(True)
 
         self.undo_stack = QtGui.QUndoStack(self)
         self.undo_stack.setUndoLimit(100)
@@ -48,19 +52,15 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.undo_stack.canUndoChanged.connect(self.on_can_undo_changed)
         self.undo_stack.cleanChanged.connect(self.on_undo_clean_changed)
 
-        self.scene = BeeGraphicsScene(self.undo_stack)
         self.filename = None
-
-        self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
-        self.setAcceptDrops(True)
-
         self.previous_transform = None
         self.pan_active = False
         self.zoom_active = False
         self.movewin_active = False
+
+        self.scene = BeeGraphicsScene(self.undo_stack)
         self.scene.changed.connect(self.on_scene_changed)
         self.scene.selectionChanged.connect(self.on_selection_changed)
-
         self.setScene(self.scene)
 
         # Context menu and actions
@@ -68,8 +68,6 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.setContextMenuPolicy(
             Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.on_context_menu)
-
-        self.welcome_overlay = gui.WelcomeOverlay(self)
 
         # Load file given via command line
         if commandline_args.filename:
@@ -199,6 +197,13 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             self.parent.setMenuBar(self.create_menubar())
         else:
             self.parent.setMenuBar(None)
+
+    def on_action_show_titlebar(self, checked):
+        self.parent.setWindowFlag(
+            Qt.WindowType.FramelessWindowHint, on=not checked)
+        self.parent.destroy()
+        self.parent.create()
+        self.parent.show()
 
     def on_action_undo(self):
         logger.debug('Undo: %s' % self.undo_stack.undoText())

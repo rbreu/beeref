@@ -61,8 +61,10 @@ class ActionsMixin:
         callback = getattr(self, actiondef['callback'])
         qaction.toggled.connect(callback)
         settings_key = actiondef.get('settings')
+        checked = actiondef.get('checked', False)
+        qaction.setChecked(checked)
         if settings_key:
-            val = self.settings.value(settings_key, False, type=bool)
+            val = self.settings.value(settings_key, checked, type=bool)
             qaction.setChecked(val)
             self._post_create_functions.append((callback, val))
             qaction.toggled.connect(
