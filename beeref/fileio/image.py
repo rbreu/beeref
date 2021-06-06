@@ -21,17 +21,63 @@ from urllib import request
 
 from PyQt6 import QtGui
 
+import exif
+
 
 logger = logging.getLogger(__name__)
 
 
+def exif_rotated_image(path=None):
+    """Returns a QImage that is transformed according to the source's
+    orientation EXIF data.
+    """
+
+    img = QtGui.QImage(path)
+    if img.isNull():
+        return img
+
+    with open(path, 'rb') as f:
+        exifimg = exif.Image(f)
+
+    if 'orientation' in exifimg.list_all():
+        orientation = exifimg.orientation
+    else:
+        return img
+
+    transform = QtGui.QTransform()
+
+    if orientation == exif.Orientation.TOP_RIGHT:
+        return img.mirrored(horizontal=True, vertical=False)
+    if orientation == exif.Orientation.BOTTOM_RIGHT:
+        transform.rotate(180)
+        return img.transformed(transform)
+    if orientation == exif.Orientation.BOTTOM_LEFT:
+        return img.mirrored(horizontal=False, vertical=True)
+    if orientation == exif.Orientation.LEFT_TOP:
+        transform.rotate(90)
+        return img.transformed(transform).mirrored(
+            horizontal=True, vertical=False)
+    if orientation == exif.Orientation.RIGHT_TOP:
+        transform.rotate(90)
+        return img.transformed(transform)
+    if orientation == exif.Orientation.RIGHT_BOTTOM:
+        transform.rotate(270)
+        return img.transformed(transform).mirrored(
+            horizontal=True, vertical=False)
+    if orientation == exif.Orientation.LEFT_BOTTOM:
+        transform.rotate(270)
+        return img.transformed(transform)
+
+    return img
+
+
 def load_image(path):
     if isinstance(path, str):
-        return (QtGui.QImage(path), path)
+        return (exif_rotated_image(path), path)
     if path.isLocalFile():
-        return (QtGui.QImage(path.path()), path.path())
+        return (exif_rotated_image(path.path()), path.path())
 
-    img = QtGui.QImage()
+    img = exif_rotated_image()
     try:
         imgdata = request.urlopen(path.url()).read()
     except URLError as e:
@@ -42,5 +88,5 @@ def load_image(path):
             with open(fname, 'wb') as f:
                 f.write(imgdata)
                 logger.debug(f'Temporarily saved in: {fname}')
-            img = QtGui.QImage(fname)
+            img = exif_rotated_image(fname)
     return (img, path.url())

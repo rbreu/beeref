@@ -11,6 +11,7 @@ setup(
     install_requires=[
         'pyQt6>=6.1',
         'rectangle-packer>=2.0.1',
+        'exif',
     ],
     packages=['beeref'],
     entry_points={
