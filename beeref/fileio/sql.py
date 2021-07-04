@@ -213,8 +213,8 @@ class SQLiteIO:
 
         self.ex(
             'INSERT INTO sqlar (item_id, name, mode, sz, data) '
-            'VALUES (?, ?, 644, ?, ?)',
-            (item.save_id, name, len(pixmap), pixmap))
+            'VALUES (?, ?, ?, ?, ?)',
+            (item.save_id, name, 0o644, len(pixmap), pixmap))
         self.connection.commit()
 
     def update_item(self, item):
