@@ -74,9 +74,10 @@ class BaseItemMixin:
         super().setZValue(value)
         if self.scene():
             self.scene().max_z = max(self.scene().max_z, value)
+            self.scene().min_z = min(self.scene().min_z, value)
 
     def bring_to_front(self):
-        self.setZValue(self.scene().max_z + 0.001)
+        self.setZValue(self.scene().max_z + self.scene().Z_STEP)
 
     @with_anchor
     def setRotation(self, value):

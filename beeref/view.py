@@ -232,6 +232,12 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             commands.DeleteItems(
                 self.scene, self.scene.selectedItems(user_only=True)))
 
+    def on_action_raise_to_top(self):
+        self.scene.raise_to_top()
+
+    def on_action_lower_to_bottom(self):
+        self.scene.lower_to_bottom()
+
     def on_action_normalize_height(self):
         self.scene.normalize_height()
 

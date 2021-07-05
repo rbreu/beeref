@@ -86,6 +86,20 @@ actions = [
         'group': 'active_when_selection',
     },
     {
+        'id': 'raise_to_top',
+        'text': '&Raise to Top',
+        'shortcuts': ['PgUp'],
+        'callback': 'on_action_raise_to_top',
+        'group': 'active_when_selection',
+    },
+    {
+        'id': 'lower_to_bottom',
+        'text': 'Lower to Bottom',
+        'shortcuts': ['PgDown'],
+        'callback': 'on_action_lower_to_bottom',
+        'group': 'active_when_selection',
+    },
+    {
         'id': 'normalize_height',
         'text': '&Height',
         'shortcuts': ['Shift+H'],

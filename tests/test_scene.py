@@ -17,6 +17,75 @@ def test_add_remove_item(view, item):
     assert view.scene.items() == []
 
 
+def test_copy_selection_to_internal_clipboard(view):
+    item1 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item1)
+    item1.setSelected(True)
+    item2 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item2)
+    item2.setSelected(True)
+    item3 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item3)
+
+    view.scene.copy_selection_to_internal_clipboard()
+    assert set(view.scene.internal_clipboard) == {item1, item2}
+    assert set(view.scene.items_for_save()) == {item1, item2, item3}
+
+
+def test_paste_from_internal_clipboard(view):
+    item1 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item1)
+    item1.setSelected(True)
+    item2 = BeePixmapItem(QtGui.QImage())
+    item2.setScale(3.3)
+    view.scene.internal_clipboard = [item2]
+
+    view.scene.paste_from_internal_clipboard(None)
+    assert len(list(view.scene.items_for_save())) == 2
+    assert item1.isSelected() is False
+    new_item = view.scene.selectedItems(user_only=True)[0]
+    assert new_item.scale() == 3.3
+    assert new_item is not item2
+
+
+def test_raise_to_top(view):
+    item1 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item1)
+    item1.setSelected(True)
+    item1.setZValue(0.06)
+    item2 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item2)
+    item2.setSelected(True)
+    item2.setZValue(0.02)
+    item3 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item3)
+    item3.setZValue(0.07)
+
+    view.scene.raise_to_top()
+    assert item1.zValue() == 0.11 + view.scene.Z_STEP
+    assert item2.zValue() == 0.07 + view.scene.Z_STEP
+    assert item3.zValue() == 0.07
+
+
+def test_lower_to_bottom(view):
+    item1 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item1)
+    item1.setSelected(True)
+    item1.setZValue(-0.06)
+    item2 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item2)
+    item2.setSelected(True)
+    item2.setZValue(-0.02)
+    item3 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item3)
+    item3.setZValue(-0.07)
+
+    view.scene.lower_to_bottom()
+    assert item1.zValue() == -0.11 - view.scene.Z_STEP
+    assert item2.zValue() == -0.07 - view.scene.Z_STEP
+    assert item3.zValue() == -0.07
+
+
 def test_normalize_height(view):
     item1 = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item1)
@@ -897,34 +966,3 @@ def test_add_queued_items_selected(view, item):
 def test_add_queued_items_when_no_items(view):
     view.scene.add_queued_items()
     assert view.scene.items() == []
-
-
-def test_copy_selection_to_internal_clipboard(view):
-    item1 = BeePixmapItem(QtGui.QImage())
-    view.scene.addItem(item1)
-    item1.setSelected(True)
-    item2 = BeePixmapItem(QtGui.QImage())
-    view.scene.addItem(item2)
-    item2.setSelected(True)
-    item3 = BeePixmapItem(QtGui.QImage())
-    view.scene.addItem(item3)
-
-    view.scene.copy_selection_to_internal_clipboard()
-    assert set(view.scene.internal_clipboard) == {item1, item2}
-    assert set(view.scene.items_for_save()) == {item1, item2, item3}
-
-
-def test_paste_from_internal_clipboard(view):
-    item1 = BeePixmapItem(QtGui.QImage())
-    view.scene.addItem(item1)
-    item1.setSelected(True)
-    item2 = BeePixmapItem(QtGui.QImage())
-    item2.setScale(3.3)
-    view.scene.internal_clipboard = [item2]
-
-    view.scene.paste_from_internal_clipboard(None)
-    assert len(list(view.scene.items_for_save())) == 2
-    assert item1.isSelected() is False
-    new_item = view.scene.selectedItems(user_only=True)[0]
-    assert new_item.scale() == 3.3
-    assert new_item is not item2

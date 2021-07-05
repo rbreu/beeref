@@ -36,14 +36,15 @@ def test_set_zvalue_sets_new_max(view, item):
     item.setZValue(1.1)
     assert item.zValue() == 1.1
     assert view.scene.max_z == 1.1
+    assert view.scene.min_z == 0
 
 
-def test_set_zvalue_keeps_old_max(view, item):
+def test_set_zvalue_sets_new_min(view, item):
     view.scene.addItem(item)
-    view.scene.max_z = 3.3
-    item.setZValue(1.1)
-    assert item.zValue() == 1.1
-    assert view.scene.max_z == 3.3
+    item.setZValue(-1.1)
+    assert item.zValue() == -1.1
+    assert view.scene.max_z == 0
+    assert view.scene.min_z == -1.1
 
 
 def test_bring_to_front(view, item):

@@ -37,6 +37,8 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.rubberband_active = False
         self.undo_stack = undo_stack
         self.max_z = 0
+        self.min_z = 0
+        self.Z_STEP = 0.001
         self.multi_select_item = MultiSelectItem()
         self.rubberband_item = RubberbandItem()
         self.selectionChanged.connect(self.on_selection_change)
@@ -64,6 +66,23 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             copy = item.create_copy()
             copies.append(copy)
         self.undo_stack.push(commands.InsertItems(self, copies, position))
+
+    def raise_to_top(self):
+        items = self.selectedItems(user_only=True)
+        z_values = map(lambda i: i.zValue(), items)
+        delta = self.max_z + self.Z_STEP - min(z_values)
+        logger.debug(f'Raise to top, delta: {delta}')
+        for item in items:
+            item.setZValue(item.zValue() + delta)
+
+    def lower_to_bottom(self):
+        items = self.selectedItems(user_only=True)
+        z_values = map(lambda i: i.zValue(), items)
+        delta = self.min_z - self.Z_STEP - max(z_values)
+        logger.debug(f'Lower to bottom, delta: {delta}')
+
+        for item in items:
+            item.setZValue(item.zValue() + delta)
 
     def normalize_width_or_height(self, mode):
         """Scale the selected images to have the same width or height, as
@@ -377,3 +396,4 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
                 item.setSelected(True)
                 item.bring_to_front()
             self.max_z = max(self.max_z, item.zValue())
+            self.min_z = min(self.min_z, item.zValue())

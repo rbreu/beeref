@@ -45,6 +45,9 @@ menu_structure = [
             'copy',
             'paste',
             'delete',
+            MENU_SEPARATOR,
+            'raise_to_top',
+            'lower_to_bottom',
         ],
     },
     {
