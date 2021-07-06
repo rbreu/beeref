@@ -16,11 +16,15 @@ def datapath(src, dest):
     return os.path.join(*src) + os.pathsep + os.path.join(*dest)
 
 
-pyqt_dir = os.path.join(get_python_lib(), 'PyQt6', 'Qt6')
-libdir = 'bin' if sys.platform.startswith('win') else 'lib'
-
-
 appname = f'{constants.APPNAME}-{constants.VERSION}'
+pyqt_dir = os.path.join(get_python_lib(), 'PyQt6', 'Qt6')
+
+if sys.platform.startswith('win'):
+    libdir = 'bin'
+    icon = 'logo.ico'
+else:
+    libdir = 'lib'
+    icon = 'logo.png'
 
 PyInstaller.__main__.run([
     '--noconfirm',
