@@ -16,6 +16,7 @@ def datapath(src, dest):
     return os.path.join(*src) + os.pathsep + os.path.join(*dest)
 
 
+import os; print(sorted(os.listdir(get_python_lib())))
 pyqt_dir = os.path.join(get_python_lib(), 'PyQt6', 'Qt6')
 appname = f'{constants.APPNAME}-{constants.VERSION}'
 
