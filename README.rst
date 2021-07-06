@@ -9,7 +9,7 @@ BeeRef lets you quickly arrange your reference images and view them while you cr
 
 |python-version| |github-ci-flake8| |github-ci-pytest| |codecov|
 
-.. image:: https://github.com/rbreu/beeref/blob/main/images/screenshot.jpg
+.. image:: https://github.com/rbreu/beeref/blob/main/images/screenshot.png
 
 .. |python-version| image:: https://github.com/rbreu/beeref/blob/main/images/python_version_badge.svg
    :target: https://www.python.org/
