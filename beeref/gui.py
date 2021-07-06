@@ -125,6 +125,7 @@ class DebugLogDialog(QtWidgets.QDialog):
 
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
+        layout.addWidget(QtWidgets.QLabel(logfile_name()))
         layout.addWidget(scroll)
         layout.addWidget(buttons)
         self.show()

@@ -161,7 +161,7 @@ logging_conf = {
             'class': 'beeref.utils.BeeRotatingFileHandler',
             'formatter': 'verbose',
             'filename': logfile_name(),
-            'maxBytes': 1024 * 1000 * 50,
+            'maxBytes': 1024 * 1000,  # 1MB
             'backupCount': 1,
             'level': 'DEBUG',
             'delay': True,
