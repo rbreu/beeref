@@ -16,11 +16,9 @@ def datapath(src, dest):
     return os.path.join(*src) + os.pathsep + os.path.join(*dest)
 
 
-pyqt_dir = os.path.join(get_python_lib(), 'PyQt6')
-print(sorted(os.listdir(pyqt_dir)))
-print('****')
 pyqt_dir = os.path.join(get_python_lib(), 'PyQt6', 'Qt6')
-print(sorted(os.listdir(pyqt_dir)))
+libdir = 'bin' if sys.platform.startswith('win') else 'lib'
+
 
 appname = f'{constants.APPNAME}-{constants.VERSION}'
 
@@ -32,10 +30,9 @@ PyInstaller.__main__.run([
     '--hidden-import', 'PyQt6.sip',
     '--hidden-import', 'PyQt6.QtPrintSupport',
     '--icon', os.path.join('beeref', 'assets', 'logo.png'),
-    #'--paths', os.path.join(pyqt_dir, 'bin'),
     '--add-data', datapath(
         [pyqt_dir, 'plugins', 'platforms'], ['platforms']),
-    '--add-data', datapath([pyqt_dir, 'lib'], ['.']),
+    '--add-data', datapath([pyqt_dir, libdir], ['.']),
     '--add-data', datapath(
         ['beeref', 'documentation'], ['beeref', 'documentation']),
     '--add-data', datapath(
