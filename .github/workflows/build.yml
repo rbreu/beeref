@@ -23,8 +23,8 @@ jobs:
     - name: Run build.py
       run: |
         python build.py
-    - uses: actions/upload-artifact@v2
     - name: Upload artifact
+      uses: actions/upload-artifact@v2
       with:
         name: build
         path: dist/*.zip
