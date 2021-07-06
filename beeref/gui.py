@@ -125,7 +125,10 @@ class DebugLogDialog(QtWidgets.QDialog):
 
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
-        layout.addWidget(QtWidgets.QLabel(logfile_name()))
+        name_widget = QtWidgets.QLabel(logfile_name())
+        name_widget.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse)
+        layout.addWidget(name_widget)
         layout.addWidget(scroll)
         layout.addWidget(buttons)
         self.show()

@@ -22,7 +22,7 @@ jobs:
         sudo apt install xvfb
         python -m pip install --upgrade pip
         pip install .
-        pip install -r requirements/dev.txt
+        pip install -r requirements/test.txt
     - name: Run Unittests with pytest
       run: |
         xvfb-run --auto-servernum --server-num=1 --server-args="-screen 1 1920x1200x24 -ac +extension GLX" coverage run --source=beeref -m pytest -v -s

@@ -1,5 +1,5 @@
-coverage
+-r test.txt
+
 flake8
-httpretty
-pytest
-pytest-qt>=4
+pybadges
+pyinstaller
