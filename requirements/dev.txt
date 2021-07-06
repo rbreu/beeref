@@ -3,3 +3,4 @@
 flake8
 pybadges
 pyinstaller
+yamllint

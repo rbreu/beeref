@@ -10,21 +10,21 @@ jobs:
       matrix:
         python-version: ['3.6', '3.7', '3.8', '3.9']
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt install libgl1-mesa-glx libegl1 libglib2.0-0 libxcb-image0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 xserver-xephyr libfontconfig1 libxkbcommon-dev libdbus-1-3 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0
-        sudo apt install xvfb
-        python -m pip install --upgrade pip
-        pip install .
-        pip install -r requirements/test.txt
-    - name: Run Unittests with pytest
-      run: |
-        xvfb-run --auto-servernum --server-num=1 --server-args="-screen 1 1920x1200x24 -ac +extension GLX" coverage run --source=beeref -m pytest -v -s
-    - name: Upload Coverage report to Codecov
-      uses: codecov/codecov-action@v1
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt install libgl1-mesa-glx libegl1 libglib2.0-0 libxcb-image0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 xserver-xephyr libfontconfig1 libxkbcommon-dev libdbus-1-3 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0
+          sudo apt install xvfb
+          python -m pip install --upgrade pip
+          pip install .
+          pip install -r requirements/test.txt
+      - name: Run Unittests with pytest
+        run: |
+          xvfb-run --auto-servernum --server-num=1 --server-args="-screen 1 1920x1200x24 -ac +extension GLX" coverage run --source=beeref -m pytest -v -s
+      - name: Upload Coverage report to Codecov
+        uses: codecov/codecov-action@v1
