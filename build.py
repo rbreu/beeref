@@ -24,7 +24,7 @@ if sys.platform.startswith('win'):
     icon = 'logo.ico'
 else:
     libdir = 'lib'
-    icon = 'logo.png'
+    icon = 'logo.icns'  # For OSX; param gets ignored on Linux
 
 PyInstaller.__main__.run([
     '--noconfirm',
@@ -33,7 +33,7 @@ PyInstaller.__main__.run([
     '--name', appname,
     '--hidden-import', 'PyQt6.sip',
     '--hidden-import', 'PyQt6.QtPrintSupport',
-    #'--icon', os.path.join('beeref', 'assets', 'logo.png'),
+    '--icon', os.path.join('beeref', 'assets', icon),
     '--add-data', datapath(
         [pyqt_dir, 'plugins', 'platforms'], ['platforms']),
     '--add-data', datapath([pyqt_dir, libdir], ['.']),
