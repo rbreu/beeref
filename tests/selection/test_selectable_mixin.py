@@ -284,17 +284,17 @@ def test_get_flip_bounds(view, item):
         with patch('beeref.items.BeePixmapItem.height',
                    new_callable=PropertyMock, return_value=80):
             edges = item.get_flip_bounds()
-            assert edges[0]['rect'].topLeft() == QtCore.QPointF(5, -15)
+            assert edges[0]['rect'].topLeft() == QtCore.QPointF(5, -5)
             assert edges[0]['rect'].bottomRight() == QtCore.QPointF(95, 5)
             assert edges[0]['flip_v'] is True
             assert edges[1]['rect'].topLeft() == QtCore.QPointF(5, 75)
-            assert edges[1]['rect'].bottomRight() == QtCore.QPointF(95, 95)
+            assert edges[1]['rect'].bottomRight() == QtCore.QPointF(95, 85)
             assert edges[1]['flip_v'] is True
-            assert edges[2]['rect'].topLeft() == QtCore.QPointF(-15, 5)
+            assert edges[2]['rect'].topLeft() == QtCore.QPointF(-5, 5)
             assert edges[2]['rect'].bottomRight() == QtCore.QPointF(5, 75)
             assert edges[2]['flip_v'] is False
             assert edges[3]['rect'].topLeft() == QtCore.QPointF(95, 5)
-            assert edges[3]['rect'].bottomRight() == QtCore.QPointF(115, 75)
+            assert edges[3]['rect'].bottomRight() == QtCore.QPointF(105, 75)
             assert edges[3]['flip_v'] is False
 
 

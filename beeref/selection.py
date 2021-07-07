@@ -250,17 +250,17 @@ class SelectableMixin(BaseItemMixin):
         """The interactactable shape of the flip handles.
 
         These stretch around the edge of the item filling the areas
-        between the scale and rotate handles, e.g. for the bottom right corner:
+        between the scale handles, e.g. for the bottom right corner:
 
-          │FFF│
-        ──┼─┬─┤
+          │F│
+        ──┼─┼─┐
         FF│S│R│
-        FF├─┘ │
-        FF│R R│
-        ──┴───┘
+        ──┼─┘ │
+          │R R│
+          └───┘
         """
 
-        outer_margin = self.select_resize_size / 2 + self.select_rotate_size
+        outer_margin = self.select_resize_size / 2
         inner_margin = self.select_resize_size / 2
         return [
             # top:
@@ -311,10 +311,17 @@ class SelectableMixin(BaseItemMixin):
     def shape(self):
         path = QtGui.QPainterPath()
         if self.has_selection_handles():
-            rect = self.boundingRect()
+            margin = self.select_resize_size / 2
+            rect = QtCore.QRectF(
+                -margin, -margin,
+                self.width + 2 * margin,
+                self.height + 2 * margin)
+            path.addRect(rect)
+            for corner in self.corners:
+                path.addPath(self.get_rotate_bounds(corner))
         else:
             rect = super().boundingRect()
-        path.addRect(rect)
+            path.addRect(rect)
         return path
 
     def hoverMoveEvent(self, event):
