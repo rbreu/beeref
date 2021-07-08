@@ -40,7 +40,7 @@ def exif_rotated_image(path=None):
     with open(path, 'rb') as f:
         try:
             exifimg = exif.Image(f)
-        except plum.UnpackError:
+        except plum.exceptions.UnpackError:
             logger.info(f'Exif parser failed on image: {path}')
             return img
 

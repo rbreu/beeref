@@ -24,7 +24,7 @@ def test_exif_rotated_image_not_a_file(qapp):
 
 def test_exif_rotated_image_exif_unpack_error(qapp, imgfilename3x3):
     with patch('beeref.fileio.image.exif.Image') as exif_mock:
-        exif_mock.raise_error = plum.UnpackError()
+        exif_mock.raise_error = plum.exceptions.UnpackError()
         img = exif_rotated_image(imgfilename3x3)
         assert img.isNull() is False
 
