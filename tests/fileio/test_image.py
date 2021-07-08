@@ -1,8 +1,11 @@
 import math
 import os.path
+from unittest.mock import patch
 
 import httpretty
 import pytest
+
+import plum
 
 from PyQt6 import QtCore, QtGui
 
@@ -17,6 +20,13 @@ def test_exif_rotated_image_without_path(qapp):
 def test_exif_rotated_image_not_a_file(qapp):
     img = exif_rotated_image('foo')
     assert img.isNull() is True
+
+
+def test_exif_rotated_image_exif_unpack_error(qapp, imgfilename3x3):
+    with patch('beeref.fileio.image.exif.Image') as exif_mock:
+        exif_mock.raise_error = plum.UnpackError()
+        img = exif_rotated_image(imgfilename3x3)
+        assert img.isNull() is False
 
 
 @pytest.mark.parametrize('path,expected',

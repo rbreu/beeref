@@ -104,6 +104,9 @@ class BeeSettings(QtCore.QSettings):
             constants.APPNAME,
             constants.APPNAME)
 
+    def fileName(self):
+        return os.path.normpath(super().fileName())
+
     def get_settings_dir(self):  # pragma: no cover
         args = CommandlineArgs()
         return args.settings_dir

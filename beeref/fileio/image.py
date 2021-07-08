@@ -22,6 +22,7 @@ from urllib import request
 from PyQt6 import QtGui
 
 import exif
+import plum
 
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,11 @@ def exif_rotated_image(path=None):
         return img
 
     with open(path, 'rb') as f:
-        exifimg = exif.Image(f)
+        try:
+            exifimg = exif.Image(f)
+        except plum.UnpackError:
+            logger.info(f'Exif parser failed on image: {path}')
+            return img
 
     if 'orientation' in exifimg.list_all():
         orientation = exifimg.orientation
@@ -73,9 +78,11 @@ def exif_rotated_image(path=None):
 
 def load_image(path):
     if isinstance(path, str):
+        path = os.path.normpath(path)
         return (exif_rotated_image(path), path)
     if path.isLocalFile():
-        return (exif_rotated_image(path.path()), path.path())
+        path = os.path.normpath(path.toLocalFile())
+        return (exif_rotated_image(path), path)
 
     img = exif_rotated_image()
     try:

@@ -15,6 +15,7 @@
 
 import logging
 import os
+import os.path
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
@@ -313,6 +314,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             caption='Open file',
             filter=f'{constants.APPNAME} File (*.bee)')
         if filename:
+            filename = os.path.normpath(filename)
             self.open_from_file(filename)
             self.filename = filename
 
@@ -660,4 +662,5 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             item = BeePixmapItem(img)
             pos = self.mapToScene(pos)
             self.undo_stack.push(commands.InsertItems(self.scene, [item], pos))
-        logger.info('Drop not an image')
+        else:
+            logger.info('Drop not an image')
