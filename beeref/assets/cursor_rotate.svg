@@ -16,9 +16,9 @@
    id="svg8"
    sodipodi:docname="cursor_rotate.svg"
    inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
-   inkscape:export-filename="/home/rbreu/code/python/beeref/git/beeref/assets/cursor_rotate_2.png"
-   inkscape:export-xdpi="23.370001"
-   inkscape:export-ydpi="23.370001">
+   inkscape:export-filename="/home/rbreu/code/python/beeref/git/beeref/assets/cursor_rotate.png"
+   inkscape:export-xdpi="18.700001"
+   inkscape:export-ydpi="18.700001">
   <defs
      id="defs2">
     <filter
@@ -43,7 +43,7 @@
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:zoom="4.1593846"
-     inkscape:cx="79.730822"
+     inkscape:cx="2.916574"
      inkscape:cy="62.010665"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
@@ -65,7 +65,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
