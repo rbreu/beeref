@@ -32,10 +32,11 @@ PyInstaller.__main__.run([
     '--windowed',
     '--name', appname,
     '--hidden-import', 'PyQt6.sip',
-    '--hidden-import', 'PyQt6.QtPrintSupport',
     '--icon', os.path.join('beeref', 'assets', icon),
     '--add-data', datapath(
         [pyqt_dir, 'plugins', 'platforms'], ['platforms']),
+    '--add-data', datapath(
+        [pyqt_dir, 'plugins', 'imageformats'], ['imageformats']),
     '--add-data', datapath([pyqt_dir, libdir], ['.']),
     '--add-data', datapath(
         ['beeref', 'documentation'], ['beeref', 'documentation']),
