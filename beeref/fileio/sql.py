@@ -87,7 +87,7 @@ class SQLiteIO:
         uri = pathlib.Path(self.filename).resolve().as_uri()
         if self.readonly:
             uri = f'{uri}?mode=ro'
-        self._connection = sqlite3.connect(uri)
+        self._connection = sqlite3.connect(uri, uri=True)
         self._cursor = self.connection.cursor()
 
     @property

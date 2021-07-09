@@ -28,9 +28,7 @@ setup(
     },
     include_package_data=True,
     package_data={
-        'beeref': [
-            'assets/*.png',
-            'documentation/*.html'
-        ],
+        'beeref.assets': ['*.png'],
+        'beeref': ['documentation/*.html'],
     },
 )
