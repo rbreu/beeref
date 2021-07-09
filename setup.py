@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='BeeRef',
-    version='0.0.1',
+    version='0.1.0',
     author='Rebecca Breu',
     author_email='rebecca@rbreu.de',
     url='https://github.com/rbreu/beeref',
@@ -14,13 +14,19 @@ setup(
         'rectangle-packer>=2.0.1',
         'exif',
     ],
-    packages=['beeref'],
+    packages=[
+        'beeref',
+        'beeref.actions',
+        'beeref.assets',
+        'beeref.documentation',
+        'beeref.fileio',
+    ],
     entry_points={
         'gui_scripts': [
             'beeref = beeref.__main__:main'
         ]
     },
     package_data={
-        'assets': ['*.png', '*.svg'],
+        'assets': ['*.png', '*.html'],
     },
 )

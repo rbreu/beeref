@@ -12,7 +12,7 @@ def test_debug_log_dialog(qtbot, settings, view):
     dialog = DebugLogDialog(view)
     dialog.show()
     qtbot.addWidget(dialog)
-    assert dialog.log.text() == 'my log output'
+    assert dialog.log.toPlainText() == 'my log output'
     qtbot.mouseClick(dialog.copy_button, Qt.MouseButton.LeftButton)
     clipboard = QtWidgets.QApplication.clipboard()
     assert clipboard.text() == 'my log output'

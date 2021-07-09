@@ -108,12 +108,8 @@ class DebugLogDialog(QtWidgets.QDialog):
         with open(logfile_name()) as f:
             self.log_txt = f.read()
 
-        self.log = QtWidgets.QLabel(self.log_txt)
-        self.log.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse)
-        scroll = QtWidgets.QScrollArea(self)
-        scroll.setWidgetResizable(True)
-        scroll.setWidget(self.log)
+        self.log = QtWidgets.QPlainTextEdit(self.log_txt)
+        self.log.setReadOnly(True)
 
         buttons = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Close)
@@ -129,7 +125,7 @@ class DebugLogDialog(QtWidgets.QDialog):
         name_widget.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(name_widget)
-        layout.addWidget(scroll)
+        layout.addWidget(self.log)
         layout.addWidget(buttons)
         self.show()
 
