@@ -26,7 +26,11 @@ setup(
             'beeref = beeref.__main__:main'
         ]
     },
+    include_package_data=True,
     package_data={
-        'assets': ['*.png', '*.html'],
+        'beeref': [
+            'assets/*.png',
+            'documentation/*.html'
+        ],
     },
 )
