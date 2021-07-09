@@ -24,10 +24,23 @@ BeeRef lets you quickly arrange your reference images and view them while you cr
    :target: https://codecov.io/gh/rbreu/beeref
 
 
-Installation via Python & pip
------------------------------
+Installation
+------------
 
-At the moment, you need to have a working Python 3 environment to install BeeRef. Run the following command to install the development version::
+Stable Release
+~~~~~~~~~~~~~~
+
+Get the zip file for your operating systom from the `latest release <https://github.com/rbreu/beeref/releases>`_. Extract the zip file. Inside the extracted folder, you will find a BeeRef executable.
+
+Follow further releases via the `atom feed <https://github.com/rbreu/beeref/releases.atom>`_.
+
+**Linux users** who want to have BeeRef appear in the app menu, save the desktop file from the `release section <https://github.com/rbreu/beeref/releases>`_ in ``~/.local/share/applications`` and adjust the path names in the file to match the location of your BeeRef installation.
+
+
+Development Version
+~~~~~~~~~~~~~~~~~~~
+
+To get the current delevopment version, you need to have a working Python 3 environment. Run the following command to install the development version::
 
   pip install git+https://github.com/rbreu/beeref.git
 
