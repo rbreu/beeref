@@ -25,6 +25,7 @@ https://www.sqlite.org/sqlar.html
 
 import logging
 import os
+import pathlib
 import sqlite3
 
 from PyQt6 import QtGui
@@ -83,11 +84,10 @@ class SQLiteIO:
         if self.create_new:
             self.scene.clear_save_ids()
 
+        uri = pathlib.Path(self.filename).resolve().as_uri()
         if self.readonly:
-            self._connection = sqlite3.connect(
-                f'file:{self.filename}?mode=ro')
-        else:
-            self._connection = sqlite3.connect(self.filename)
+            uri = f'{uri}?mode=ro'
+        self._connection = sqlite3.connect(uri)
         self._cursor = self.connection.cursor()
 
     @property

@@ -65,6 +65,11 @@ def imgdata3x3(imgfilename3x3):
 
 
 @pytest.fixture
+def tmpfile(tmpdir):
+    yield os.path.join(tmpdir, 'test')
+
+
+@pytest.fixture
 def item():
     from beeref.items import BeePixmapItem
     yield BeePixmapItem(QtGui.QImage())

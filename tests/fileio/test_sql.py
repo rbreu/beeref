@@ -9,30 +9,30 @@ from beeref.fileio.sql import SQLiteIO
 from beeref.items import BeePixmapItem
 
 
-def test_sqliteio_ẁrite_meta_application_id():
-    io = SQLiteIO(':memory:', MagicMock(), create_new=True)
+def test_sqliteio_ẁrite_meta_application_id(tmpfile):
+    io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
     io.write_meta()
     result = io.fetchone('PRAGMA application_id')
     assert result[0] == SQLiteIO.APPLICATION_ID
 
 
-def test_sqliteio_ẁrite_meta_user_version():
-    io = SQLiteIO(':memory:', MagicMock(), create_new=True)
+def test_sqliteio_ẁrite_meta_user_version(tmpfile):
+    io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
     io.write_meta()
     result = io.fetchone('PRAGMA user_version')
     assert result[0] == SQLiteIO.USER_VERSION
 
 
-def test_sqliteio_ẁrite_meta_foreign_keys():
-    io = SQLiteIO(':memory:', MagicMock(), create_new=True)
+def test_sqliteio_ẁrite_meta_foreign_keys(tmpfile):
+    io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
     io.write_meta()
     result = io.fetchone('PRAGMA foreign_keys')
     assert result[0] == 1
 
 
-def test_sqliteio_create_schema_on_new_when_create_new():
+def test_sqliteio_create_schema_on_new_when_create_new(tmpfile):
     scene_mock = MagicMock()
-    io = SQLiteIO(':memory:', scene_mock, create_new=True)
+    io = SQLiteIO(tmpfile, scene_mock, create_new=True)
     io.create_schema_on_new()
     result = io.fetchone(
         'SELECT COUNT(*) FROM sqlite_master '
@@ -41,9 +41,9 @@ def test_sqliteio_create_schema_on_new_when_create_new():
     scene_mock.clear_save_ids.assert_called_once()
 
 
-def test_sqliteio_create_schema_on_new_when_not_create_new():
+def test_sqliteio_create_schema_on_new_when_not_create_new(tmpfile):
     scene_mock = MagicMock()
-    io = SQLiteIO(':memory:', scene_mock, create_new=False)
+    io = SQLiteIO(tmpfile, scene_mock, create_new=False)
     io.create_schema_on_new()
     result = io.fetchone(
         'SELECT COUNT(*) FROM sqlite_master '
@@ -52,22 +52,21 @@ def test_sqliteio_create_schema_on_new_when_not_create_new():
     scene_mock.clear_save_ids.assert_not_called()
 
 
-def test_sqliteio_readonly_doesnt_allow_write(view, tmpdir):
-    fname = os.path.join(tmpdir, 'test.bee')
-    with open(fname, 'w') as f:
+def test_sqliteio_readonly_doesnt_allow_write(view, tmpfile):
+    with open(tmpfile, 'w') as f:
         f.write('foobar')
-    io = SQLiteIO(fname, view.scene, readonly=True)
+    io = SQLiteIO(tmpfile, view.scene, readonly=True)
 
     with pytest.raises(BeeFileIOError) as exinfo:
         io.write()
 
-    assert exinfo.value.filename == fname
-    with open(fname, 'r') as f:
+    assert exinfo.value.filename == tmpfile
+    with open(tmpfile, 'r') as f:
         f.read() == 'foobar'
 
 
-def test_sqliteio_write_calls_create_schema_on_new(view):
-    io = SQLiteIO(':memory:', view.scene, create_new=True)
+def test_sqliteio_write_calls_create_schema_on_new(tmpfile, view):
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
     with patch.object(io, 'create_schema_on_new') as crmock:
         with patch.object(io, 'fetchall'):
             with patch.object(io, 'exmany'):
@@ -75,8 +74,8 @@ def test_sqliteio_write_calls_create_schema_on_new(view):
                 crmock.assert_called_once()
 
 
-def test_sqliteio_write_calls_write_meta(view):
-    io = SQLiteIO(':memory:', view.scene, create_new=True)
+def test_sqliteio_write_calls_write_meta(tmpfile, view):
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
     with patch.object(io, 'write_meta') as metamock:
         with patch.object(io, 'fetchall'):
             with patch.object(io, 'exmany'):
@@ -84,7 +83,7 @@ def test_sqliteio_write_calls_write_meta(view):
                 metamock.assert_called_once()
 
 
-def test_sqliteio_write_inserts_new_item(view):
+def test_sqliteio_write_inserts_new_item(tmpfile, view):
     item = BeePixmapItem(QtGui.QImage(), filename='bee.jpg')
     view.scene.addItem(item)
     item.setScale(1.3)
@@ -93,7 +92,7 @@ def test_sqliteio_write_inserts_new_item(view):
     item.setRotation(33)
     item.do_flip()
     item.pixmap_to_bytes = MagicMock(return_value=b'abc')
-    io = SQLiteIO(':memory:', view.scene, create_new=True)
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
     io.write()
 
     assert item.save_id == 1
@@ -114,9 +113,9 @@ def test_sqliteio_write_inserts_new_item(view):
     assert result[9] == '0001-bee.png'
 
 
-def test_sqliteio_write_inserts_new_item_without_filename(view, item):
+def test_sqliteio_write_inserts_new_item_without_filename(tmpfile, view, item):
     view.scene.addItem(item)
-    io = SQLiteIO(':memory:', view.scene, create_new=True)
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
     io.write()
 
     assert item.save_id == 1
@@ -127,7 +126,7 @@ def test_sqliteio_write_inserts_new_item_without_filename(view, item):
     assert result[1] == '0001.png'
 
 
-def test_sqliteio_write_updates_existing_item(view):
+def test_sqliteio_write_updates_existing_item(tmpfile, view):
     item = BeePixmapItem(QtGui.QImage(), filename='bee.png')
     view.scene.addItem(item)
     item.setScale(1.3)
@@ -136,7 +135,7 @@ def test_sqliteio_write_updates_existing_item(view):
     item.setRotation(33)
     item.save_id = 1
     item.pixmap_to_bytes = MagicMock(return_value=b'abc')
-    io = SQLiteIO(':memory:', view.scene, create_new=True)
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
     io.write()
     item.setScale(0.7)
     item.setPos(20, 30)
@@ -163,12 +162,12 @@ def test_sqliteio_write_updates_existing_item(view):
     assert result[7] == b'abc'
 
 
-def test_sqliteio_write_removes_nonexisting_item(view):
+def test_sqliteio_write_removes_nonexisting_item(tmpfile, view):
     item = BeePixmapItem(QtGui.QImage(), filename='bee.png')
     item.setScale(1.3)
     item.setPos(44, 55)
     view.scene.addItem(item)
-    io = SQLiteIO(':memory:', view.scene, create_new=True)
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
     io.write()
 
     view.scene.removeItem(item)
@@ -179,34 +178,33 @@ def test_sqliteio_write_removes_nonexisting_item(view):
     assert io.fetchone('SELECT COUNT(*) from sqlar') == (0,)
 
 
-def test_sqliteio_write_update_recovers_from_borked_file(view, tmpdir):
+def test_sqliteio_write_update_recovers_from_borked_file(view, tmpfile):
     item = BeePixmapItem(QtGui.QImage(), filename='bee.png')
     view.scene.addItem(item)
 
-    fname = os.path.join(tmpdir, 'test.bee')
-    with open(fname, 'w') as f:
+    with open(tmpfile, 'w') as f:
         f.write('foobar')
 
-    io = SQLiteIO(fname, view.scene, create_new=False)
+    io = SQLiteIO(tmpfile, view.scene, create_new=False)
     io.write()
     result = io.fetchone('SELECT COUNT(*) FROM items')
     assert result[0] == 1
 
 
-def test_sqliteio_write_updates_progress(view):
+def test_sqliteio_write_updates_progress(tmpfile, view):
     worker = MagicMock(canceled=False)
-    io = SQLiteIO(':memory:', view.scene, create_new=True, worker=worker)
+    io = SQLiteIO(tmpfile, view.scene, create_new=True, worker=worker)
     item = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item)
     io.write()
     worker.begin_processing.emit.assert_called_once_with(1)
     worker.progress.emit.assert_called_once_with(0)
-    worker.finished.emit.assert_called_once_with(':memory:', [])
+    worker.finished.emit.assert_called_once_with(tmpfile, [])
 
 
-def test_sqliteio_write_canceled(view):
+def test_sqliteio_write_canceled(tmpfile, view):
     worker = MagicMock(canceled=True)
-    io = SQLiteIO(':memory:', view.scene, create_new=True, worker=worker)
+    io = SQLiteIO(tmpfile, view.scene, create_new=True, worker=worker)
     item = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item)
     item = BeePixmapItem(QtGui.QImage())
@@ -214,12 +212,11 @@ def test_sqliteio_write_canceled(view):
     io.write()
     worker.begin_processing.emit.assert_called_once_with(2)
     worker.progress.emit.assert_called_once_with(0)
-    worker.finished.emit.assert_called_once_with(':memory:', [])
+    worker.finished.emit.assert_called_once_with(tmpfile, [])
 
 
-def test_sqliteio_read_reads_readonly(view, tmpdir, imgdata3x3):
-    fname = os.path.join(tmpdir, 'test.bee')
-    io = SQLiteIO(fname, view.scene, create_new=True)
+def test_sqliteio_read_reads_readonly(tmpfile, view, imgdata3x3):
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
     io.create_schema_on_new()
     io.ex('INSERT INTO items '
           '(type, x, y, z, scale, rotation, flip, filename) '
@@ -230,7 +227,7 @@ def test_sqliteio_read_reads_readonly(view, tmpdir, imgdata3x3):
     io.connection.commit()
     del(io)
 
-    io = SQLiteIO(fname, view.scene, readonly=True)
+    io = SQLiteIO(tmpfile, view.scene, readonly=True)
     io.read()
     item, selected = view.scene.items_to_add.get()
     assert selected is False
@@ -247,9 +244,9 @@ def test_sqliteio_read_reads_readonly(view, tmpdir, imgdata3x3):
     assert view.scene.items_to_add.empty() is True
 
 
-def test_sqliteio_read_updates_progress(view):
+def test_sqliteio_read_updates_progress(tmpfile, view):
     worker = MagicMock(canceled=False)
-    io = SQLiteIO(':memory:', view.scene, create_new=True,
+    io = SQLiteIO(tmpfile, view.scene, create_new=True,
                   worker=worker)
 
     io.create_schema_on_new()
@@ -261,12 +258,12 @@ def test_sqliteio_read_updates_progress(view):
     io.read()
     worker.begin_processing.emit.assert_called_once_with(1)
     worker.progress.emit.assert_called_once_with(0)
-    worker.finished.emit.assert_called_once_with(':memory:', [])
+    worker.finished.emit.assert_called_once_with(tmpfile, [])
 
 
-def test_sqliteio_read_canceled(view):
+def test_sqliteio_read_canceled(tmpfile, view):
     worker = MagicMock(canceled=True)
-    io = SQLiteIO(':memory:', view.scene, create_new=True, worker=worker)
+    io = SQLiteIO(tmpfile, view.scene, create_new=True, worker=worker)
 
     io.create_schema_on_new()
     io.ex('INSERT INTO items (type, x, y, z, scale, filename) '
@@ -284,37 +281,34 @@ def test_sqliteio_read_canceled(view):
     worker.finished.emit.assert_called_once_with('', [])
 
 
-def test_sqliteio_read_raises_error_when_file_borked(view, tmpdir):
-    fname = os.path.join(tmpdir, 'test.bee')
-    with open(fname, 'w') as f:
+def test_sqliteio_read_raises_error_when_file_borked(view, tmpfile):
+    with open(tmpfile, 'w') as f:
         f.write('foobar')
 
-    io = SQLiteIO(fname, view.scene, readonly=True)
+    io = SQLiteIO(tmpfile, view.scene, readonly=True)
     with pytest.raises(BeeFileIOError) as exinfo:
         io.read()
-    assert exinfo.value.filename == fname
+    assert exinfo.value.filename == tmpfile
 
 
-def test_sqliteio_read_emits_error_message_when_file_borked(view, tmpdir):
-    fname = os.path.join(tmpdir, 'test.bee')
-    with open(fname, 'w') as f:
+def test_sqliteio_read_emits_error_message_when_file_borked(view, tmpfile):
+    with open(tmpfile, 'w') as f:
         f.write('foobar')
 
     worker = MagicMock()
-    io = SQLiteIO(fname, view.scene, readonly=True, worker=worker)
+    io = SQLiteIO(tmpfile, view.scene, readonly=True, worker=worker)
     io.read()
     worker.finished.emit.assert_called_once()
     args = worker.finished.emit.call_args_list[0][0]
-    assert args[0] == fname
+    assert args[0] == tmpfile
     assert len(args[1]) == 1
 
 
-def test_sqliteio_read_raises_error_when_file_empty(view, tmpdir):
-    fname = os.path.join(tmpdir, 'test.bee')
-    io = SQLiteIO(fname, view.scene, readonly=True)
+def test_sqliteio_read_raises_error_when_file_empty(view, tmpfile):
+    io = SQLiteIO(tmpfile, view.scene, readonly=True)
     with pytest.raises(BeeFileIOError) as exinfo:
         io.read()
-    assert exinfo.value.filename == fname
+    assert exinfo.value.filename == tmpfile
 
     # should not create a file on reading!
-    assert os.path.isfile(fname) is False
+    assert os.path.isfile(tmpfile) is False
