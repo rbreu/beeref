@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class BeeAssets:
     _instance = None
-    PATH = os.path.join(os.path.dirname(__file__), 'assets')
+    PATH = os.path.dirname(__file__)
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
