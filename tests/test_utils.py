@@ -1,5 +1,3 @@
-import logging
-import os.path
 import pytest
 
 from PyQt6 import QtCore, QtGui
@@ -65,21 +63,3 @@ def test_get_rect_from_points_given_topright_bottomleft():
                           (3.1, 0.5, 3.0)])
 def test_round_to(number, base, expected):
     assert utils.round_to(number, base) == expected
-
-
-def test_rotating_file_handler_creates_new_dir(tmpdir):
-    logfile = os.path.join(tmpdir, 'foo', 'bar.log')
-    handler = utils.BeeRotatingFileHandler(logfile)
-    handler.emit(logging.LogRecord(
-        'foo', logging.INFO, 'bar', 66, 'baz', [], None))
-    handler.close()
-    assert os.path.exists(logfile)
-
-
-def testrotating_file_handler_uses_existing_dir(tmpdir):
-    logfile = os.path.join(tmpdir, 'bar.log')
-    handler = utils.BeeRotatingFileHandler(logfile)
-    handler.emit(logging.LogRecord(
-        'foo', logging.INFO, 'bar', 66, 'baz', [], None))
-    handler.close()
-    assert os.path.exists(logfile)

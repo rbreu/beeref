@@ -70,11 +70,3 @@ def round_to(number, base):
     """
 
     return base * round(number / base)
-
-
-class BeeRotatingFileHandler(logging.handlers.RotatingFileHandler):
-    """RotatingFileHandler that creates log directory if necessary."""
-
-    def __init__(self, filename, **kwargs):
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-        super().__init__(filename, **kwargs)

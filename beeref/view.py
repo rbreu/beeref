@@ -471,7 +471,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
         if self.previous_transform:
             return
-        logger.debug('Recalculating scene rectangle...')
+        logger.trace('Recalculating scene rectangle...')
         try:
             topleft = self.mapFromScene(
                 self.scene.itemsBoundingRect().topLeft())
@@ -486,7 +486,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             self.setSceneRect(QtCore.QRectF(topleft, bottomright))
         except OverflowError:
             logger.info('Maximum scene size reached')
-        logger.debug('Done recalculating scene rectangle')
+        logger.trace('Done recalculating scene rectangle')
 
     def get_zoom_size(self, func):
         """Calculates the size of all items' bounding box in the view's

@@ -1,3 +1,12 @@
+0.2.0 - unreleased
+==================
+
+Changed
+-------
+
+* Make debug log file less verbose
+
+
 0.1.1 - 2021-07-18
 ==================
 
