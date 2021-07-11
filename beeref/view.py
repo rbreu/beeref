@@ -468,6 +468,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         width higher on top and bottom. This gives the impression of
         an infinite canvas."""
 
+        if self.previous_transform:
+            return
         logger.debug('Recalculating scene rectangle...')
         try:
             topleft = self.mapFromScene(
