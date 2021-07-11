@@ -1,11 +1,11 @@
 [Desktop Entry]
 Name=BeeRef
-Comment=BeeRef 0.1.0
+Comment=BeeRef 0.1.1
 Terminal=false
-Exec=/home/yourname/path/to/beeref/git/dist/BeeRef-0.1.0/BeeRef-0.1.0
+Exec=/home/yourname/path/to/BeeRef-0.1.1/BeeRef-0.1.1
 Type=Application
-Icon=/home/yourname/path/to/BeeRef-0.1.0/beeref/assets/logo.png
-Name[en_US]=BeeRef
+Icon=/home/yourname/path/to/BeeRef-0.1.1/beeref/assets/logo.png
+Name[en_US]=Beeref
 
 MimeType=application/x-beeref;
 Categories=Qt;KDE;Graphics;

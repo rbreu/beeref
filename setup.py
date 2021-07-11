@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='BeeRef',
-    version='0.1.0',
+    version='0.1.1',
     author='Rebecca Breu',
     author_email='rebecca@rbreu.de',
     url='https://github.com/rbreu/beeref',
