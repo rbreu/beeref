@@ -1,0 +1,39 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+.page-header {
+    background-color: rgba(160,42,111,1);
+    background-image: linear-gradient(
+        90deg,
+        rgba(0,184,200,1) 0%,
+        rgba(49,58,180,1) 50%,
+        rgba(160,42,111,1) 100%,
+    );
+}
+
+.main-content h1,
+.main-content h2,
+.main-content h3,
+.main-content h4,
+.main-content h5,
+.main-content h6 {
+    color: rgba(160,42,111,1);
+}
+
+a {
+    color: rgba(49,58,180,1);
+}
+
+.page-header .logo {
+    @include large {
+        width: 5rem;
+    }
+    @include medium {
+        width: 3.5rem;
+    }
+    @include small {
+        width: 2.7rem;
+    }
+}

@@ -1,37 +1,40 @@
-## Welcome to GitHub Pages
+---
+# Feel free to add content and custom Front Matter to this file.
+# To modify the layout, see https://jekyllrb.com/docs/themes/#overriding-theme-defaults
 
-You can use the [editor on GitHub](https://github.com/rbreu/beeref/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+layout: default
+---
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+BeeRef lets you quickly arrange your reference images and view them while you create. Its minimal interface is designed not to get in the way of your creative process.
 
-### Markdown
+![Screenshot of BeeRef]({{ site.baseurl}}/assets/images/screenshot.png)
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
 
-```markdown
-Syntax highlighted code block
+## Installation
 
-# Header 1
-## Header 2
-### Header 3
+Get the zip file for your operating system (Windows, Linux, macOS) from the [latest release]({{ site.github.latest_release.html_url }}). Extract the zip file. Inside the extracted folder, you will find a BeeRef executable.
 
-- Bulleted
-- List
+**Linux users** who want to have BeeRef appear in the app menu, save the desktop file from the [release section]({{ site.github.latest_release.html_url }}) in `~/.local/share/applications` and adjust the path names in the file to match the location of your BeeRef installation.
 
-1. Numbered
-2. List
 
-**Bold** and _Italic_ and `Code` text
+## Features
 
-[Link](url) and ![Image](src)
+* Move, scale, rotate and flip images
+* Mass-scale images to the same width, height or size
+* Mass-arrange images vertically, horizontally or for optimal usage of space
+* Enable alaways-on-top-mode and disable the title bar to let the BeeRef window unobtrusively float above your art program:
+
+![Screenshot of BeeRef over other program]({{ site.baseurl}}/assets/images/screenshot_float.png)
+
+
+### Regarding the bee file format
+
+Currently, all images are embedded into the bee file as png files. While png is a lossless format, it may also produce larger file sizes than compressed jpg files, so bee files may become bigger than the imported images on their own. More embedding options are to come later.
+
+The bee file format is a sqlite database inside which the images are stored in an sqlar table—meaning they can be extracted with the [sqlite command line program](<https://www.sqlite.org/cli.html>):
+
+```
+sqlite3 myfile.bee -Axv
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/rbreu/beeref/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+Options for exporting from inside BeeRef are planned, but the above always works independently of BeeRef.

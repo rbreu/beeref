@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   width="87.5"
+   height="87.5"
+   id="RSSicon"
+   viewBox="0 0 175 175"
+   sodipodi:docname="feed_icon.svg"
+   inkscape:version="1.0.2 (e86c870, 2021-01-15)"
+   inkscape:export-filename="/home/rbreu/code/python/beeref/git/images/feed_icon.png"
+   inkscape:export-xdpi="561.73999"
+   inkscape:export-ydpi="561.73999">
+  <metadata
+     id="metadata34">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1280"
+     inkscape:window-height="656"
+     id="namedview32"
+     showgrid="false"
+     inkscape:pagecheckerboard="true"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:zoom="3.8671875"
+     inkscape:cx="42"
+     inkscape:cy="45"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="RSSicon"
+     inkscape:document-rotation="0" />
+  <defs
+     id="defs17">
+    <linearGradient
+       x1="0.085000001"
+       y1="0.085000001"
+       x2="0.91500002"
+       y2="0.91500002"
+       id="RSSg">
+      <stop
+         offset="0.0"
+         stop-color="#E3702D"
+         id="stop2" />
+      <stop
+         offset="0.1071"
+         stop-color="#EA7D31"
+         id="stop4" />
+      <stop
+         offset="0.3503"
+         stop-color="#F69537"
+         id="stop6" />
+      <stop
+         offset="0.5"
+         stop-color="#FB9E3A"
+         id="stop8" />
+      <stop
+         offset="0.7016"
+         stop-color="#EA7C31"
+         id="stop10" />
+      <stop
+         offset="0.8866"
+         stop-color="#DE642B"
+         id="stop12" />
+      <stop
+         offset="1.0"
+         stop-color="#D95B29"
+         id="stop14" />
+    </linearGradient>
+  </defs>
+  <circle
+     cx="24"
+     cy="151"
+     r="24"
+     fill="#ffffff"
+     id="circle25" />
+  <path
+     d="M 116,175 H 82 A 82,82 0 0 0 0,93 V 59 a 116,116 0 0 1 116,116 z"
+     fill="#ffffff"
+     id="path27" />
+  <path
+     d="M 140,175 A 140,140 0 0 0 0,35 V 0 a 175,175 0 0 1 175,175 z"
+     fill="#ffffff"
+     id="path29" />
+</svg>
