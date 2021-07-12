@@ -5,7 +5,7 @@ BeeRef — A Simple Reference Image Viewer
 
    <img align="left" width="100" height="100" src="https://raw.githubusercontent.com/rbreu/beeref/main/beeref/assets/logo.png">
 
-BeeRef lets you quickly arrange your reference images and view them while you create. Its minimal interface is designed not to get in the way of your creative process.
+`BeeRef <https://rbreu.github.io/beeref/>`_ lets you quickly arrange your reference images and view them while you create. Its minimal interface is designed not to get in the way of your creative process.
 
 |python-version| |github-ci-flake8| |github-ci-pytest| |codecov|
 
@@ -30,7 +30,7 @@ Installation
 Stable Release
 ~~~~~~~~~~~~~~
 
-Get the zip file for your operating systom from the `latest release <https://github.com/rbreu/beeref/releases>`_. Extract the zip file. Inside the extracted folder, you will find a BeeRef executable.
+Get the zip file for your operating system (Windows, Linux, macOS) from the `latest release <https://github.com/rbreu/beeref/releases>`_. Extract the zip file. Inside the extracted folder, you will find a BeeRef executable.
 
 Follow further releases via the `atom feed <https://github.com/rbreu/beeref/releases.atom>`_.
 
@@ -53,8 +53,19 @@ If there are issues starting the application, run it with the environment variba
 This should tell you whether you need to install any additional libraries.
 
 
+Features
+--------
+
+* Move, scale, rotate and flip images
+* Mass-scale images to the same width, height or size
+* Mass-arrange images vertically, horizontally or for optimal usage of space
+* Enable alaways-on-top-mode and disable the title bar to let the BeeRef window unobtrusively float above your art program:
+
+.. image:: https://github.com/rbreu/beeref/blob/main/images/screenshot.png
+
+
 Regarding the bee file format
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Currently, all images are embedded into the bee file as png files. While png is a lossless format, it may also produce larger file sizes than compressed jpg files, so bee files may become bigger than the imported images on their own. More embedding options are to come later.
 
