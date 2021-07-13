@@ -610,6 +610,10 @@ class RubberbandItem(BaseItemMixin, QtWidgets.QGraphicsRectItem):
         color = QtGui.QColor(SELECT_COLOR)
         color.setAlpha(40)
         self.setBrush(QtGui.QBrush(color))
+        pen = QtGui.QPen(QtGui.QColor(0, 0, 0))
+        pen.setWidth(1)
+        pen.setCosmetic(True)
+        self.setPen(pen)
 
     def __str__(self):
         return (f'RubberbandItem {self.width} x {self.height}')
