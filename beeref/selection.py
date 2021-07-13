@@ -396,6 +396,11 @@ class SelectableMixin(BaseItemMixin):
                     if edge['rect'].contains(event.pos()):
                         self.flip_active = True
                         event.accept()
+                        self.scene().undo_stack.push(
+                            commands.FlipItems(
+                                self.selection_action_items(),
+                                self.center_scene_coords,
+                                vertical=self.get_edge_flips_v(edge)))
                         return
 
         super().mousePressEvent(event)
@@ -474,6 +479,9 @@ class SelectableMixin(BaseItemMixin):
             event.accept()
             return
         if self.flip_active:
+            # We have already flipped on MousePress, but we
+            # still need to accept the event here as to not
+            # initiate an item move
             event.accept()
             return
 
@@ -508,11 +516,9 @@ class SelectableMixin(BaseItemMixin):
         elif self.flip_active and not just_selected:
             for edge in self.get_flip_bounds():
                 if edge['rect'].contains(event.pos()):
-                    self.scene().undo_stack.push(
-                        commands.FlipItems(
-                            self.selection_action_items(),
-                            self.center_scene_coords,
-                            vertical=self.get_edge_flips_v(edge)))
+                    # We have already flipped on MousePress, but we
+                    # still need to accept the event here as to not
+                    # initiate an item move
                     event.accept()
                     self.reset_actions()
                     return

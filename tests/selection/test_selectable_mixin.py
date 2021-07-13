@@ -767,6 +767,7 @@ def test_mouse_press_event_just_selected(view, item):
     with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent'):
         item.mousePressEvent(event)
     assert item.just_selected is True
+    event.accept.assert_not_called()
 
 
 def test_mouse_press_event_previously_selected(view, item):
@@ -777,6 +778,7 @@ def test_mouse_press_event_previously_selected(view, item):
     with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent'):
         item.mousePressEvent(event)
     assert item.just_selected is False
+    event.accept.assert_not_called()
 
 
 def test_mouse_press_event_topleft_scale(view, item):
@@ -792,6 +794,7 @@ def test_mouse_press_event_topleft_scale(view, item):
     assert item.event_direction.x() < 0
     assert item.event_direction.y() < 0
     assert item.scale_orig_factor == 1
+    event.accept.assert_called_once_with()
 
 
 def test_mouse_press_event_bottomright_scale(view, item):
@@ -811,6 +814,7 @@ def test_mouse_press_event_bottomright_scale(view, item):
             assert item.event_direction.x() > 0
             assert item.event_direction.y() > 0
             assert item.scale_orig_factor == 1
+            event.accept.assert_called_once_with()
 
 
 def test_mouse_press_event_rotate(view, item):
@@ -828,6 +832,7 @@ def test_mouse_press_event_rotate(view, item):
             assert item.rotate_active is True
             assert item.event_anchor == QtCore.QPointF(50, 40)
             assert item.rotate_orig_degrees == 0
+            event.accept.assert_called_once_with()
 
 
 def test_mouse_press_event_flip(view, item):
@@ -836,13 +841,21 @@ def test_mouse_press_event_flip(view, item):
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(0, 40)
     event.button.return_value = Qt.MouseButton.LeftButton
+    view.scene.undo_stack = MagicMock(push=MagicMock())
     with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent'):
         with patch('beeref.items.BeePixmapItem.width',
                    new_callable=PropertyMock, return_value=100):
             with patch('beeref.items.BeePixmapItem.height',
                        new_callable=PropertyMock, return_value=80):
                 item.mousePressEvent(event)
+    args = view.scene.undo_stack.push.call_args_list[0][0]
+    cmd = args[0]
+    isinstance(cmd, commands.FlipItems)
+    assert cmd.items == [item]
+    assert cmd.anchor == QtCore.QPointF(50, 40)
+    assert cmd.vertical is False
     assert item.flip_active is True
+    event.accept.assert_called_once_with()
 
 
 def test_mouse_press_event_not_selected(view, item):
@@ -856,6 +869,7 @@ def test_mouse_press_event_not_selected(view, item):
         assert item.scale_active is False
         assert item.rotate_active is False
         assert item.flip_active is False
+        event.accept.assert_not_called()
 
 
 def test_mouse_press_event_not_in_handles(view, item):
@@ -871,6 +885,7 @@ def test_mouse_press_event_not_in_handles(view, item):
         assert item.scale_active is False
         assert item.rotate_active is False
         assert item.flip_active is False
+        event.accept.assert_not_called()
 
 
 def test_mouse_move_event_when_no_action_reset_prev_transform(view, item):
@@ -883,6 +898,7 @@ def test_mouse_move_event_when_no_action_reset_prev_transform(view, item):
         item.mouseMoveEvent(event)
         m.assert_called_once_with(event)
         view.reset_previous_transform.assert_called_once()
+        event.accept.assert_not_called()
 
 
 def test_mouse_move_event_when_no_action_doesnt_reset_prev_transf(view, item):
@@ -895,6 +911,7 @@ def test_mouse_move_event_when_no_action_doesnt_reset_prev_transf(view, item):
         item.mouseMoveEvent(event)
         m.assert_called_once_with(event)
         view.reset_previous_transform.assert_not_called()
+        event.accept.assert_not_called()
 
 
 def test_mouse_move_event_when_scale_action(view, item):
@@ -915,6 +932,7 @@ def test_mouse_move_event_when_scale_action(view, item):
                 item.mouseMoveEvent(event)
                 m.assert_not_called()
                 assert item.scale() == approx(1.5, 0.01)
+                event.accept.assert_called_once_with()
 
 
 def test_mouse_move_event_when_rotate_action(view, item):
@@ -930,6 +948,7 @@ def test_mouse_move_event_when_rotate_action(view, item):
         item.mouseMoveEvent(event)
         m.assert_not_called()
     assert item.rotation() == 318
+    event.accept.assert_called_once_with()
 
 
 def test_mouse_move_event_when_flip_action(view, item):
@@ -941,6 +960,7 @@ def test_mouse_move_event_when_flip_action(view, item):
     with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mouseMoveEvent') as m:
         item.mouseMoveEvent(event)
         m.assert_not_called()
+        event.accept.assert_called_once_with()
 
 
 def test_mouse_release_event_when_no_action(view, item):
@@ -953,6 +973,7 @@ def test_mouse_release_event_when_no_action(view, item):
         item.mouseReleaseEvent(event)
         m.assert_called_once_with(event)
         item.flip_active is False
+        event.accept.assert_not_called()
 
 
 def test_mouse_release_event_when_scale_action(view, item):
@@ -980,6 +1001,7 @@ def test_mouse_release_event_when_scale_action(view, item):
             assert cmd.anchor == QtCore.QPointF(100, 80)
             assert cmd.ignore_first_redo is True
             assert item.scale_active is False
+            event.accept.assert_called_once_with()
 
 
 def test_mouse_release_event_when_scale_action_zero(view, item):
@@ -1000,6 +1022,7 @@ def test_mouse_release_event_when_scale_action_zero(view, item):
             item.mouseReleaseEvent(event)
             view.scene.undo_stack.push.assert_not_called()
             assert item.scale_active is False
+            event.accept.assert_called_once_with()
 
 
 def test_mouse_release_event_when_rotate_action(view, item):
@@ -1022,6 +1045,7 @@ def test_mouse_release_event_when_rotate_action(view, item):
     assert cmd.anchor == QtCore.QPointF(10, 20)
     assert cmd.ignore_first_redo is True
     assert item.rotate_active is False
+    event.accept.assert_called_once_with()
 
 
 def test_mouse_release_event_when_rotate_action_zero(view, item):
@@ -1037,6 +1061,7 @@ def test_mouse_release_event_when_rotate_action_zero(view, item):
     item.mouseReleaseEvent(event)
     view.scene.undo_stack.push.assert_not_called()
     assert item.rotate_active is False
+    event.accept.assert_called_once_with()
 
 
 def test_mouse_release_event_when_flip_action(view, item):
@@ -1051,10 +1076,6 @@ def test_mouse_release_event_when_flip_action(view, item):
         with patch('beeref.items.BeePixmapItem.height',
                    new_callable=PropertyMock, return_value=80):
             item.mouseReleaseEvent(event)
-            args = view.scene.undo_stack.push.call_args_list[0][0]
-            cmd = args[0]
-            isinstance(cmd, commands.FlipItems)
-            assert cmd.items == [item]
-            assert cmd.anchor == QtCore.QPointF(50, 40)
-            assert cmd.vertical is False
-            assert item.flip_active is False
+    view.scene.undo_stack.push.assert_not_called()
+    assert item.flip_active is False
+    event.accept.assert_called_once_with()
