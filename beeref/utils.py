@@ -13,10 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
-import logging.handlers
-import os
-import os.path
-
 from PyQt6 import QtCore, QtGui
 
 

@@ -1,3 +1,7 @@
+USER_VERSION = 2
+APPLICATION_ID = 2060242126
+
+
 SCHEMA = [
     """
     CREATE TABLE items (
@@ -9,7 +13,7 @@ SCHEMA = [
         scale REAL DEFAULT 1,
         rotation REAL DEFAULT 0,
         flip INTEGER DEFAULT 1,
-        filename TEXT
+        data JSON
     )
     """,
     """
@@ -27,3 +31,11 @@ SCHEMA = [
     )
     """,
 ]
+
+
+MIGRATIONS = {
+    2: [
+        "ALTER TABLE items ADD COLUMN data JSON",
+        "UPDATE items SET data = json_object('filename', filename)",
+    ],
+}

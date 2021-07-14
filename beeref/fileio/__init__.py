@@ -65,12 +65,15 @@ def load_images(filenames, pos, scene, worker):
             logger.info(f'Could not load file {filename}')
             errors.append(filename)
             continue
+
         item = BeePixmapItem(img, filename)
         item.set_pos_center(pos)
-        scene.add_item_later(item, selected=True)
+        scene.add_item_later({'item': item, 'type': 'pixmap'}, selected=True)
         items.append(item)
         if worker.canceled:
             break
+        # Give main thread time to process items:
+        worker.msleep(10)
 
     scene.undo_stack.push(
         commands.InsertItems(scene, items, ignore_first_redo=True))

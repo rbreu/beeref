@@ -124,6 +124,7 @@ class SelectableMixin(BaseItemMixin):
 
         self.viewport_scale = 1
         self.reset_actions()
+        self.is_editable = False
 
     def reset_actions(self):
         self.scale_active = False

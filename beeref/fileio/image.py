@@ -40,8 +40,8 @@ def exif_rotated_image(path=None):
     with open(path, 'rb') as f:
         try:
             exifimg = exif.Image(f)
-        except plum.exceptions.UnpackError:
-            logger.info(f'Exif parser failed on image: {path}')
+        except (plum.exceptions.UnpackError, NotImplementedError):
+            logger.exception(f'Exif parser failed on image: {path}')
             return img
 
     if 'orientation' in exifimg.list_all():

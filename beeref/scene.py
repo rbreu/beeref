@@ -23,6 +23,7 @@ from PyQt6.QtCore import Qt
 import rpack
 
 from beeref import commands
+from beeref.items import item_registry
 from beeref.selection import MultiSelectItem, RubberbandItem
 
 
@@ -45,6 +46,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.changed.connect(self.on_change)
         self.items_to_add = Queue()
         self.internal_clipboard = []
+        self.edit_item = None
 
     def addItem(self, item):
         logger.debug(f'Adding item {item}')
@@ -249,7 +251,17 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         if event.button() == Qt.MouseButton.LeftButton:
             self.event_start = event.scenePos()
-            if self.itemAt(event.scenePos(), self.views()[0].transform()):
+            item_at_pos = self.itemAt(
+                event.scenePos(), self.views()[0].transform())
+
+            if self.edit_item:
+                if item_at_pos != self.edit_item:
+                    self.edit_item.exit_edit_mode()
+                    self.edit_item = None
+                else:
+                    super().mousePressEvent(event)
+                    return
+            if item_at_pos:
                 self.move_active = True
             elif self.items():
                 self.rubberband_active = True
@@ -262,9 +274,14 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             self.move_active = False
             if not item.isSelected():
                 item.setSelected(True)
-            self.views()[0].fit_rect(
-                self.itemsBoundingRect(items=[item]),
-                toggle_item=item)
+            if item.is_editable:
+                self.edit_item = item
+                item.enter_edit_mode()
+                self.mousePressEvent(event)
+            else:
+                self.views()[0].fit_rect(
+                    self.itemsBoundingRect(items=[item]),
+                    toggle_item=item)
             return
         super().mouseDoubleClickEvent(event)
 
@@ -381,19 +398,26 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             self.multi_select_item.fit_selection_area(
                 self.itemsBoundingRect(selection_only=True))
 
-    def add_item_later(self, item, selected=False):
-        """Keep an item for adding later via ``add_queued_items``"""
+    def add_item_later(self, itemdata, selected=False):
+        """Keep an item for adding later via ``add_queued_items``
 
-        self.items_to_add.put((item, selected))
+        :param dict itemdata: Defines the item's data
+        :param bool selected: Whether the item is initialised as selected
+        """
+
+        self.items_to_add.put((itemdata, selected))
 
     def add_queued_items(self):
         """Adds items added via ``add_items_later``"""
 
         while not self.items_to_add.empty():
-            item, selected = self.items_to_add.get()
+            data, selected = self.items_to_add.get()
+            cls = item_registry[data.pop('type')]
+            item = cls.create_from_data(**data)
+            item.update_from_data(**data)
             self.addItem(item)
+            # Force recalculation of min/max z values:
+            item.setZValue(item.zValue())
             if selected:
                 item.setSelected(True)
                 item.bring_to_front()
-            self.max_z = max(self.max_z, item.zValue())
-            self.min_z = min(self.min_z, item.zValue())

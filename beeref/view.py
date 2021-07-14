@@ -26,7 +26,7 @@ from beeref.config import CommandlineArgs, BeeSettings
 from beeref import constants
 from beeref import fileio
 from beeref import gui
-from beeref.items import BeePixmapItem
+from beeref.items import BeePixmapItem, BeeTextItem
 from beeref.scene import BeeGraphicsScene
 
 
@@ -120,8 +120,12 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.context_menu.exec(self.mapToGlobal(point))
 
     def get_supported_image_formats(self, cls):
-        formats = map(lambda f: f'*.{f.data().decode()}',
-                      cls.supportedImageFormats())
+        formats = []
+
+        for f in cls.supportedImageFormats():
+            string = f'*.{f.data().decode()}'
+            formats.extend((string, string.upper()))
+        print(formats)
         return ' '.join(formats)
 
     def get_view_center(self):
@@ -162,6 +166,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         # It seems to be more reliable when we fit a second time
         # Sometimes a changing scene rect can mess up the fitting
         self.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
+        logger.trace('Fit view done')
 
     def on_action_fit_scene(self):
         self.fit_rect(self.scene.itemsBoundingRect())
@@ -281,7 +286,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             self.scene.selectedItems(user_only=True)))
 
     def on_items_loaded(self, value):
-        logger.debug('On items loded: add queued images')
+        logger.debug('On items loaded: add queued items')
         self.scene.add_queued_items()
 
     def on_loading_finished(self, filename, errors):
@@ -413,11 +418,18 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
     def on_action_insert_images(self):
         formats = self.get_supported_image_formats(QtGui.QImageReader)
+        logger.debug(f'Supported image types for reading: {formats}')
         filenames, f = QtWidgets.QFileDialog.getOpenFileNames(
             parent=self,
             caption='Select one ore more images to open',
             filter=f'Images ({formats})')
         self.do_insert_images(filenames)
+
+    def on_action_insert_text(self):
+        item = BeeTextItem()
+        pos = self.mapToScene(self.mapFromGlobal(self.cursor().pos()))
+        item.setScale(1 / self.get_scale())
+        self.undo_stack.push(commands.InsertItems(self.scene, [item], pos))
 
     def on_action_copy(self):
         logger.debug('Copying to clipboard...')
@@ -454,7 +466,13 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             item = BeePixmapItem(img)
             self.undo_stack.push(commands.InsertItems(self.scene, [item], pos))
             return
-        logger.info('No image data in clipboard')
+        text = clipboard.text()
+        if text:
+            item = BeeTextItem(text)
+            item.setScale(1 / self.get_scale())
+            self.undo_stack.push(commands.InsertItems(self.scene, [item], pos))
+            return
+        logger.info('No image data or text in clipboard')
 
     def on_selection_changed(self):
         logger.debug('Currently selected items: %s',
@@ -497,7 +515,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         much (causing overflow errors).
 
         :param func: Function which takes the width and height as
-        arguments and turns it into a number, for ex. ``min`` or ``max``.
+            arguments and turns it into a number, for ex. ``min`` or ``max``.
         """
 
         topleft = self.mapFromScene(

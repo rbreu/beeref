@@ -1,26 +1,80 @@
+import json
+import os
 import os.path
+import stat
 from unittest.mock import MagicMock, patch
 
 from PyQt6 import QtGui
 import pytest
 
+from beeref.fileio import schema
 from beeref.fileio.errors import BeeFileIOError
 from beeref.fileio.sql import SQLiteIO
-from beeref.items import BeePixmapItem
+from beeref.items import BeePixmapItem, BeeTextItem
+
+
+def test_sqliteio_migrate_does_nothing_when_version_ok(tmpfile):
+    io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
+    io.ex('PRAGMA user_version=%s' % schema.USER_VERSION)
+    io.connection.commit()
+    del(io)
+    with patch('beeref.fileio.sql.SQLiteIO.ex') as ex_mock:
+        SQLiteIO(tmpfile, MagicMock())
+        ex_mock.assert_not_called()
+
+
+@patch('beeref.fileio.sql.USER_VERSION', 3)
+@patch('beeref.fileio.sql.MIGRATIONS', {
+    2: ['CREATE TABLE foo (col1 INT)',
+        'CREATE TABLE bar (baz INT)'],
+    3: ['ALTER TABLE foo ADD COLUMN col2 TEXT']})
+def test_sqliteio_migrate_migrates(tmpfile):
+    io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
+    io.ex('PRAGMA user_version=1')
+    io.connection.commit()
+    del(io)
+    io = SQLiteIO(tmpfile, MagicMock())
+    io.ex('INSERT INTO foo (col1, col2) VALUES (22, "hello world")')
+    io.ex('INSERT INTO bar (baz) VALUES (55)')
+    result = io.fetchone('PRAGMA user_version')
+    assert result[0] == 3
+
+
+@patch('beeref.fileio.sql.USER_VERSION', 3)
+@patch('beeref.fileio.sql.MIGRATIONS', {
+    2: ['CREATE TABLE foo (col1 INT)',
+        'CREATE TABLE bar (baz INT)'],
+    3: ['ALTER TABLE foo ADD COLUMN col2 TEXT']})
+def test_sqliteio_migrate_migrates_when_file_not_writable(tmpfile):
+    io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
+    io.ex('PRAGMA user_version=1')
+    io.connection.commit()
+    del(io)
+    os.chmod(tmpfile, stat.S_IREAD)
+    with pytest.raises(PermissionError):
+        open(tmpfile, 'w')
+    io = SQLiteIO(tmpfile, MagicMock(), readonly=True)
+    io.ex('INSERT INTO foo (col1, col2) VALUES (22, "hello world")')
+    io.ex('INSERT INTO bar (baz) VALUES (55)')
+    result = io.fetchone('PRAGMA user_version')
+    assert result[0] == 3
+    newdir = io._tmpdir.name
+    del(io)
+    assert os.path.exists(newdir) is False
 
 
 def test_sqliteio_ẁrite_meta_application_id(tmpfile):
     io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
     io.write_meta()
     result = io.fetchone('PRAGMA application_id')
-    assert result[0] == SQLiteIO.APPLICATION_ID
+    assert result[0] == schema.APPLICATION_ID
 
 
 def test_sqliteio_ẁrite_meta_user_version(tmpfile):
     io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
     io.write_meta()
     result = io.fetchone('PRAGMA user_version')
-    assert result[0] == SQLiteIO.USER_VERSION
+    assert result[0] == schema.USER_VERSION
 
 
 def test_sqliteio_ẁrite_meta_foreign_keys(tmpfile):
@@ -41,7 +95,9 @@ def test_sqliteio_create_schema_on_new_when_create_new(tmpfile):
     scene_mock.clear_save_ids.assert_called_once()
 
 
-def test_sqliteio_create_schema_on_new_when_not_create_new(tmpfile):
+@patch('beeref.fileio.sql.SQLiteIO._migrate')
+def test_sqliteio_create_schema_on_new_when_not_create_new(
+        migrate_mock, tmpfile):
     scene_mock = MagicMock()
     io = SQLiteIO(tmpfile, scene_mock, create_new=False)
     io.create_schema_on_new()
@@ -83,7 +139,36 @@ def test_sqliteio_write_calls_write_meta(tmpfile, view):
                 metamock.assert_called_once()
 
 
-def test_sqliteio_write_inserts_new_item(tmpfile, view):
+def test_sqliteio_write_inserts_new_text_item(tmpfile, view):
+    item = BeeTextItem(text='foo bar')
+    view.scene.addItem(item)
+    item.setScale(1.3)
+    item.setPos(44, 55)
+    item.setZValue(0.22)
+    item.setRotation(33)
+    item.do_flip()
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
+    io.write()
+
+    assert item.save_id == 1
+    result = io.fetchone(
+        'SELECT x, y, z, scale, rotation, flip, items.data, type, '
+        'sqlar.data, sqlar.name '
+        'FROM items '
+        'LEFT OUTER JOIN sqlar on sqlar.item_id = items.id')
+    assert result[0] == 44.0
+    assert result[1] == 55.0
+    assert result[2] == 0.22
+    assert result[3] == 1.3
+    assert result[4] == 33
+    assert result[5] == -1
+    assert json.loads(result[6]) == {'text': 'foo bar'}
+    assert result[7] == 'text'
+    assert result[8] is None
+    assert result[9] is None
+
+
+def test_sqliteio_write_inserts_new_pixmap_item(tmpfile, view):
     item = BeePixmapItem(QtGui.QImage(), filename='bee.jpg')
     view.scene.addItem(item)
     item.setScale(1.3)
@@ -97,7 +182,7 @@ def test_sqliteio_write_inserts_new_item(tmpfile, view):
 
     assert item.save_id == 1
     result = io.fetchone(
-        'SELECT x, y, z, scale, rotation, flip, filename, type, '
+        'SELECT x, y, z, scale, rotation, flip, items.data, type, '
         'sqlar.data, sqlar.name '
         'FROM items '
         'INNER JOIN sqlar on sqlar.item_id = items.id')
@@ -107,26 +192,61 @@ def test_sqliteio_write_inserts_new_item(tmpfile, view):
     assert result[3] == 1.3
     assert result[4] == 33
     assert result[5] == -1
-    assert result[6] == 'bee.jpg'
+    assert json.loads(result[6]) == {'filename': 'bee.jpg'}
     assert result[7] == 'pixmap'
     assert result[8] == b'abc'
     assert result[9] == '0001-bee.png'
 
 
-def test_sqliteio_write_inserts_new_item_without_filename(tmpfile, view, item):
+def test_sqliteio_write_inserts_new_pixmap_item_without_filename(
+        tmpfile, view, item):
     view.scene.addItem(item)
     io = SQLiteIO(tmpfile, view.scene, create_new=True)
     io.write()
 
     assert item.save_id == 1
     result = io.fetchone(
-        'SELECT filename, sqlar.name FROM items '
+        'SELECT items.data, sqlar.name FROM items '
         'INNER JOIN sqlar on sqlar.item_id = items.id')
-    assert result[0] is None
+    assert json.loads(result[0]) == {'filename': None}
     assert result[1] == '0001.png'
 
 
-def test_sqliteio_write_updates_existing_item(tmpfile, view):
+def test_sqliteio_write_updates_existing_text_item(tmpfile, view):
+    item = BeeTextItem(text='foo bar')
+    view.scene.addItem(item)
+    item.setScale(1.3)
+    item.setPos(44, 55)
+    item.setZValue(0.22)
+    item.setRotation(33)
+    item.save_id = 1
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
+    io.write()
+    item.setScale(0.7)
+    item.setPos(20, 30)
+    item.setZValue(0.33)
+    item.setRotation(100)
+    item.do_flip()
+    item.setPlainText('updated')
+    io.create_new = False
+    io.write()
+
+    assert io.fetchone('SELECT COUNT(*) from items') == (1,)
+    result = io.fetchone(
+        'SELECT x, y, z, scale, rotation, flip, items.data, sqlar.data '
+        'FROM items '
+        'LEFT OUTER JOIN sqlar on sqlar.item_id = items.id')
+    assert result[0] == 20
+    assert result[1] == 30
+    assert result[2] == 0.33
+    assert result[3] == 0.7
+    assert result[4] == 100
+    assert result[5] == -1
+    assert json.loads(result[6]) == {'text': 'updated'}
+    assert result[7] is None
+
+
+def test_sqliteio_write_updates_existing_pixmap_item(tmpfile, view):
     item = BeePixmapItem(QtGui.QImage(), filename='bee.png')
     view.scene.addItem(item)
     item.setScale(1.3)
@@ -149,7 +269,7 @@ def test_sqliteio_write_updates_existing_item(tmpfile, view):
 
     assert io.fetchone('SELECT COUNT(*) from items') == (1,)
     result = io.fetchone(
-        'SELECT x, y, z, scale, rotation, flip, filename, sqlar.data '
+        'SELECT x, y, z, scale, rotation, flip, items.data, sqlar.data '
         'FROM items '
         'INNER JOIN sqlar on sqlar.item_id = items.id')
     assert result[0] == 20
@@ -158,11 +278,27 @@ def test_sqliteio_write_updates_existing_item(tmpfile, view):
     assert result[3] == 0.7
     assert result[4] == 100
     assert result[5] == -1
-    assert result[6] == 'new.png'
+    assert json.loads(result[6]) == {'filename': 'new.png'}
     assert result[7] == b'abc'
 
 
-def test_sqliteio_write_removes_nonexisting_item(tmpfile, view):
+def test_sqliteio_write_removes_nonexisting_text_item(tmpfile, view):
+    item = BeeTextItem('foo bar')
+    item.setScale(1.3)
+    item.setPos(44, 55)
+    view.scene.addItem(item)
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
+    io.write()
+
+    view.scene.removeItem(item)
+    io.create_new = False
+    io.write()
+
+    assert io.fetchone('SELECT COUNT(*) from items') == (0,)
+    assert io.fetchone('SELECT COUNT(*) from sqlar') == (0,)
+
+
+def test_sqliteio_write_removes_nonexisting_pixmap_item(tmpfile, view):
     item = BeePixmapItem(QtGui.QImage(), filename='bee.png')
     item.setScale(1.3)
     item.setPos(44, 55)
@@ -215,13 +351,42 @@ def test_sqliteio_write_canceled(tmpfile, view):
     worker.finished.emit.assert_called_once_with(tmpfile, [])
 
 
-def test_sqliteio_read_reads_readonly(tmpfile, view, imgdata3x3):
+def test_sqliteio_read_reads_readonly_text_item(tmpfile, view):
     io = SQLiteIO(tmpfile, view.scene, create_new=True)
     io.create_schema_on_new()
     io.ex('INSERT INTO items '
-          '(type, x, y, z, scale, rotation, flip, filename) '
+          '(type, x, y, z, scale, rotation, flip, data) '
           'VALUES (?, ?, ?, ?, ?, ?, ?, ?) ',
-          ('pixmap', 22.2, 33.3, 0.22, 3.4, 45, -1, 'bee.png'))
+          ('text', 22.2, 33.3, 0.22, 3.4, 45, -1,
+           json.dumps({'text': 'foo bar'})))
+    io.connection.commit()
+    del(io)
+
+    io = SQLiteIO(tmpfile, view.scene, readonly=True)
+    io.read()
+    view.scene.add_queued_items()
+    assert len(view.scene.items()) == 1
+    item = view.scene.items()[0]
+    assert item.isSelected() is False
+    assert item.save_id == 1
+    assert item.pos().x() == 22.2
+    assert item.pos().y() == 33.3
+    assert item.zValue() == 0.22
+    assert item.scale() == 3.4
+    assert item.rotation() == 45
+    assert item.flip() == -1
+    assert item.toPlainText() == 'foo bar'
+    assert view.scene.items_to_add.empty() is True
+
+
+def test_sqliteio_read_reads_readonly_pixmap_item(tmpfile, view, imgdata3x3):
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
+    io.create_schema_on_new()
+    io.ex('INSERT INTO items '
+          '(type, x, y, z, scale, rotation, flip, data) '
+          'VALUES (?, ?, ?, ?, ?, ?, ?, ?) ',
+          ('pixmap', 22.2, 33.3, 0.22, 3.4, 45, -1,
+           json.dumps({'filename': 'bee.png'})))
     io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)',
           (1, imgdata3x3))
     io.connection.commit()
@@ -229,8 +394,10 @@ def test_sqliteio_read_reads_readonly(tmpfile, view, imgdata3x3):
 
     io = SQLiteIO(tmpfile, view.scene, readonly=True)
     io.read()
-    item, selected = view.scene.items_to_add.get()
-    assert selected is False
+    view.scene.add_queued_items()
+    assert len(view.scene.items()) == 1
+    item = view.scene.items()[0]
+    assert item.isSelected() is False
     assert item.save_id == 1
     assert item.pos().x() == 22.2
     assert item.pos().y() == 33.3
@@ -250,11 +417,12 @@ def test_sqliteio_read_updates_progress(tmpfile, view):
                   worker=worker)
 
     io.create_schema_on_new()
-    io.ex('INSERT INTO items (type, x, y, z, scale, filename) '
+    io.ex('INSERT INTO items (type, x, y, z, scale, data) '
           'VALUES (?, ?, ?, ?, ?, ?) ',
-          ('pixmap', 0, 0, 0, 1, 'bee.png'))
+          ('pixmap', 0, 0, 0, 1, json.dumps({'filename': 'bee.png'})))
     io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)', (1, b''))
     io.connection.commit()
+
     io.read()
     worker.begin_processing.emit.assert_called_once_with(1)
     worker.progress.emit.assert_called_once_with(0)
@@ -264,17 +432,17 @@ def test_sqliteio_read_updates_progress(tmpfile, view):
 def test_sqliteio_read_canceled(tmpfile, view):
     worker = MagicMock(canceled=True)
     io = SQLiteIO(tmpfile, view.scene, create_new=True, worker=worker)
-
     io.create_schema_on_new()
-    io.ex('INSERT INTO items (type, x, y, z, scale, filename) '
+    io.ex('INSERT INTO items (type, x, y, z, scale, data) '
           'VALUES (?, ?, ?, ?, ?, ?) ',
-          ('pixmap', 0, 0, 0, 1, 'bee.png'))
+          ('pixmap', 0, 0, 0, 1, json.dumps({'filename': 'bee.png'})))
     io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)', (1, b''))
-    io.ex('INSERT INTO items (type, x, y, z, scale, filename) '
+    io.ex('INSERT INTO items (type, x, y, z, scale, data) '
           'VALUES (?, ?, ?, ?, ?, ?) ',
-          ('pixmap', 50, 50, 0, 1, 'bee2.png'))
-    io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)', (1, b''))
+          ('pixmap', 50, 50, 0, 1, json.dumps({'filename': 'bee2.png'})))
+    io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)', (2, b''))
     io.connection.commit()
+
     io.read()
     worker.begin_processing.emit.assert_called_once_with(2)
     worker.progress.emit.assert_called_once_with(0)

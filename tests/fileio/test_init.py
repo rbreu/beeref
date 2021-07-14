@@ -33,9 +33,9 @@ def test_load_images_loads(view, imgfilename3x3):
     worker.begin_processing.emit.assert_called_once_with(1)
     worker.progress.emit.assert_called_once_with(0)
     worker.finished.emit.assert_called_once_with('', [])
-    items = queue2list(view.scene.items_to_add)
-    assert len(items) == 1
-    item = items[0][0]
+    itemdata = queue2list(view.scene.items_to_add)
+    assert len(itemdata) == 1
+    item = itemdata[0][0]['item']
     args = view.scene.undo_stack.push.call_args_list[0][0]
     cmd = args[0]
     assert isinstance(cmd, commands.InsertItems)
@@ -53,9 +53,9 @@ def test_load_images_canceled(view, imgfilename3x3):
     worker.begin_processing.emit.assert_called_once_with(2)
     worker.progress.emit.assert_called_once_with(0)
     worker.finished.emit.assert_called_once_with('', [])
-    items = queue2list(view.scene.items_to_add)
-    assert len(items) == 1
-    item = items[0][0]
+    itemdata = queue2list(view.scene.items_to_add)
+    assert len(itemdata) == 1
+    item = itemdata[0][0]['item']
     args = view.scene.undo_stack.push.call_args_list[0][0]
     cmd = args[0]
     assert isinstance(cmd, commands.InsertItems)
@@ -74,9 +74,9 @@ def test_load_images_error(view, imgfilename3x3):
     worker.progress.emit.assert_any_call(0)
     worker.progress.emit.assert_any_call(1)
     worker.finished.emit.assert_called_once_with('', ['foo.jpg'])
-    items = queue2list(view.scene.items_to_add)
-    assert len(items) == 1
-    item = items[0][0]
+    itemdata = queue2list(view.scene.items_to_add)
+    assert len(itemdata) == 1
+    item = itemdata[0][0]['item']
     args = view.scene.undo_stack.push.call_args_list[0][0]
     cmd = args[0]
     assert isinstance(cmd, commands.InsertItems)

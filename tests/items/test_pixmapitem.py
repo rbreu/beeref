@@ -2,7 +2,11 @@ from unittest.mock import patch, MagicMock, PropertyMock
 
 from PyQt6 import QtCore, QtGui
 
-from beeref.items import BeePixmapItem
+from beeref.items import BeePixmapItem, item_registry
+
+
+def test_in_item_registry():
+    assert item_registry['pixmap'] == BeePixmapItem
 
 
 @patch('beeref.selection.SelectableMixin.init_selectable')
@@ -46,6 +50,11 @@ def test_set_pos_center_when_rotated(qapp, item):
             item.set_pos_center(QtCore.QPointF(0, 0))
             assert item.pos().x() == 50
             assert item.pos().y() == -100
+
+
+def test_get_extra_save_data(item):
+    item.filename = 'foobar.png'
+    assert item.get_extra_save_data() == {'filename': 'foobar.png'}
 
 
 def test_pixmap_to_bytes(qapp, imgfilename3x3):
@@ -112,6 +121,41 @@ def test_has_selection_handles_when_selected_multi(view, item):
 def test_selection_action_items(qapp):
     item = BeePixmapItem(QtGui.QImage())
     assert item.selection_action_items() == [item]
+
+
+def test_update_from_data(item):
+    item.update_from_data(
+        save_id=3,
+        x=11,
+        y=22,
+        z=1.2,
+        scale=2.5,
+        rotation=45,
+        flip=-1)
+    assert item.save_id == 3
+    assert item.pos() == QtCore.QPointF(11, 22)
+    assert item.zValue() == 1.2
+    assert item.rotation() == 45
+    assert item.flip() == -1
+
+
+def test_update_from_data_keeps_flip(item):
+    item.do_flip()
+    item.update_from_data(flip=-1)
+    assert item.flip() == -1
+
+
+def test_update_from_data_keeps_unset_values(item):
+    item.setScale(3)
+    item.update_from_data(rotation=45)
+    assert item.scale() == 3
+
+
+def test_create_from_data(item):
+    new_item = BeePixmapItem.create_from_data(
+        item=item, data={'filename': 'foobar.png'})
+    assert new_item is item
+    assert item.filename == 'foobar.png'
 
 
 def test_create_copy(qapp, imgfilename3x3):

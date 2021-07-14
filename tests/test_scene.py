@@ -7,7 +7,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
 from beeref import commands
-from beeref.items import BeePixmapItem
+from beeref.items import BeePixmapItem, BeeTextItem
 
 
 def test_add_remove_item(view, item):
@@ -448,6 +448,66 @@ def test_mouse_press_event_when_left_click_over_item(mouse_mock, view, item):
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
+def test_mouse_press_event_when_left_click_over_item_in_edit_mode(
+        mouse_mock, view):
+    item = BeeTextItem('foo bar')
+    item.exit_edit_mode = MagicMock()
+    view.scene.addItem(item)
+    view.scene.edit_item = item
+    view.scene.itemAt = MagicMock(return_value=item)
+    event = MagicMock(
+        button=MagicMock(return_value=Qt.MouseButton.LeftButton),
+    )
+    view.scene.mousePressEvent(event)
+    event.accept.assert_not_called()
+    mouse_mock.assert_called_once_with(event)
+    assert view.scene.edit_item == item
+    item.exit_edit_mode.assert_not_called()
+    assert view.scene.move_active is False
+    assert view.scene.rubberband_active is False
+
+
+@patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
+def test_mouse_press_event_when_left_click_over_diff_item_in_edit_mode(
+        mouse_mock, view, item):
+    txtitem = BeeTextItem('foo bar')
+    txtitem.exit_edit_mode = MagicMock()
+    view.scene.addItem(txtitem)
+    view.scene.edit_item = txtitem
+    view.scene.itemAt = MagicMock(return_value=item)
+    event = MagicMock(
+        button=MagicMock(return_value=Qt.MouseButton.LeftButton),
+    )
+    view.scene.mousePressEvent(event)
+    event.accept.assert_not_called()
+    mouse_mock.assert_called_once_with(event)
+    assert view.scene.edit_item is None
+    txtitem.exit_edit_mode.assert_called_once_with()
+    assert view.scene.move_active is True
+    assert view.scene.rubberband_active is False
+
+
+@patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
+def test_mouse_press_event_when_left_click_over_no_item_in_edit_mode(
+        mouse_mock, view):
+    item = BeeTextItem('foo bar')
+    item.exit_edit_mode = MagicMock()
+    view.scene.addItem(item)
+    view.scene.edit_item = item
+    view.scene.itemAt = MagicMock(return_value=None)
+    event = MagicMock(
+        button=MagicMock(return_value=Qt.MouseButton.LeftButton),
+    )
+    view.scene.mousePressEvent(event)
+    event.accept.assert_not_called()
+    mouse_mock.assert_called_once_with(event)
+    assert view.scene.edit_item is None
+    item.exit_edit_mode.assert_called_once_with()
+    assert view.scene.move_active is False
+    assert view.scene.rubberband_active is True
+
+
+@patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
 def test_mouse_press_event_when_left_click_not_over_item(
         mouse_mock, view, item):
     view.scene.addItem(item)
@@ -499,6 +559,33 @@ def test_mouse_doubleclick_event_when_over_item(mouse_mock, view, item):
     view.fit_rect.assert_called_once_with(
         QtCore.QRectF(30, 40, 100, 100), toggle_item=item)
     mouse_mock.assert_not_called()
+
+
+@patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
+@patch('PyQt6.QtWidgets.QGraphicsScene.mouseDoubleClickEvent')
+def test_mouse_doubleclick_event_when_over_editable_item(
+        double_mock, press_mock, view):
+    item = BeeTextItem('foo bar')
+    item.enter_edit_mode = MagicMock()
+    event = MagicMock()
+    view.scene.move_active = True
+    view.scene.addItem(item)
+    item.setPos(30, 40)
+    item.setSelected(True)
+    view.scene.itemAt = MagicMock(return_value=item)
+    view.fit_rect = MagicMock()
+
+    with patch('beeref.items.BeePixmapItem.width',
+               new_callable=PropertyMock, return_value=100):
+        with patch('beeref.items.BeePixmapItem.height',
+                   new_callable=PropertyMock, return_value=100):
+            view.scene.mouseDoubleClickEvent(event)
+
+    assert view.scene.move_active is False
+    item.enter_edit_mode.assert_called_once_with()
+    view.scene.edit_item == item
+    double_mock.assert_not_called()
+    press_mock.assert_called_once_with(event)
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mouseDoubleClickEvent')
@@ -944,21 +1031,24 @@ def test_on_change_when_no_multi_select(view):
     view.scene.multi_select_item.fit_selection_area.assert_not_called()
 
 
-def test_add_queued_items_unselected(view, item):
-    item.setZValue(0.33)
-    view.scene.add_item_later(item, selected=False)
+def test_add_queued_items_unselected(view):
+    data = {'type': 'text', 'z': 0.33, 'data': {'text': 'foo'}}
+    view.scene.add_item_later(data, selected=False)
     view.scene.add_queued_items()
-    assert view.scene.items() == [item]
+    assert len(view.scene.items()) == 1
+    item = view.scene.items()[0]
     assert item.isSelected() is False
     assert view.scene.max_z == 0.33
+    assert item.toPlainText() == 'foo'
 
 
-def test_add_queued_items_selected(view, item):
+def test_add_queued_items_selected(view):
     view.scene.max_z = 0.6
-    item.setZValue(0.33)
-    view.scene.add_item_later(item, selected=True)
+    data = {'type': 'text', 'z': 0.33, 'data': {'text': 'foo'}}
+    view.scene.add_item_later(data, selected=True)
     view.scene.add_queued_items()
-    assert view.scene.items() == [item]
+    assert len(view.scene.items()) == 1
+    item = view.scene.items()[0]
     assert item.isSelected() is True
     assert item.zValue() > 0.6
 

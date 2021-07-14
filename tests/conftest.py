@@ -1,5 +1,7 @@
 import os.path
 import pytest
+import uuid
+
 from unittest.mock import MagicMock, patch
 
 from PyQt6 import QtGui, QtWidgets
@@ -66,7 +68,7 @@ def imgdata3x3(imgfilename3x3):
 
 @pytest.fixture
 def tmpfile(tmpdir):
-    yield os.path.join(tmpdir, 'test')
+    yield os.path.join(tmpdir, str(uuid.uuid4()))
 
 
 @pytest.fixture

@@ -23,16 +23,20 @@ https://www.sqlite.org/appfileformat.html
 https://www.sqlite.org/sqlar.html
 """
 
+import json
 import logging
 import os
 import pathlib
+import shutil
 import sqlite3
+import tempfile
 
 from PyQt6 import QtGui
 
+from beeref import constants
 from beeref.items import BeePixmapItem
 from .errors import BeeFileIOError
-from .schema import SCHEMA
+from .schema import SCHEMA, USER_VERSION, MIGRATIONS, APPLICATION_ID
 
 
 logger = logging.getLogger(__name__)
@@ -54,8 +58,6 @@ def handle_sqlite_errors(func):
 
 
 class SQLiteIO:
-    USER_VERSION = 1
-    APPLICATION_ID = 2060242126
 
     def __init__(self, filename, scene, create_new=False, readonly=False,
                  worker=None):
@@ -74,6 +76,9 @@ class SQLiteIO:
             delattr(self, '_connection')
         if hasattr(self, '_cursor'):
             delattr(self, '_cursor')
+        if hasattr(self, '_tmpdir'):
+            self._tmpdir.cleanup()
+            delattr(self, '_tmpdir')
 
     def _establish_connection(self):
         if (self.create_new
@@ -86,9 +91,42 @@ class SQLiteIO:
 
         uri = pathlib.Path(self.filename).resolve().as_uri()
         if self.readonly:
-            uri = f'{uri}?mode=ro'
+            uri = f'{uri}?mode=rw'
         self._connection = sqlite3.connect(uri, uri=True)
         self._cursor = self.connection.cursor()
+        if not self.create_new:
+            self._migrate()
+
+    def _migrate(self):
+        """Migrate database if necessary."""
+
+        version = self.fetchone('PRAGMA user_version')[0]
+        logger.debug(f'Found bee file version: {version}')
+        if version == USER_VERSION:
+            logger.debug('Version ok; no migrations necessary')
+            return
+
+        if self.readonly:
+            try:
+                # See whether file is writable so we can migrate it directly
+                self.ex('PRAGMA application_id=%s' % APPLICATION_ID)
+            except sqlite3.Error:
+                logger.debug('File not writable; use temporary copy instead')
+                self._connection.close()
+                self._tmpdir = tempfile.TemporaryDirectory(
+                    prefix=constants.APPNAME)
+                tmpname = os.path.join(self._tmpdir.name, 'mig.bee')
+                shutil.copyfile(self.filename, tmpname)
+                self._connection = sqlite3.connect(tmpname)
+                self._cursor = self.connection.cursor()
+
+        for i in range(version, USER_VERSION):
+            logger.debug(f'Migrating from version {i} to {i + 1}...')
+            for migration in MIGRATIONS[i + 1]:
+                self.ex(migration)
+        self.write_meta()
+        self.connection.commit()
+        logger.debug('Migration finished')
 
     @property
     def connection(self):
@@ -117,47 +155,61 @@ class SQLiteIO:
         return self.cursor.fetchall()
 
     def write_meta(self):
-        self.ex('PRAGMA application_id=%s' % self.APPLICATION_ID)
-        self.ex('PRAGMA user_version=%s' % self.USER_VERSION)
+        self.ex('PRAGMA application_id=%s' % APPLICATION_ID)
+        self.ex('PRAGMA user_version=%s' % USER_VERSION)
         self.ex('PRAGMA foreign_keys=1')
 
     def create_schema_on_new(self):
         if self.create_new:
+            self.write_meta()
             for schema in SCHEMA:
                 self.ex(schema)
 
     @handle_sqlite_errors
     def read(self):
         rows = self.fetchall(
-            'SELECT items.id, x, y, z, scale, rotation, flip, filename, '
-            'sqlar.data '
-            'FROM items INNER JOIN sqlar on sqlar.item_id = items.id')
+            'SELECT items.id, type, x, y, z, scale, rotation, flip, '
+            'items.data, sqlar.data '
+            'FROM items LEFT OUTER JOIN sqlar on sqlar.item_id = items.id')
         if self.worker:
             self.worker.begin_processing.emit(len(rows))
 
         for i, row in enumerate(rows):
-            item = BeePixmapItem(QtGui.QImage(), filename=row[7])
-            item.save_id = row[0]
-            item.pixmap_from_bytes(row[8])
-            item.setPos(row[1], row[2])
-            item.setZValue(row[3])
-            item.setScale(row[4])
-            item.setRotation(row[5])
-            if row[6] == -1:
-                item.do_flip()
-            self.scene.add_item_later(item)
+            data = {
+                'save_id': row[0],
+                'type': row[1],
+                'x': row[2],
+                'y': row[3],
+                'z': row[4],
+                'scale': row[5],
+                'rotation': row[6],
+                'flip': row[7],
+                'data': json.loads(row[8]),
+            }
+
+            if data['type'] == 'pixmap':
+                data['item'] = BeePixmapItem(QtGui.QImage(), **data['data'])
+                data['item'].pixmap_from_bytes(row[9])
+
+            self.scene.add_item_later(data)
+
             if self.worker:
+                logger.trace(f'Emit progress: {i}')
                 self.worker.progress.emit(i)
                 if self.worker.canceled:
                     self.worker.finished.emit('', [])
                     return
+                # Give main thread time to process items:
+                self.worker.msleep(10)
         if self.worker:
             self.worker.finished.emit(self.filename, [])
 
     @handle_sqlite_errors
     def write(self):
+        if self.readonly:
+            raise sqlite3.OperationalError(
+                'attempt to write a readonly database')
         try:
-            self.write_meta()
             self.create_schema_on_new()
             self.write_data()
         except sqlite3.Error:
@@ -198,23 +250,26 @@ class SQLiteIO:
     def insert_item(self, item):
         self.ex(
             'INSERT INTO items (type, x, y, z, scale, rotation, flip, '
-            'filename) '
+            'data) '
             'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            ('pixmap', item.pos().x(), item.pos().y(), item.zValue(),
-             item.scale(), item.rotation(), item.flip(), item.filename))
+            (item.TYPE, item.pos().x(), item.pos().y(), item.zValue(),
+             item.scale(), item.rotation(), item.flip(),
+             json.dumps(item.get_extra_save_data())))
         item.save_id = self.cursor.lastrowid
-        pixmap = item.pixmap_to_bytes()
 
-        if item.filename:
-            basename = os.path.splitext(os.path.basename(item.filename))[0]
-            name = '%04d-%s.png' % (item.save_id, basename)
-        else:
-            name = '%04d.png' % item.save_id
+        if hasattr(item, 'pixmap_to_bytes'):
+            pixmap = item.pixmap_to_bytes()
 
-        self.ex(
-            'INSERT INTO sqlar (item_id, name, mode, sz, data) '
-            'VALUES (?, ?, ?, ?, ?)',
-            (item.save_id, name, 0o644, len(pixmap), pixmap))
+            if item.filename:
+                basename = os.path.splitext(os.path.basename(item.filename))[0]
+                name = '%04d-%s.png' % (item.save_id, basename)
+            else:
+                name = '%04d.png' % item.save_id
+
+            self.ex(
+                'INSERT INTO sqlar (item_id, name, mode, sz, data) '
+                'VALUES (?, ?, ?, ?, ?)',
+                (item.save_id, name, 0o644, len(pixmap), pixmap))
         self.connection.commit()
 
     def update_item(self, item):
@@ -225,8 +280,10 @@ class SQLiteIO:
         """
         self.ex(
             'UPDATE items SET x=?, y=?, z=?, scale=?, rotation=?, flip=?, '
-            'filename=? '
+            'data=? '
             'WHERE id=?',
             (item.pos().x(), item.pos().y(), item.zValue(), item.scale(),
-             item.rotation(), item.flip(), item.filename, item.save_id))
+             item.rotation(), item.flip(),
+             json.dumps(item.get_extra_save_data()),
+             item.save_id))
         self.connection.commit()

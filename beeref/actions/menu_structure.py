@@ -67,6 +67,7 @@ menu_structure = [
         'menu': '&Insert',
         'items': [
             'insert_images',
+            'insert_text',
         ],
     },
     {

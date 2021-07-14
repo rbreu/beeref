@@ -34,7 +34,7 @@ actions = [
     },
     {
         'id': 'quit',
-        'text': '&Quit...',
+        'text': '&Quit',
         'shortcuts': ['Ctrl+Q'],
         'callback': 'on_action_quit',
     },
@@ -43,6 +43,12 @@ actions = [
         'text': '&Images...',
         'shortcuts': ['Ctrl+I'],
         'callback': 'on_action_insert_images',
+    },
+    {
+        'id': 'insert_text',
+        'text': '&Text',
+        'shortcuts': ['Ctrl+T'],
+        'callback': 'on_action_insert_text',
     },
     {
         'id': 'undo',

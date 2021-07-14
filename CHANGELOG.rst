@@ -1,6 +1,11 @@
 0.2.0 - unreleased
 ==================
 
+Added
+-----
+
+* You can now add plain text notes
+
 Changed
 -------
 

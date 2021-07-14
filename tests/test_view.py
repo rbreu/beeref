@@ -1,4 +1,5 @@
 import os.path
+import shutil
 import sqlite3
 from unittest.mock import MagicMock, patch, mock_open
 
@@ -244,7 +245,6 @@ def test_on_action_save_as_when_error(
     view.scene.addItem(item)
     view.on_saving_finished = MagicMock()
     filename = os.path.join(tmpdir, 'test.bee')
-    assert os.path.exists(filename) is False
     dialog_mock.return_value = (filename, None)
     save_mock.side_effect = sqlite3.Error('foo')
     view.on_action_save_as()
@@ -256,8 +256,10 @@ def test_on_action_save(view, qtbot, imgfilename3x3, tmpdir):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scene.addItem(item)
     view.filename = os.path.join(tmpdir, 'test.bee')
+    root = os.path.dirname(__file__)
+    shutil.copyfile(os.path.join(root, 'assets', 'test1item.bee'),
+                    view.filename)
     view.on_saving_finished = MagicMock()
-    assert os.path.exists(view.filename) is False
     view.on_action_save()
     qtbot.waitUntil(lambda: view.on_saving_finished.called is True)
     assert os.path.exists(view.filename) is True
@@ -320,6 +322,16 @@ def test_on_action_insert_images_when_error(
         '', ['iaeiae', 'trntrn'])
 
 
+@patch('beeref.scene.BeeGraphicsScene.clearSelection')
+def test_on_action_insert_text(clear_mock, view):
+    view.on_action_insert_text()
+    clear_mock.assert_called_once_with()
+    assert len(view.scene.items()) == 1
+    item = view.scene.items()[0]
+    assert item.toPlainText() == 'Text'
+    assert item.isSelected() is True
+
+
 @patch('PyQt6.QtWidgets.QApplication.clipboard')
 def test_on_action_copy(clipboard_mock, view, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
@@ -359,9 +371,24 @@ def test_on_action_paste_internal(mimedata_mock, clear_mock, view):
 
 
 @patch('beeref.scene.BeeGraphicsScene.clearSelection')
+@patch('PyQt6.QtGui.QClipboard.text')
 @patch('PyQt6.QtGui.QClipboard.image')
-def test_on_action_paste_when_empty(clipboard_mock, clear_mock, view):
-    clipboard_mock.return_value = QtGui.QImage()
+def test_on_action_paste_when_text(img_mock, text_mock, clear_mock, view):
+    img_mock.return_value = QtGui.QImage()
+    text_mock.return_value = 'foo bar'
+    view.on_action_paste()
+    assert len(view.scene.items()) == 1
+    assert view.scene.items()[0].isSelected() is True
+    assert view.scene.items()[0].toPlainText() == 'foo bar'
+    clear_mock.assert_called_once_with()
+
+
+@patch('beeref.scene.BeeGraphicsScene.clearSelection')
+@patch('PyQt6.QtGui.QClipboard.text')
+@patch('PyQt6.QtGui.QClipboard.image')
+def test_on_action_paste_when_empty(img_mock, text_mock, clear_mock, view):
+    img_mock.return_value = QtGui.QImage()
+    text_mock.return_value = ''
     view.on_action_paste()
     assert len(view.scene.items()) == 0
     clear_mock.assert_not_called()
