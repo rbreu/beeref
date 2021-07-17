@@ -17,7 +17,37 @@ import logging.handlers
 import os
 import os.path
 
-from PyQt6 import QtCore
+from PyQt6 import QtCore, QtGui
+
+
+def create_palette_from_dict(conf):
+    """Create a palette from a config dictionary. Keys are a string of
+    'ColourGroup:ColorRole' and values are a (r, g, b) tuple. E.g:
+    {
+        'Active:WindowText': (80, 100, 0),
+        ...
+    }
+
+    Colors from the Active group will automatically be applied to the
+    Inactive group as well. Unknown color groups will be ignored.
+    """
+
+    palette = QtGui.QPalette()
+    for key, value in conf.items():
+        group, role = key.split(':')
+        if hasattr(QtGui.QPalette.ColorGroup, group):
+            palette.setColor(
+                getattr(QtGui.QPalette.ColorGroup, group),
+                getattr(QtGui.QPalette.ColorRole, role),
+                QtGui.QColor(*value))
+            if group == 'Active':
+                # Also set the Inactive colour group.
+                palette.setColor(
+                    QtGui.QPalette.ColorGroup.Inactive,
+                    getattr(QtGui.QPalette.ColorRole, role),
+                    QtGui.QColor(*value))
+
+    return palette
 
 
 def get_rect_from_points(point1, point2):

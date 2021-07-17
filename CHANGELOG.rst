@@ -5,6 +5,8 @@ Changed
 -------
 
 * Flipping an image now happens on mouse press instead of mouse release
+* About dialog points to new website beeref.org
+* Menus and dialogs now have a dark style to match the optics of the canvas
 
 Fixed
 -----

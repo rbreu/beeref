@@ -2,9 +2,42 @@ import logging
 import os.path
 import pytest
 
-from PyQt6 import QtCore
+from PyQt6 import QtCore, QtGui
 
 from beeref import utils
+
+
+def test_create_palette_from_dict_sets_qt_group():
+    conf = {'Disabled:WindowText': (44, 55, 66)}
+    palette = utils.create_palette_from_dict(conf)
+    color = palette.color(QtGui.QPalette.ColorGroup.Disabled,
+                          QtGui.QPalette.ColorRole.WindowText)
+    assert color.getRgb() == (44, 55, 66, 255)
+    color_inactive = palette.color(QtGui.QPalette.ColorGroup.Inactive,
+                                   QtGui.QPalette.ColorRole.WindowText)
+    assert color_inactive.getRgb() != (44, 55, 66, 255)
+
+
+def test_create_palette_from_dict_active_group_also_sets_inactive():
+    conf = {'Active:WindowText': (44, 55, 66)}
+    palette = utils.create_palette_from_dict(conf)
+    color = palette.color(QtGui.QPalette.ColorGroup.Active,
+                          QtGui.QPalette.ColorRole.WindowText)
+    assert color.getRgb() == (44, 55, 66, 255)
+    color_inactive = palette.color(QtGui.QPalette.ColorGroup.Inactive,
+                                   QtGui.QPalette.ColorRole.WindowText)
+    assert color_inactive.getRgb() == (44, 55, 66, 255)
+
+
+def test_create_palette_from_dict_ignores_unknown_group():
+    conf = {'Foo:WindowText': (44, 55, 66)}
+    palette = utils.create_palette_from_dict(conf)
+    color = palette.color(QtGui.QPalette.ColorGroup.Active,
+                          QtGui.QPalette.ColorRole.WindowText)
+    assert color.getRgb() != (44, 55, 66, 255)
+    color_inactive = palette.color(QtGui.QPalette.ColorGroup.Inactive,
+                                   QtGui.QPalette.ColorRole.WindowText)
+    assert color_inactive.getRgb() != (44, 55, 66, 255)
 
 
 def test_get_rect_from_points_given_topleft_bottomright():

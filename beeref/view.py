@@ -43,7 +43,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.settings = BeeSettings()
         self.welcome_overlay = gui.WelcomeOverlay(self)
 
-        self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(60, 60, 60)))
+        self.setBackgroundBrush(
+            QtGui.QBrush(QtGui.QColor(*constants.COLORS['Scene:Canvas'])))
         self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
         self.setAcceptDrops(True)
 

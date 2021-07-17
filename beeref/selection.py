@@ -25,12 +25,13 @@ from PyQt6.QtWidgets import QGraphicsItem
 from beeref.assets import BeeAssets
 from beeref import commands
 from beeref.config import CommandlineArgs
+from beeref.constants import COLORS
 from beeref import utils
 
 
 commandline_args = CommandlineArgs()
 logger = logging.getLogger(__name__)
-SELECT_COLOR = QtGui.QColor(116, 234, 231, 255)
+SELECT_COLOR = QtGui.QColor(*COLORS['Scene:Selection'])
 
 
 def with_anchor(func):
