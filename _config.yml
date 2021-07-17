@@ -18,6 +18,12 @@ description: A Simple Reference Image Viewer
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://beeref.org"
 
+defaults:
+  - scope:
+      path: "" # an empty string here means all files in the project
+    values:
+      image: "/assets/images/screenshot.png"
+
 # Build settings
 markdown: kramdown
 theme: jekyll-theme-cayman
