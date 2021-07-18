@@ -30,7 +30,7 @@ COLORS = {
     'Active:ButtonText': (200, 200, 200),
     'Active:Highlight': (83, 167, 165),
     'Active:Link': (90, 181, 179),
-    'Disabled:Light': (0, 0, 0),
+    'Disabled:Light': (0, 0, 0, 0),
     'Disabled:Text': (140, 140, 140),
 
     # BeeRef specific:
