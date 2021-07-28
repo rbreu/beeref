@@ -4,7 +4,7 @@
 Added
 -----
 
-* You can now add plain text notes
+* You can now add plain text notes. Bee files from version 0.2.0 won't work with BeeRef 0.1.x.
 
 Changed
 -------

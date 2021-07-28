@@ -63,6 +63,54 @@ def test_sqliteio_migrate_migrates_when_file_not_writable(tmpfile):
     assert os.path.exists(newdir) is False
 
 
+def test_all_migrations(tmpfile):
+    io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
+
+    # Set up version 1 bee file
+    io.ex('PRAGMA user_version=1')
+    io.ex("""
+        CREATE TABLE items (
+          id INTEGER PRIMARY KEY,
+          type TEXT NOT NULL,
+          x REAL DEFAULT 0,
+          y REAL DEFAULT 0,
+          z REAL DEFAULT 0,
+          scale REAL DEFAULT 1,
+          rotation REAL DEFAULT 0,
+          flip INTEGER DEFAULT 1,
+          filename TEXT)""")
+    io.ex("""
+        CREATE TABLE sqlar (
+            name TEXT PRIMARY KEY,
+            item_id INTEGER NOT NULL,
+            mode INT,
+            mtime INT default current_timestamp,
+            sz INT,
+            data BLOB,
+            FOREIGN KEY (item_id)
+              REFERENCES items (id)
+                 ON DELETE CASCADE
+                 ON UPDATE NO ACTION)""")
+    io.ex('INSERT INTO items '
+          '(type, x, y, z, scale, rotation, flip, filename) '
+          'VALUES (?, ?, ?, ?, ?, ?, ?, ?) ',
+          ('pixmap', 22.2, 33.3, 0.22, 3.4, 45, -1, 'bee.png'))
+    io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)',
+          (1, b'bla'))
+    io.connection.commit()
+    del(io)
+
+    io = SQLiteIO(tmpfile, MagicMock(), create_new=False)
+    result = io.fetchone('PRAGMA user_version')
+    assert result[0] == schema.USER_VERSION
+    result = io.fetchone(
+        'SELECT x, y, items.data, sqlar.data FROM items '
+        'LEFT OUTER JOIN sqlar on sqlar.item_id = items.id')
+    assert result[0] == 22.2
+    assert result[1] == 33.3
+    assert json.loads(result[2]) == {'filename': 'bee.png'}
+    assert result[3] == b'bla'
+
 def test_sqliteio_ẁrite_meta_application_id(tmpfile):
     io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
     io.write_meta()
