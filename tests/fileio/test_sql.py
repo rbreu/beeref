@@ -111,6 +111,7 @@ def test_all_migrations(tmpfile):
     assert json.loads(result[2]) == {'filename': 'bee.png'}
     assert result[3] == b'bla'
 
+
 def test_sqliteio_ẁrite_meta_application_id(tmpfile):
     io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
     io.write_meta()
