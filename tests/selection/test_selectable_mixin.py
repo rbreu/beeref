@@ -556,85 +556,53 @@ def test_hover_move_event_no_selection(view, item):
             item.setCursor.assert_not_called()
 
 
-def test_hover_move_event_topleft_scale(view, item):
+@mark.parametrize('pos,flipped,rotation, expected',
+                  [((0, 0), False, 0, 'SizeFDiagCursor'),
+                   ((100, 80), False, 0, 'SizeFDiagCursor'),
+                   ((100, 0), False, 0, 'SizeBDiagCursor'),
+                   ((0, 0), False, 90, 'SizeBDiagCursor'),
+                   ((0, 0), False, 45, 'SizeVerCursor'),
+                   ((0, 0), False, 135, 'SizeHorCursor'),
+                   ((0, 80), False, 45, 'SizeHorCursor'),
+                   ((0, 80), False, 90, 'SizeFDiagCursor'),
+                   ((0, 80), False, 135, 'SizeVerCursor'),
+                   ((0, 80), True, 0, 'SizeFDiagCursor'),
+                   ((100, 0), True, 0, 'SizeFDiagCursor'),
+                   ((100, 80), True, 0, 'SizeBDiagCursor'),
+                   ((0, 80), True, 90, 'SizeBDiagCursor'),
+                   ((0, 80), True, 45, 'SizeHorCursor'),
+                   ((0, 0), True, 135, 'SizeHorCursor'),
+                   ((0, 0), True, 45, 'SizeVerCursor'),
+                   ((0, 0), True, 90, 'SizeFDiagCursor'),
+                   ((0, 0), True, 135, 'SizeHorCursor')])
+def test_hover_move_event_topleft_scale(
+        pos, flipped, rotation, expected, view, item):
     view.scene.addItem(item)
     item.setSelected(True)
+    if flipped:
+        item.do_flip()
+    item.setRotation(rotation)
     event = MagicMock()
-    event.pos.return_value = QtCore.QPointF(0, 0)
+    event.pos.return_value = QtCore.QPointF(*pos)
     with patch('beeref.items.BeePixmapItem.width',
                new_callable=PropertyMock, return_value=100):
         with patch('beeref.items.BeePixmapItem.height',
                    new_callable=PropertyMock, return_value=80):
+            item.hoverMoveEvent(event)
+            assert item.cursor() == getattr(Qt.CursorShape, expected)
+
+
+def test_hover_move_event_bottomright_scale_very_wide_item(view, item):
+    view.scene.addItem(item)
+    item.setSelected(True)
+    event = MagicMock()
+    event.pos.return_value = QtCore.QPointF(1000, 100)
+    with patch('beeref.items.BeePixmapItem.width',
+               new_callable=PropertyMock, return_value=1000):
+        with patch('beeref.items.BeePixmapItem.height',
+                   new_callable=PropertyMock, return_value=100):
             item.hoverMoveEvent(event)
             assert item.cursor() == Qt.CursorShape.SizeFDiagCursor
-
-
-def test_hover_move_event_bottomright_scale(view, item):
-    view.scene.addItem(item)
-    item.setSelected(True)
-    event = MagicMock()
-    event.pos.return_value = QtCore.QPointF(100, 80)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == Qt.CursorShape.SizeFDiagCursor
-
-
-def test_hover_move_event_topright_scale(view, item):
-    view.scene.addItem(item)
-    item.setSelected(True)
-    event = MagicMock()
-    event.pos.return_value = QtCore.QPointF(100, 0)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == Qt.CursorShape.SizeBDiagCursor
-
-
-def test_hover_move_event_topright_scale_rotated_90(view, item):
-    view.scene.addItem(item)
-    item.setRotation(90)
-    item.setSelected(True)
-    event = MagicMock()
-    event.pos.return_value = QtCore.QPointF(0, 0)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == Qt.CursorShape.SizeBDiagCursor
-
-
-def test_hover_move_event_top_scale_rotated_45(view, item):
-    view.scene.addItem(item)
-    item.setRotation(45)
-    item.setSelected(True)
-    event = MagicMock()
-    event.pos.return_value = QtCore.QPointF(0, 0)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == Qt.CursorShape.SizeVerCursor
-
-
-def test_hover_move_event_left_scale_rotated_45(view, item):
-    view.scene.addItem(item)
-    item.setRotation(45)
-    item.setSelected(True)
-    event = MagicMock()
-    event.pos.return_value = QtCore.QPointF(0, 80)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == Qt.CursorShape.SizeHorCursor
 
 
 def test_hover_move_event_rotate(view, item):

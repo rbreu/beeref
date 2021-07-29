@@ -13,6 +13,11 @@ Changed
 
 * Make debug log file less verbose
 
+Fixed
+-----
+
+* Hovering over the scale handles of very narrow items now displays correct cursor
+
 
 0.1.1 - 2021-07-18
 ==================

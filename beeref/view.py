@@ -125,7 +125,6 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         for f in cls.supportedImageFormats():
             string = f'*.{f.data().decode()}'
             formats.extend((string, string.upper()))
-        print(formats)
         return ' '.join(formats)
 
     def get_view_center(self):

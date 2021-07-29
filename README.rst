@@ -46,7 +46,7 @@ To get the current delevopment version, you need to have a working Python 3 envi
 
 Then run ``beeref`` or ``beeref filename.bee``.
 
-If there are issues starting the application, run it with the environment varibale ``QT_DEBUG_PLUGINS`` set to 1, for example from a Linux shell::
+If there are issues starting the application, run it with the environment variable ``QT_DEBUG_PLUGINS`` set to 1, for example from a Linux shell::
 
   QT_DEBUG_PLUGINS=1 beeref
 

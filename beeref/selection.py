@@ -333,16 +333,7 @@ class SelectableMixin(BaseItemMixin):
         for corner in self.corners:
             # See if we need to change the cursor for interactable areas
             if self.get_scale_bounds(corner).contains(event.pos()):
-                self.event_anchor = self.center_scene_coords
-                angle = self.get_rotate_angle(self.mapToScene(corner))
-                if abs(angle) >= 157.5 or abs(angle) <= 22.5:
-                    self.setCursor(Qt.CursorShape.SizeVerCursor)
-                elif 112.5 <= angle <= 157.5 or -67.5 <= angle <= -22.5:
-                    self.setCursor(Qt.CursorShape.SizeFDiagCursor)
-                elif 67.5 <= abs(angle) <= 112.5:
-                    self.setCursor(Qt.CursorShape.SizeHorCursor)
-                else:
-                    self.setCursor(Qt.CursorShape.SizeBDiagCursor)
+                self.setCursor(self.get_corner_scale_cursor(corner))
                 return
             elif self.get_rotate_bounds(corner).contains(event.pos()):
                 self.setCursor(BeeAssets().cursor_rotate)
@@ -450,9 +441,39 @@ class SelectableMixin(BaseItemMixin):
 
         return delta
 
+    def get_corner_scale_cursor(self, corner):
+        """Gets the scale cursor for the given corner."""
+
+        rotation = self.rotation() % 180
+        flipped = self.flip() == -1
+
+        if corner in (QtCore.QPointF(0, 0),
+                      QtCore.QPointF(self.width, self.height)):
+            if 22.5 < rotation < 67.5:
+                return Qt.CursorShape.SizeVerCursor
+            elif 67.5 < rotation < 112.5:
+                return (Qt.CursorShape.SizeFDiagCursor if flipped
+                        else Qt.CursorShape.SizeBDiagCursor)
+            elif 112.5 < rotation < 157.5:
+                return Qt.CursorShape.SizeHorCursor
+            else:
+                return (Qt.CursorShape.SizeBDiagCursor if flipped
+                        else Qt.CursorShape.SizeFDiagCursor)
+        else:
+            if 22.5 < rotation < 67.5:
+                return Qt.CursorShape.SizeHorCursor
+            elif 67.5 < rotation < 112.5:
+                return (Qt.CursorShape.SizeBDiagCursor if flipped
+                        else Qt.CursorShape.SizeFDiagCursor)
+            elif 112.5 < rotation < 157.5:
+                return Qt.CursorShape.SizeVerCursor
+            else:
+                return (Qt.CursorShape.SizeFDiagCursor if flipped
+                        else Qt.CursorShape.SizeBDiagCursor)
+
     def get_edge_flips_v(self, edge):
         """Returns ``True`` if the given edge invokes a horizontal flip,
-        ``False`` if it invokes a vertacal flip."""
+        ``False`` if it invokes a vertical flip."""
 
         if 45 < self.rotation() < 135 or 225 < self.rotation() < 315:
             return not edge['flip_v']
