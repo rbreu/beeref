@@ -6,7 +6,7 @@ Note that bee files from version 0.2.0 won't open in BeeRef 0.1.x.
 Added
 -----
 
-* You can now add plain text notes
+* You can now add plain text notes and paste text from the clipboard
 
 Changed
 -------

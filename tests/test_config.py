@@ -71,3 +71,27 @@ def test_settings_recent_files_update_respects_max_num(settings):
     assert len(recent) == 10
     assert recent[0] == os.path.abspath('14.bee')
     assert recent[-1] == os.path.abspath('5.bee')
+
+
+def test_keyboardsettings_set_shortcuts(kbsettings):
+    kbsettings.set_shortcuts('Actions', 'foo', ['Ctrl+F'])
+    assert kbsettings.get_shortcuts('Actions', 'foo') == ['Ctrl+F']
+
+
+def test_keyboardsettings_set_shortcuts_multiple(kbsettings):
+    kbsettings.set_shortcuts('Actions', 'foo', ['Ctrl+F', 'Alt+O'])
+    assert kbsettings.get_shortcuts('Actions', 'foo') == ['Ctrl+F', 'Alt+O']
+
+
+def test_keyboardsettings_get_shortcuts_default(kbsettings):
+    assert kbsettings.get_shortcuts('Actions', 'bar', ['Ctrl+B']) == ['Ctrl+B']
+
+
+def test_keyboardsettings_get_shortcuts_defaults_dont_overwrite_empty(
+        kbsettings):
+    kbsettings.set_shortcuts('Actions', 'bar', [])
+    assert kbsettings.get_shortcuts('Actions', 'bar', ['Ctrl+B']) == []
+
+
+def test_keyboardsettings_get_shortcuts_not_set_no_defaults(kbsettings):
+    assert kbsettings.get_shortcuts('Actions', 'baz') == []

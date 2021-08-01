@@ -39,6 +39,18 @@ def settings(tmpdir):
     dir_patcher.stop()
 
 
+@pytest.fixture(autouse=True)
+def kbsettings(tmpdir):
+    from beeref.config import KeyboardSettings
+    dir_patcher = patch('beeref.config.BeeSettings.get_settings_dir',
+                        return_value=tmpdir.dirname)
+    dir_patcher.start()
+    kbsettings = KeyboardSettings()
+    yield kbsettings
+    kbsettings.clear()
+    dir_patcher.stop()
+
+
 @pytest.fixture
 def main_window(qtbot):
     from beeref.__main__ import BeeRefMainWindow

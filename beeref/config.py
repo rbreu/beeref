@@ -26,6 +26,9 @@ from beeref import constants
 from beeref.logging import qt_message_handler
 
 
+logger = logging.getLogger(__name__)
+
+
 parser = argparse.ArgumentParser(
     description=f'{constants.APPNAME_FULL} {constants.VERSION}')
 parser.add_argument(
@@ -136,6 +139,27 @@ class BeeSettings(QtCore.QSettings):
         if existing_only:
             values = [f for f in values if os.path.exists(f)]
         return values
+
+
+class KeyboardSettings(QtCore.QSettings):
+
+    def __init__(self):
+        settings_format = QtCore.QSettings.Format.IniFormat
+        filename = os.path.join(
+            os.path.dirname(BeeSettings().fileName()),
+            'KeyboardSettings.ini')
+        super().__init__(filename, settings_format)
+
+    def set_shortcuts(self, group, key, values):
+        self.setValue(f'{group}/{key}', ', '.join(values))
+
+    def get_shortcuts(self, group, key, default=None):
+        values = self.value(f'{group}/{key}')
+        if values is not None:
+            values = list(filter(lambda x: x, values.split(', ')))
+            logger.debug(f'Found custom shorcuts for {group}/{key}: {values}')
+            return values
+        return default or []
 
 
 def logfile_name():

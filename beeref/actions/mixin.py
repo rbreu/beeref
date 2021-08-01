@@ -22,7 +22,7 @@ from PyQt6 import QtGui, QtWidgets
 from .actions import actions
 from .menu_structure import menu_structure, MENU_SEPARATOR
 
-from beeref import config
+from beeref.config import KeyboardSettings
 
 
 class ActionsMixin:
@@ -73,8 +73,10 @@ class ActionsMixin:
     def _create_actions(self):
         for action in actions:
             qaction = QtGui.QAction(action['text'], self)
-            if 'shortcuts' in action:
-                qaction.setShortcuts(action['shortcuts'])
+            shortcuts = KeyboardSettings().get_shortcuts(
+                'Actions', action['id'], action.get('shortcuts'))
+            if shortcuts:
+                qaction.setShortcuts(shortcuts)
             if action.get('checkable', False):
                 self._init_action_checkable(action, qaction)
             else:
@@ -108,7 +110,7 @@ class ActionsMixin:
             self._recent_files_submenu = menu
         self._clear_recent_files()
 
-        files = config.BeeSettings().get_recent_files(existing_only=True)
+        files = self.settings.get_recent_files(existing_only=True)
         items = []
         for i, filename in enumerate(files):
             qaction = QtGui.QAction(os.path.basename(filename), self)

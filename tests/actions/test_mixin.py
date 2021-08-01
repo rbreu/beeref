@@ -49,6 +49,25 @@ def test_create_actions(
     assert widget.bee_actions['foo'] == qaction
 
 
+@patch('beeref.actions.mixin.menu_structure')
+@patch('beeref.actions.mixin.actions')
+def test_create_actions_with_shortcut_from_settings(
+        actions_mock, menu_mock, qapp, kbsettings):
+    kbsettings.set_shortcuts('Actions', 'foo', ['Alt+O'])
+    widget = FooWidget()
+    actions_mock.__iter__.return_value = [{
+        'id': 'foo',
+        'text': '&Foo',
+        'shortcuts': ['Ctrl+F'],
+        'callback': 'on_foo',
+    }]
+
+    menu_mock.__iter__.return_value = ['foo']
+    widget.build_menu_and_actions()
+    qaction = widget.actions()[0]
+    assert qaction.shortcut() == 'Alt+O'
+
+
 @patch('PyQt6.QtGui.QAction.triggered')
 @patch('PyQt6.QtGui.QAction.toggled')
 @patch('beeref.actions.mixin.menu_structure')
@@ -245,14 +264,12 @@ def test_build_menu_and_actions_disables_actiongroups(
     assert qaction.isEnabled() is False
 
 
-@patch('beeref.config.BeeSettings.get_recent_files')
 @patch('PyQt6.QtGui.QAction.triggered')
 @patch('beeref.actions.mixin.menu_structure')
 @patch('beeref.actions.mixin.actions')
-def test_create_recent_files(
-        actions_mock, menu_mock, triggered_mock, files_mock, qapp):
+def test_create_recent_files(actions_mock, menu_mock, triggered_mock, qapp):
     widget = FooWidget()
-    files_mock.return_value = [
+    widget.settings.get_recent_files.return_value = [
         os.path.abspath(f'{i}.bee') for i in range(15)]
     menu_mock.__iter__.return_value = [{
         'menu': 'Open &Recent',
@@ -279,14 +296,13 @@ def test_create_recent_files(
     assert widget.bee_actions['recent_files_14'] == qaction15
 
 
-@patch('beeref.config.BeeSettings.get_recent_files')
 @patch('PyQt6.QtGui.QAction.triggered')
 @patch('beeref.actions.mixin.menu_structure')
 @patch('beeref.actions.mixin.actions')
-def test_update_recent_files(
-        actions_mock, menu_mock, triggered_mock, files_mock, qapp):
+def test_update_recent_files(actions_mock, menu_mock, triggered_mock, qapp):
     widget = FooWidget()
-    files_mock.return_value = [os.path.abspath('foo.bee')]
+    widget.settings.get_recent_files.return_value = [
+        os.path.abspath('foo.bee')]
     menu_mock.__iter__.return_value = [{
         'menu': 'Open &Recent',
         'items': '_build_recent_files',
@@ -298,7 +314,8 @@ def test_update_recent_files(
     qaction1 = widget.actions()[0]
     assert qaction1.text() == 'foo.bee'
 
-    files_mock.return_value = [os.path.abspath('bar.bee')]
+    widget.settings.get_recent_files.return_value = [
+        os.path.abspath('bar.bee')]
     widget.update_menu_and_actions()
     triggered_mock.connect.assert_called()
     assert len(widget.actions()) == 1
