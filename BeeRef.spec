@@ -61,4 +61,12 @@ if sys.platform == 'darwin':
         exe,
         name=f'{appname}.app',
         icon=join('beeref', 'assets', icon),
-        bundle_identifier=None)
+        bundle_identifier=None,
+        info_plist={
+            'CFBundleDocumentTypes': [
+                {
+                    'CFBundleTypeExtensions': [ 'bee' ],
+                    'CFBundleTypeRole': 'Viewer'
+                }
+            ]
+        })
