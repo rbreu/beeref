@@ -30,6 +30,19 @@ from beeref.view import BeeGraphicsView
 logger = logging.getLogger(__name__)
 
 
+class BeeRefApplication(QtWidgets.QApplication):
+
+    def event(self, event):
+        if event.type() == QtCore.QEvent.Type.FileOpen:
+            for widget in self.topLevelWidgets():
+                if isinstance(widget, BeeRefMainWindow):
+                    widget.view.open_from_file(event.file())
+                    return True
+            return False
+        else:
+            return super().event(event)
+
+
 class BeeRefMainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, app):
@@ -79,7 +92,7 @@ def main():
     logger.info(f'Using settings: {settings.fileName()}')
     logger.info(f'Logging to: {logfile_name()}')
     CommandlineArgs(with_check=True)  # Force checking
-    app = QtWidgets.QApplication(sys.argv)
+    app = BeeRefApplication(sys.argv)
     palette = create_palette_from_dict(constants.COLORS)
     app.setPalette(palette)
 
