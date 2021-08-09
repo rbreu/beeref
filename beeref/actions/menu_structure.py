@@ -99,6 +99,12 @@ menu_structure = [
         ],
     },
     {
+        'menu': '&Settings',
+        'items': [
+            'settings',
+        ],
+    },
+    {
         'menu': '&Help',
         'items': [
             'help',

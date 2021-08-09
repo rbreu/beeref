@@ -151,6 +151,7 @@ class KeyboardSettings(QtCore.QSettings):
         super().__init__(filename, settings_format)
 
     def set_shortcuts(self, group, key, values):
+        logger.debug('Saving custom shorcuts for {group}/{key}: {values}')
         self.setValue(f'{group}/{key}', ', '.join(values))
 
     def get_shortcuts(self, group, key, default=None):

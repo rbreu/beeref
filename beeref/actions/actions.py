@@ -265,4 +265,9 @@ actions = [
         'checkable': True,
         'callback': 'on_action_always_on_top',
     },
+    {
+        'id': 'settings',
+        'text': '&Settings...',
+        'callback': 'on_action_settings',
+    },
 ]

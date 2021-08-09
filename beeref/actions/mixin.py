@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from functools import partial
 import os.path
 
@@ -43,6 +43,12 @@ class ActionsMixin:
         for func, arg in self._post_create_functions:
             func(arg)
         del self._post_create_functions
+
+    def get_keyboardsettings_tree(self):
+        tree = OrderedDict()
+        self._create_keybordsettings_tree(
+            self.bee_actions, tree, menu_structure)
+        return tree
 
     def update_menu_and_actions(self):
         self._build_recent_files()
@@ -104,6 +110,25 @@ class ActionsMixin:
                 self._create_menu(actions, submenu, item['items'])
 
         return menu
+
+    def _create_keybordsettings_tree(self, actions, tree, items):
+        if isinstance(items, str):
+            #getattr(self, items)(menu)
+            return tree
+        for item in items:
+            if isinstance(item, str):
+                #xxx
+                menu.addAction(actions[item])
+            if item == MENU_SEPARATOR:
+                menu.addSeparator()
+            if isinstance(item, dict):
+                submenu = menu.addMenu(item['menu'])
+                if menu == self.context_menu:
+                    self.toplevel_menus.append(submenu)
+                self._create_menu(actions, submenu, item['items'])
+
+        return menu
+
 
     def _build_recent_files(self, menu=None):
         if menu:

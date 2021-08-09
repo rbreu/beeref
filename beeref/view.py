@@ -473,6 +473,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             return
         logger.info('No image data or text in clipboard')
 
+    def on_action_settings(self):
+        gui.SettingsDialog(self)
+
     def on_selection_changed(self):
         logger.debug('Currently selected items: %s',
                      len(self.scene.selectedItems(user_only=True)))
