@@ -2,5 +2,5 @@
 
 flake8
 pybadges
-pyinstaller
+pyinstaller >= 4.5
 yamllint

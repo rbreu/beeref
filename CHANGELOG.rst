@@ -12,6 +12,7 @@ Changed
 -------
 
 * Make debug log file less verbose
+* The program is now bundled as a single executable file (issue #4)
 
 Fixed
 -----

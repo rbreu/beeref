@@ -3,6 +3,10 @@ BeeRef — Notes For Developers
 
 BeeRef is written in Python and PyQt6.
 
+
+Delevoping
+----------
+
 Clone the repository and install beeref and its dependencies::
 
   git clone https://github.com/rbreu/beeref.git
@@ -33,6 +37,20 @@ Beeref files are sqlite databases, so they can be inspected with any sqlite brow
 For debugging options, run::
 
   beeref --help
+
+
+Building the app
+----------------
+
+To build the app, run::
+
+  pyinstaller --onefile BeeRef.spec
+
+You will find the generated executable in the folder ``dist``.
+
+
+Website etc.
+------------
 
 The Python version badge in the README is generated with pybadges::
 

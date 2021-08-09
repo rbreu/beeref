@@ -23,12 +23,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyinstaller
           pip install -e .
-      - name: Run build.py
+      - name: Run Pyinstaller
         run: |
-          python build.py
+          pyinstaller --onefile BeeRef.spec
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: build
-          path: dist/*.zip
+          path: dist/*
           retention-days: 5
