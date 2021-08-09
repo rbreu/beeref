@@ -54,3 +54,6 @@ shutil.make_archive(
     base_dir=appname)
 
 print('Done')
+
+with os.path.open('BeeRef-0.2.0.spec') as f:
+    print(f.read())
