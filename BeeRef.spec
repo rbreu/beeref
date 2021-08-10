@@ -59,9 +59,10 @@ exe = EXE(
 if sys.platform == 'darwin':
     app = BUNDLE(
         exe,
-        name=f'{appname}.app',
+        name=f'{constants.APPNAME}.app',
         icon=join('beeref', 'assets', icon),
-        bundle_identifier=None,
+        bundle_identifier='org.beeref.app',
+        version=f'{constants.VERSION}',
         info_plist={
             'CFBundleDocumentTypes': [
                 {
