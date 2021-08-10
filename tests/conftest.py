@@ -87,3 +87,9 @@ def tmpfile(tmpdir):
 def item():
     from beeref.items import BeePixmapItem
     yield BeePixmapItem(QtGui.QImage())
+
+
+@pytest.fixture(scope="session")
+def qapp():
+    from beeref.__main__ import BeeRefApplication
+    yield BeeRefApplication([])
