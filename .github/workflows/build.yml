@@ -29,6 +29,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: build
+          name: build-${{ matrix.os }}
           path: dist/*
           retention-days: 5
