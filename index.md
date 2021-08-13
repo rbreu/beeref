@@ -16,6 +16,7 @@ Get the zip file for your operating system (Windows, Linux, macOS) from the [lat
 
 **Linux users** who want to have BeeRef appear in the app menu, save the desktop file from the [release section]({{ site.github.latest_release.html_url }}) in `~/.local/share/applications` and adjust the path names in the file to match the location of your BeeRef installation.
 
+**MacOS X users**, look at [detailed instructions]({% link macosx-run.md %}) if you have problems running BeeRef.
 
 ## Features
 
