@@ -51,10 +51,21 @@ class BeeRefMainWindow(QtWidgets.QMainWindow):
         app.setOrganizationName(constants.APPNAME)
         app.setApplicationName(constants.APPNAME)
         self.setWindowIcon(BeeAssets().logo)
-        self.resize(500, 300)
         self.view = BeeGraphicsView(app, self)
+        default_window_size = QtCore.QSize(500, 300)
+        geom = self.view.settings.value('MainWindow/geometry')
+        if geom is None:
+            self.resize(default_window_size)
+        else:
+            if not self.restoreGeometry(geom):
+                self.resize(default_window_size)
         self.setCentralWidget(self.view)
         self.show()
+
+    def closeEvent(self, event):
+        geom = self.saveGeometry()
+        self.view.settings.setValue('MainWindow/geometry', geom)
+        event.accept()
 
     def __del__(self):
         del self.view
