@@ -438,7 +438,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         # At the moment, we can only copy one image to the global
         # clipboard. (Later, we might create an image of the whole
         # selection for external copying.)
-        clipboard.setPixmap(items[0].pixmap())
+        items[0].copy_to_clipboard(clipboard)
 
         # However, we can copy all items to the internal clipboard:
         self.scene.copy_selection_to_internal_clipboard()

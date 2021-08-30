@@ -136,6 +136,9 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
             item.do_flip()
         return item
 
+    def copy_to_clipboard(self, clipboard):
+        clipboard.setPixmap(self.pixmap())
+
 
 @register_item
 class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
@@ -219,3 +222,6 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
             event.accept()
             return
         super().keyPressEvent(event)
+
+    def copy_to_clipboard(self, clipboard):
+        clipboard.setText(self.toPlainText())

@@ -7,6 +7,8 @@ Added
 -----
 
 * You can now add plain text notes and paste text from the clipboard
+* You can now open bee files from finder on MacOS (by Davin Andrs)
+
 
 Changed
 -------

@@ -7,7 +7,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
 from beeref.config import logfile_name
-from beeref.items import BeePixmapItem
+from beeref.items import BeePixmapItem, BeeTextItem
 from beeref.view import BeeGraphicsView
 
 
@@ -333,7 +333,7 @@ def test_on_action_insert_text(clear_mock, view):
 
 
 @patch('PyQt6.QtWidgets.QApplication.clipboard')
-def test_on_action_copy(clipboard_mock, view, imgfilename3x3):
+def test_on_action_copy_image(clipboard_mock, view, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scene.addItem(item)
     item.setSelected(True)
@@ -342,6 +342,20 @@ def test_on_action_copy(clipboard_mock, view, imgfilename3x3):
     view.on_action_copy()
 
     clipboard_mock.return_value.setPixmap.assert_called_once()
+    view.scene.internal_clipboard == [item]
+    assert mimedata.data('beeref/items') == b'1'
+
+
+@patch('PyQt6.QtWidgets.QApplication.clipboard')
+def test_on_action_copy_text(clipboard_mock, view, imgfilename3x3):
+    item = BeeTextItem('foo bar')
+    view.scene.addItem(item)
+    item.setSelected(True)
+    mimedata = QtCore.QMimeData()
+    clipboard_mock.return_value.mimeData.return_value = mimedata
+    view.on_action_copy()
+
+    clipboard_mock.return_value.setText.assert_called_once_with('foo bar')
     view.scene.internal_clipboard == [item]
     assert mimedata.data('beeref/items') == b'1'
 

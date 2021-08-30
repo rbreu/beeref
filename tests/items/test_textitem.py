@@ -299,3 +299,10 @@ def test_key_press_event_enter(exit_mock, key_press_mock, view):
     key_press_mock.assert_not_called()
     exit_mock.assert_called_once_with()
     assert view.scene.edit_item is None
+
+
+def test_item_to_clipboard(qapp):
+    clipboard = QtWidgets.QApplication.clipboard()
+    item = BeeTextItem('foo bar')
+    item.copy_to_clipboard(clipboard)
+    assert clipboard.text() == 'foo bar'

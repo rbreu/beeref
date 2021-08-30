@@ -1,6 +1,6 @@
 from unittest.mock import patch, MagicMock, PropertyMock
 
-from PyQt6 import QtCore, QtGui
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 from beeref.items import BeePixmapItem, item_registry
 
@@ -174,3 +174,10 @@ def test_create_copy(qapp, imgfilename3x3):
     assert item.flip() == -1
     assert item.zValue() == 0.5
     assert item.scale() == 2.2
+
+
+def test_item_to_clipboard(qapp, imgfilename3x3):
+    clipboard = QtWidgets.QApplication.clipboard()
+    item = BeePixmapItem(QtGui.QImage(imgfilename3x3), 'foo.png')
+    item.copy_to_clipboard(clipboard)
+    assert clipboard.pixmap().size() == item.pixmap().size()
