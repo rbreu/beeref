@@ -7,7 +7,7 @@ Added
 -----
 
 * You can now add plain text notes and paste text from the clipboard
-* You can now open bee files from finder on MacOS (by Davin Andrs)
+* You can now open bee files from finder on MacOS (by David Andrs)
 
 
 Changed
@@ -19,7 +19,9 @@ Changed
 Fixed
 -----
 
-* Hovering over the scale handles of very narrow items now displays correct cursor
+* Hovering over the scale handles of very narrow items now displays
+  correct cursor orientation
+* Fix a rare crash while displaying selection handles
 
 
 0.1.1 - 2021-07-18

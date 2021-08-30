@@ -48,7 +48,9 @@ class BeeItemMixin(SelectableMixin):
         return self.isSelected()
 
     def has_selection_handles(self):
-        return self.isSelected() and self.scene().has_single_selection()
+        return (self.isSelected()
+                and self.scene()
+                and self.scene().has_single_selection())
 
     def selection_action_items(self):
         """The items affected by selection actions like scaling and rotating.
