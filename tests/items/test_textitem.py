@@ -181,6 +181,7 @@ def test_update_from_data_keeps_unset_values(qapp):
     item.setScale(3)
     item.update_from_data(rotation=45)
     assert item.scale() == 3
+    assert item.flip() == 1
 
 
 def test_create_from_data(qapp):

@@ -70,7 +70,7 @@ class BeeItemMixin(SelectableMixin):
         self.setZValue(kwargs.get('z', self.zValue()))
         self.setScale(kwargs.get('scale', self.scale()))
         self.setRotation(kwargs.get('rotation', self.rotation()))
-        if kwargs.get('flip') != self.flip():
+        if kwargs.get('flip', 1) != self.flip():
             self.do_flip()
 
 
