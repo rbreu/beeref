@@ -1056,3 +1056,12 @@ def test_add_queued_items_selected(view):
 def test_add_queued_items_when_no_items(view):
     view.scene.add_queued_items()
     assert view.scene.items() == []
+
+
+def test_add_queued_items_ignores_unknown_type(view):
+    data = {'type': 'foo', 'z': 0.33, 'data': {'bar': 'baz'}}
+    view.scene.add_item_later(data, selected=False)
+    view.scene.add_queued_items()
+    assert len(view.scene.items()) == 1
+    item = view.scene.items()[0]
+    assert item.toPlainText() == 'Item of unknown type: foo'

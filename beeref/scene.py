@@ -412,7 +412,13 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         while not self.items_to_add.empty():
             data, selected = self.items_to_add.get()
-            cls = item_registry[data.pop('type')]
+            typ = data.pop('type')
+            cls = item_registry.get(typ)
+            if not cls:
+                # Just in case we add new item types in future versions
+                logger.warning(f'Encountered item of unknown type: {typ}')
+                cls = item_registry.get('text')
+                data['data'] = {'text': f'Item of unknown type: {typ}'}
             item = cls.create_from_data(**data)
             item.update_from_data(**data)
             self.addItem(item)
