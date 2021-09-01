@@ -20,11 +20,12 @@ from PyQt6 import QtCore
 from beeref import commands
 from beeref.fileio.errors import BeeFileIOError
 from beeref.fileio.image import load_image
-from beeref.fileio.sql import SQLiteIO
+from beeref.fileio.sql import SQLiteIO, is_bee_file
 from beeref.items import BeePixmapItem
 
 
 __all__ = [
+    'is_bee_file',
     'load_bee',
     'save_bee',
     'load_images',

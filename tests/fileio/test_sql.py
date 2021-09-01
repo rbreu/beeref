@@ -7,10 +7,18 @@ from unittest.mock import MagicMock, patch
 from PyQt6 import QtGui
 import pytest
 
-from beeref.fileio import schema
+from beeref.fileio import schema, is_bee_file
 from beeref.fileio.errors import BeeFileIOError
 from beeref.fileio.sql import SQLiteIO
 from beeref.items import BeePixmapItem, BeeTextItem
+
+
+@pytest.mark.parametrize('filename,expected',
+                         [(os.path.join('foo', 'bar.bee'), True),
+                          (os.path.join('foo', 'bar.png'), False),
+                          (os.path.join('foo', 'bar'), False)])
+def test_is_bee_file(filename, expected):
+    assert is_bee_file(filename) is expected
 
 
 def test_sqliteio_migrate_does_nothing_when_version_ok(tmpfile):

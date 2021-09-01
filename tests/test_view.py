@@ -811,8 +811,7 @@ def test_drag_move(view):
 
 @patch('beeref.view.BeeGraphicsView.do_insert_images')
 def test_drop_when_url(insert_mock, view, imgfilename3x3):
-    url = QtCore.QUrl()
-    url.fromLocalFile(imgfilename3x3)
+    url = QtCore.QUrl.fromLocalFile(imgfilename3x3)
     mimedata = QtCore.QMimeData()
     mimedata.setUrls([url])
     event = MagicMock()
@@ -821,6 +820,39 @@ def test_drop_when_url(insert_mock, view, imgfilename3x3):
 
     view.dropEvent(event)
     insert_mock.assert_called_once_with([url], QtCore.QPoint(10, 20))
+
+
+@patch('beeref.view.BeeGraphicsView.open_from_file')
+def test_drop_when_url_beefile_and_scene_empty(open_mock, view):
+    root = os.path.dirname(__file__)
+    filename = os.path.join(root, 'assets', 'test1item.bee')
+    url = QtCore.QUrl.fromLocalFile(filename)
+    mimedata = QtCore.QMimeData()
+    mimedata.setUrls([url])
+    event = MagicMock()
+    event.mimeData.return_value = mimedata
+    event.position.return_value = QtCore.QPointF(10, 20)
+
+    view.dropEvent(event)
+    open_mock.assert_called_once_with(filename)
+
+
+@patch('beeref.view.BeeGraphicsView.do_insert_images')
+@patch('beeref.view.BeeGraphicsView.open_from_file')
+def test_drop_when_url_beefile_and_scene_not_empty(
+        open_mock, insert_mock, view, item):
+    view.scene.addItem(item)
+    root = os.path.dirname(__file__)
+    filename = os.path.join(root, 'assets', 'test1item.bee')
+    url = QtCore.QUrl.fromLocalFile(filename)
+    mimedata = QtCore.QMimeData()
+    mimedata.setUrls([url])
+    event = MagicMock()
+    event.mimeData.return_value = mimedata
+    event.position.return_value = QtCore.QPointF(10, 20)
+
+    view.dropEvent(event)
+    open_mock.assert_not_called()
 
 
 def test_drop_when_img(view, imgfilename3x3):

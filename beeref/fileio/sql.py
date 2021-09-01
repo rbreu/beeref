@@ -42,6 +42,13 @@ from .schema import SCHEMA, USER_VERSION, MIGRATIONS, APPLICATION_ID
 logger = logging.getLogger(__name__)
 
 
+def is_bee_file(path):
+    """Check wether the file at the given path is a bee file."""
+
+    print(os.path.splitext(path)[1])
+    return os.path.splitext(path)[1] == '.bee'
+
+
 def handle_sqlite_errors(func):
     def wrapper(self, *args, **kwargs):
         try:

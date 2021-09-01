@@ -676,6 +676,14 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         pos = QtCore.QPoint(round(event.position().x()),
                             round(event.position().y()))
         if mimedata.hasUrls():
+            logger.debug(f'Found dropped urls: {mimedata.urls()}')
+            if not self.scene.items():
+                # Check if we have a bee file we can open directly
+                path = mimedata.urls()[0]
+                if (path.isLocalFile()
+                        and fileio.is_bee_file(path.toLocalFile())):
+                    self.open_from_file(path.toLocalFile())
+                    return
             self.do_insert_images(mimedata.urls(), pos)
         elif mimedata.hasImage():
             img = QtGui.QImage(mimedata.imageData())
