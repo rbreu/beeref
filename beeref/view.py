@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
+from functools import partial
 import logging
 import os
 import os.path
@@ -380,7 +381,14 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
     def on_action_debuglog(self):
         gui.DebugLogDialog(self)
 
-    def on_insert_images_finished(self, filename, errors):
+    def on_insert_images_finished(self, new_scene, filename, errors):
+        """Callback for when loading of images is finished.
+
+        :param new_scene: True if the scene was empty before, else False
+        :param filename: Not used, for compability only
+        :param errors: List of filenames that couldn't be loaded
+        """
+
         logger.debug('Insert images finished')
         if errors:
             errornames = [
@@ -396,6 +404,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.scene.add_queued_items()
         self.scene.arrange_optimal()
         self.undo_stack.endMacro()
+        if new_scene:
+            self.on_action_fit_scene()
 
     def do_insert_images(self, filenames, pos=None):
         if not pos:
@@ -408,7 +418,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             self.mapToScene(pos),
             self.scene)
         self.worker.progress.connect(self.on_items_loaded)
-        self.worker.finished.connect(self.on_insert_images_finished)
+        self.worker.finished.connect(
+            partial(self.on_insert_images_finished,
+                    not self.scene.items()))
         self.progress = gui.BeeProgressDialog(
             'Loading images',
             worker=self.worker,
@@ -464,6 +476,9 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         if not img.isNull():
             item = BeePixmapItem(img)
             self.undo_stack.push(commands.InsertItems(self.scene, [item], pos))
+            if len(self.scene.items()) == 1:
+                # This is the first image in the scene
+                self.on_action_fit_scene()
             return
         text = clipboard.text()
         if text:

@@ -8,8 +8,8 @@ Added
 
 * You can now add plain text notes and paste text from the clipboard
 * You can now open bee files from finder on MacOS (by David Andrs)
-* You can now drag bee files onto an empty scene to open them
-
+* Dragging bee files onto an empty scene will now open them
+* Adding the first image(s) to a new scene centers the view
 
 Changed
 -------

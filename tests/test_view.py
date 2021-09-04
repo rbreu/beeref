@@ -291,7 +291,7 @@ def test_on_action_debuglog(show_mock, view):
 
 @patch('beeref.scene.BeeGraphicsScene.clearSelection')
 @patch('PyQt6.QtWidgets.QFileDialog.getOpenFileNames')
-def test_on_action_insert_images(
+def test_on_action_insert_images_new_scene(
         dialog_mock, clear_mock, view, imgfilename3x3, qtbot):
     dialog_mock.return_value = ([imgfilename3x3], None)
     view.on_insert_images_finished = MagicMock()
@@ -302,7 +302,24 @@ def test_on_action_insert_images(
     assert item.isSelected() is True
     assert item.pixmap()
     clear_mock.assert_called_once_with()
-    view.on_insert_images_finished.assert_called_once_with('', [])
+    view.on_insert_images_finished.assert_called_once_with(True, '', [])
+
+
+@patch('beeref.scene.BeeGraphicsScene.clearSelection')
+@patch('PyQt6.QtWidgets.QFileDialog.getOpenFileNames')
+def test_on_action_insert_images_existing_scene(
+        dialog_mock, clear_mock, view, imgfilename3x3, qtbot, item):
+    view.scene.addItem(item)
+    dialog_mock.return_value = ([imgfilename3x3], None)
+    view.on_insert_images_finished = MagicMock()
+    view.on_action_insert_images()
+    qtbot.waitUntil(lambda: view.on_insert_images_finished.called is True)
+    assert len(view.scene.items()) == 2
+    item = view.scene.items()[0]
+    assert item.isSelected() is True
+    assert item.pixmap()
+    clear_mock.assert_called_once_with()
+    view.on_insert_images_finished.assert_called_once_with(False, '', [])
 
 
 @patch('beeref.scene.BeeGraphicsScene.clearSelection')
@@ -319,7 +336,7 @@ def test_on_action_insert_images_when_error(
     assert item.pixmap()
     clear_mock.assert_called_once_with()
     view.on_insert_images_finished.assert_called_once_with(
-        '', ['iaeiae', 'trntrn'])
+        True, '', ['iaeiae', 'trntrn'])
 
 
 @patch('beeref.scene.BeeGraphicsScene.clearSelection')
@@ -360,14 +377,30 @@ def test_on_action_copy_text(clipboard_mock, view, imgfilename3x3):
     assert mimedata.data('beeref/items') == b'1'
 
 
+@patch('beeref.view.BeeGraphicsView.on_action_fit_scene')
 @patch('beeref.scene.BeeGraphicsScene.clearSelection')
 @patch('PyQt6.QtGui.QClipboard.image')
-def test_on_action_paste_external(
-        clipboard_mock, clear_mock, view, imgfilename3x3):
+def test_on_action_paste_external_new_scene(
+        clipboard_mock, clear_mock, fit_mock, view, imgfilename3x3):
     clipboard_mock.return_value = QtGui.QImage(imgfilename3x3)
     view.on_action_paste()
     assert len(view.scene.items()) == 1
     assert view.scene.items()[0].isSelected() is True
+    fit_mock.assert_called_once_with()
+
+
+@patch('beeref.view.BeeGraphicsView.on_action_fit_scene')
+@patch('beeref.scene.BeeGraphicsScene.clearSelection')
+@patch('PyQt6.QtGui.QClipboard.image')
+def test_on_action_paste_external_existing_scene(
+        clipboard_mock, clear_mock, fit_mock, view, item, imgfilename3x3):
+    view.scene.addItem(item)
+    clipboard_mock.return_value = QtGui.QImage(imgfilename3x3)
+    view.on_action_paste()
+    assert len(view.scene.items()) == 2
+    assert view.scene.items()[0].isSelected() is True
+    assert view.scene.items()[1].isSelected() is False
+    fit_mock.assert_not_called()
 
 
 @patch('beeref.scene.BeeGraphicsScene.clearSelection')
