@@ -9,12 +9,14 @@ BeeRef lets you quickly arrange your reference images and view them while you cr
 
 ![Screenshot of BeeRef]({{ site.baseurl}}/assets/images/screenshot.png)
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/d_OVQSU5cd8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 
 ## Installation
 
-Get the zip file for your operating system (Windows, Linux, macOS) from the [latest release]({{ site.github.latest_release.html_url }}). Extract the zip file. Inside the extracted folder, you will find a BeeRef executable.
+Get the file for your operating system (Windows, Linux, macOS) from the [latest release]({{ site.github.latest_release.html_url }}).
 
-**Linux users** who want to have BeeRef appear in the app menu, save the desktop file from the [release section]({{ site.github.latest_release.html_url }}) in `~/.local/share/applications` and adjust the path names in the file to match the location of your BeeRef installation.
+**Linux users** need to give the file executable rights before running it. Optional: If you want to have BeeRef appear in the app menu, save the desktop file from the [release section]({{ site.github.latest_release.html_url }}) in `~/.local/share/applications`, save the [logo]({{ site.baseurl}}/assets/images/logo.png), and adjust the path names in the desktop file to match the location of your BeeRef installation.
 
 **MacOS X users**, look at [detailed instructions]({% link macosx-run.md %}) if you have problems running BeeRef.
 
@@ -23,6 +25,7 @@ Get the zip file for your operating system (Windows, Linux, macOS) from the [lat
 * Move, scale, rotate and flip images
 * Mass-scale images to the same width, height or size
 * Mass-arrange images vertically, horizontally or for optimal usage of space
+* Add text notes
 * Enable alaways-on-top-mode and disable the title bar to let the BeeRef window unobtrusively float above your art program:
 
 ![Screenshot of BeeRef over other program]({{ site.baseurl}}/assets/images/screenshot_float.png)
