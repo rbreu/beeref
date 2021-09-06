@@ -55,6 +55,14 @@ def handle_sqlite_errors(func):
             func(self, *args, **kwargs)
         except sqlite3.Error as e:
             logger.exception(f'Error while reading/writing {self.filename}')
+            try:
+                # Try to roll back transaction if there is any
+                if (hasattr(self, '_connection')
+                        and self._connection.in_transaction):
+                    self.ex('ROLLBACK')
+                    logger.debug('Transaction rolled back')
+            except sqlite3.Error:
+                pass
             self._close_connection()
             if self.worker:
                 self.worker.finished.emit(self.filename, [str(e)])
@@ -127,6 +135,7 @@ class SQLiteIO:
                 self._connection = sqlite3.connect(tmpname)
                 self._cursor = self.connection.cursor()
 
+        self.ex('BEGIN TRANSACTION')
         for i in range(version, USER_VERSION):
             logger.debug(f'Migrating from version {i} to {i + 1}...')
             for migration in MIGRATIONS[i + 1]:
