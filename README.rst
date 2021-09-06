@@ -30,11 +30,13 @@ Installation
 Stable Release
 ~~~~~~~~~~~~~~
 
-Get the zip file for your operating system (Windows, Linux, macOS) from the `latest release <https://github.com/rbreu/beeref/releases>`_. Extract the zip file. Inside the extracted folder, you will find a BeeRef executable.
+Get the file for your operating system (Windows, Linux, macOS) from the `latest release <https://github.com/rbreu/beeref/releases>`_.
+
+**Linux users** need to give the file executable rights before running it. Optional: If you want to have BeeRef appear in the app menu, save the desktop file from the `release section <https://github.com/rbreu/beeref/releases>`_ in ``~/.local/share/applications``, save the `logo <https://raw.githubusercontent.com/rbreu/beeref/main/beeref/assets/logo.png>`_, and adjust the path names in the desktop file to match the location of your BeeRef installation.
+
+**MacOS X users**, look at `detailed instructions <https://beeref.org/macosx-run.html>`_ if you have problems running BeeRef.
 
 Follow further releases via the `atom feed <https://github.com/rbreu/beeref/releases.atom>`_.
-
-**Linux users** who want to have BeeRef appear in the app menu, save the desktop file from the `release section <https://github.com/rbreu/beeref/releases>`_ in ``~/.local/share/applications`` and adjust the path names in the file to match the location of your BeeRef installation.
 
 
 Development Version
@@ -59,6 +61,7 @@ Features
 * Move, scale, rotate and flip images
 * Mass-scale images to the same width, height or size
 * Mass-arrange images vertically, horizontally or for optimal usage of space
+* Add text notes
 * Enable alaways-on-top-mode and disable the title bar to let the BeeRef window unobtrusively float above your art program:
 
 .. image:: https://github.com/rbreu/beeref/blob/main/images/screenshot.png
