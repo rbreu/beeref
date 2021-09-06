@@ -2,9 +2,9 @@
 Name=BeeRef
 Comment=BeeRef 0.2.0
 Terminal=false
-Exec=/home/yourname/path/to/BeeRef-0.2.0/BeeRef-0.2.0
+Exec=/home/yourname/path/to/BeeRef-0.2.0-linux
 Type=Application
-Icon=/home/yourname/path/to/BeeRef-0.2.0/beeref/assets/logo.png
+Icon=/home/yourname/path/to/logo.png
 Name[en_US]=BeeRef
 
 MimeType=application/x-beeref;
