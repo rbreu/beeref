@@ -1,4 +1,4 @@
-0.2.0 - unreleased
+0.2.0 - 2021-09-06
 ==================
 
 Note that bee files from version 0.2.0 won't open in BeeRef 0.1.x.
