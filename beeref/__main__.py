@@ -16,6 +16,7 @@
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+import platform
 import signal
 import sys
 
@@ -88,6 +89,8 @@ sys.excepthook = handle_uncaught_exception
 
 def main():
     logger.info(f'Starting {constants.APPNAME} version {constants.VERSION}')
+    logger.debug('System: %s', ' '.join(platform.uname()))
+    logger.debug('Python: %s', platform.python_version())
     settings = BeeSettings()
     logger.info(f'Using settings: {settings.fileName()}')
     logger.info(f'Logging to: {logfile_name()}')
