@@ -41,7 +41,7 @@ def with_anchor(func):
     """
 
     def wrapper(self, *args, **kwargs):
-        # We caculate where the anchor is before and after the transformation
+        # We calculate where the anchor is before and after the transformation
         # and then move the item accordingly to keep the anchor fixed
 
         anchor = kwargs.pop('anchor', None)
@@ -244,7 +244,7 @@ class SelectableMixin(BaseItemMixin):
         path.addRect(utils.get_rect_from_points(p1, p2))
 
         # Substract the scale area:
-        # We need to make the substracted shape slighty bigger due to this bug:
+        # We need to make the substracted shape slightly bigger due to this bug:
         # https://bugreports.qt.io/browse/QTBUG-57567
         return path - self.get_scale_bounds(corner, margin=0.001)
 

@@ -42,7 +42,7 @@ Follow further releases via the `atom feed <https://github.com/rbreu/beeref/rele
 Development Version
 ~~~~~~~~~~~~~~~~~~~
 
-To get the current delevopment version, you need to have a working Python 3 environment. Run the following command to install the development version::
+To get the current development version, you need to have a working Python 3 environment. Run the following command to install the development version::
 
   pip install git+https://github.com/rbreu/beeref.git
 
