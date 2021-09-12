@@ -385,7 +385,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         """Callback for when loading of images is finished.
 
         :param new_scene: True if the scene was empty before, else False
-        :param filename: Not used, for compability only
+        :param filename: Not used, for compatibility only
         :param errors: List of filenames that couldn't be loaded
         """
 
@@ -432,7 +432,7 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         logger.debug(f'Supported image types for reading: {formats}')
         filenames, f = QtWidgets.QFileDialog.getOpenFileNames(
             parent=self,
-            caption='Select one ore more images to open',
+            caption='Select one or more images to open',
             filter=f'Images ({formats})')
         self.do_insert_images(filenames)
 
@@ -562,10 +562,10 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
             logger.debug('No items in scene; ignore zoom')
             return
 
-        # We caculate where the anchor is before and after the zoom
+        # We calculate where the anchor is before and after the zoom
         # and then move the view accordingly to keep the anchor fixed
         # We can't use QGraphicsView's AnchorUnderMouse since it
-        # uses the current cursor position while we need the inital mouse
+        # uses the current cursor position while we need the initial mouse
         # press position for zooming with Ctrl + Middle Drag
         anchor = QtCore.QPoint(round(anchor.x()),
                                round(anchor.y()))

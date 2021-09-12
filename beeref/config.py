@@ -64,7 +64,7 @@ parser.add_argument(
 class CommandlineArgs:
     """Wrapper around argument parsing.
 
-    Checking for unknown arugments is configurable so that it can be
+    Checking for unknown arguments is configurable so that it can be
     deliberately enabled from the main() function while ignored for
     other imports so that unit tests won't fail.
 
@@ -157,7 +157,7 @@ class KeyboardSettings(QtCore.QSettings):
         values = self.value(f'{group}/{key}')
         if values is not None:
             values = list(filter(lambda x: x, values.split(', ')))
-            logger.debug(f'Found custom shorcuts for {group}/{key}: {values}')
+            logger.debug(f'Found custom shortcuts for {group}/{key}: {values}')
             return values
         return default or []
 
