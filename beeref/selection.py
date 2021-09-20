@@ -244,7 +244,7 @@ class SelectableMixin(BaseItemMixin):
         path.addRect(utils.get_rect_from_points(p1, p2))
 
         # Substract the scale area:
-        # We need to make the substracted shape slightly bigger due to this bug:
+        # We need to make the substracted shape slightly bigger due to:
         # https://bugreports.qt.io/browse/QTBUG-57567
         return path - self.get_scale_bounds(corner, margin=0.001)
 
