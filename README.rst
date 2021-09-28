@@ -62,7 +62,7 @@ Features
 * Mass-scale images to the same width, height or size
 * Mass-arrange images vertically, horizontally or for optimal usage of space
 * Add text notes
-* Enable alaways-on-top-mode and disable the title bar to let the BeeRef window unobtrusively float above your art program:
+* Enable always-on-top-mode and disable the title bar to let the BeeRef window unobtrusively float above your art program:
 
 .. image:: https://github.com/rbreu/beeref/blob/main/images/screenshot.png
 
