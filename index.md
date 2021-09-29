@@ -26,7 +26,7 @@ Get the file for your operating system (Windows, Linux, macOS) from the [latest 
 * Mass-scale images to the same width, height or size
 * Mass-arrange images vertically, horizontally or for optimal usage of space
 * Add text notes
-* Enable alaways-on-top-mode and disable the title bar to let the BeeRef window unobtrusively float above your art program:
+* Enable always-on-top-mode and disable the title bar to let the BeeRef window unobtrusively float above your art program:
 
 ![Screenshot of BeeRef over other program]({{ site.baseurl}}/assets/images/screenshot_float.png)
 
