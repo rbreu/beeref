@@ -1,6 +1,16 @@
 0.2.1 - (unreleased)
 ====================
 
+Added
+-----
+
+* Show list of recent files on welcome screen
+
+Fixed
+-----
+
+* Various typos (by luzpaz)
+
 
 0.2.0 - 2021-09-06
 ==================

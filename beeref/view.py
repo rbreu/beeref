@@ -28,6 +28,7 @@ from beeref import constants
 from beeref import fileio
 from beeref import gui
 from beeref.items import BeePixmapItem, BeeTextItem
+from beeref.main_controls import MainControlsMixin
 from beeref.scene import BeeGraphicsScene
 
 
@@ -35,7 +36,9 @@ commandline_args = CommandlineArgs()
 logger = logging.getLogger(__name__)
 
 
-class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
+class BeeGraphicsView(MainControlsMixin,
+                      QtWidgets.QGraphicsView,
+                      ActionsMixin):
 
     def __init__(self, app, parent=None):
         super().__init__(parent)
@@ -47,7 +50,6 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         self.setBackgroundBrush(
             QtGui.QBrush(QtGui.QColor(*constants.COLORS['Scene:Canvas'])))
         self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
-        self.setAcceptDrops(True)
 
         self.undo_stack = QtGui.QUndoStack(self)
         self.undo_stack.setUndoLimit(100)
@@ -68,9 +70,8 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
 
         # Context menu and actions
         self.build_menu_and_actions()
-        self.setContextMenuPolicy(
-            Qt.ContextMenuPolicy.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.on_context_menu)
+        self.control_target = self
+        self.init_main_controls()
 
         # Load file given via command line
         if commandline_args.filename:
@@ -671,39 +672,3 @@ class BeeGraphicsView(QtWidgets.QGraphicsView, ActionsMixin):
         super().resizeEvent(event)
         self.recalc_scene_rect()
         self.welcome_overlay.resize(self.size())
-
-    def dragEnterEvent(self, event):
-        mimedata = event.mimeData()
-        logger.debug(f'Drag enter event: {mimedata.formats()}')
-        if mimedata.hasUrls():
-            event.acceptProposedAction()
-        elif mimedata.hasImage():
-            event.acceptProposedAction()
-        else:
-            logger.info('Attempted drop not an image')
-
-    def dragMoveEvent(self, event):
-        event.acceptProposedAction()
-
-    def dropEvent(self, event):
-        mimedata = event.mimeData()
-        logger.debug(f'Handling file drop: {mimedata.formats()}')
-        pos = QtCore.QPoint(round(event.position().x()),
-                            round(event.position().y()))
-        if mimedata.hasUrls():
-            logger.debug(f'Found dropped urls: {mimedata.urls()}')
-            if not self.scene.items():
-                # Check if we have a bee file we can open directly
-                path = mimedata.urls()[0]
-                if (path.isLocalFile()
-                        and fileio.is_bee_file(path.toLocalFile())):
-                    self.open_from_file(path.toLocalFile())
-                    return
-            self.do_insert_images(mimedata.urls(), pos)
-        elif mimedata.hasImage():
-            img = QtGui.QImage(mimedata.imageData())
-            item = BeePixmapItem(img)
-            pos = self.mapToScene(pos)
-            self.undo_stack.push(commands.InsertItems(self.scene, [item], pos))
-        else:
-            logger.info('Drop not an image')
