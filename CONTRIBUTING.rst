@@ -4,7 +4,7 @@ BeeRef — Notes For Developers
 BeeRef is written in Python and PyQt6.
 
 
-Delevoping
+Developing
 ----------
 
 Clone the repository and install beeref and its dependencies::
