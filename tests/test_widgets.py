@@ -4,7 +4,7 @@ from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
 
 from beeref.config import logfile_name
-from beeref.gui import DebugLogDialog, RecentFilesModel
+from beeref.widgets import DebugLogDialog, RecentFilesModel
 
 
 def test_debug_log_dialog(qtbot, settings, view):

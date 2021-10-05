@@ -39,7 +39,7 @@ def test_init_with_filename(open_file_mock, view, qapp, commandline_args):
     del view
 
 
-@patch('beeref.gui.WelcomeOverlay.hide')
+@patch('beeref.widgets.WelcomeOverlay.hide')
 def test_on_scene_changed_when_items(hide_mock, view):
     item = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item)
@@ -51,7 +51,7 @@ def test_on_scene_changed_when_items(hide_mock, view):
         assert view.get_scale() == 2
 
 
-@patch('beeref.gui.WelcomeOverlay.show')
+@patch('beeref.widgets.WelcomeOverlay.show')
 def test_on_scene_changed_when_no_items(show_mock, view):
     view.scale(2, 2)
     with patch('beeref.view.BeeGraphicsView.recalc_scene_rect') as r:
@@ -275,13 +275,13 @@ def test_on_action_save_when_no_filename(save_as_mock, view, imgfilename3x3):
     save_as_mock.assert_called_once_with()
 
 
-@patch('beeref.gui.HelpDialog.show')
+@patch('beeref.widgets.HelpDialog.show')
 def test_on_action_help(show_mock, view):
     view.on_action_help()
     show_mock.assert_called_once()
 
 
-@patch('beeref.gui.DebugLogDialog.show')
+@patch('beeref.widgets.DebugLogDialog.show')
 def test_on_action_debuglog(show_mock, view):
     with patch('builtins.open', mock_open(read_data='log')) as open_mock:
         view.on_action_debuglog()

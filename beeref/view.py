@@ -26,7 +26,7 @@ from beeref import commands
 from beeref.config import CommandlineArgs, BeeSettings
 from beeref import constants
 from beeref import fileio
-from beeref import gui
+from beeref import widgets
 from beeref.items import BeePixmapItem, BeeTextItem
 from beeref.main_controls import MainControlsMixin
 from beeref.scene import BeeGraphicsScene
@@ -45,7 +45,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.app = app
         self.parent = parent
         self.settings = BeeSettings()
-        self.welcome_overlay = gui.WelcomeOverlay(self)
+        self.welcome_overlay = widgets.WelcomeOverlay(self)
 
         self.setBackgroundBrush(
             QtGui.QBrush(QtGui.QColor(*constants.COLORS['Scene:Canvas'])))
@@ -309,7 +309,7 @@ class BeeGraphicsView(MainControlsMixin,
             fileio.load_bee, filename, self.scene)
         self.worker.progress.connect(self.on_items_loaded)
         self.worker.finished.connect(self.on_loading_finished)
-        self.progress = gui.BeeProgressDialog(
+        self.progress = widgets.BeeProgressDialog(
             'Loading %s' % filename,
             worker=self.worker,
             parent=self)
@@ -342,7 +342,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.worker = fileio.ThreadedIO(
             fileio.save_bee, filename, self.scene, create_new=create_new)
         self.worker.finished.connect(self.on_saving_finished)
-        self.progress = gui.BeeProgressDialog(
+        self.progress = widgets.BeeProgressDialog(
             'Saving %s' % filename,
             worker=self.worker,
             parent=self)
@@ -367,7 +367,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.app.quit()
 
     def on_action_help(self):
-        gui.HelpDialog(self)
+        widgets.HelpDialog(self)
 
     def on_action_about(self):
         QtWidgets.QMessageBox.about(
@@ -380,7 +380,7 @@ class BeeGraphicsView(MainControlsMixin,
              f'Visit the {constants.APPNAME} website</a></p>'))
 
     def on_action_debuglog(self):
-        gui.DebugLogDialog(self)
+        widgets.DebugLogDialog(self)
 
     def on_insert_images_finished(self, new_scene, filename, errors):
         """Callback for when loading of images is finished.
@@ -422,7 +422,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.worker.finished.connect(
             partial(self.on_insert_images_finished,
                     not self.scene.items()))
-        self.progress = gui.BeeProgressDialog(
+        self.progress = widgets.BeeProgressDialog(
             'Loading images',
             worker=self.worker,
             parent=self)
