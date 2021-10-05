@@ -1,5 +1,5 @@
 import os.path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call
 
 from PyQt6 import QtWidgets
 
@@ -26,8 +26,10 @@ class FooWidget(QtWidgets.QWidget, ActionsMixin):
 @patch('PyQt6.QtGui.QAction.toggled')
 @patch('beeref.actions.mixin.menu_structure')
 @patch('beeref.actions.mixin.actions')
+@patch('beeref.actions.mixin.KeyboardSettings.get_shortcuts')
 def test_create_actions(
-        actions_mock, menu_mock, toggle_mock, trigger_mock, qapp):
+        kb_mock, actions_mock, menu_mock, toggle_mock, trigger_mock, qapp):
+    kb_mock.side_effect = lambda group, key, default: default
     widget = FooWidget()
     actions_mock.__iter__.return_value = [{
         'id': 'foo',
@@ -47,6 +49,7 @@ def test_create_actions(
     assert qaction.shortcut() == 'Ctrl+F'
     assert qaction.isEnabled() is True
     assert widget.bee_actions['foo'] == qaction
+    kb_mock.assert_called_once_with('Actions', 'foo', ['Ctrl+F'])
 
 
 @patch('beeref.actions.mixin.menu_structure')
@@ -267,7 +270,10 @@ def test_build_menu_and_actions_disables_actiongroups(
 @patch('PyQt6.QtGui.QAction.triggered')
 @patch('beeref.actions.mixin.menu_structure')
 @patch('beeref.actions.mixin.actions')
-def test_create_recent_files(actions_mock, menu_mock, triggered_mock, qapp):
+@patch('beeref.actions.mixin.KeyboardSettings.get_shortcuts')
+def test_create_recent_files_more_files_than_shortcuts(
+        kb_mock, actions_mock, menu_mock, triggered_mock, qapp):
+    kb_mock.side_effect = lambda group, key, default: default
     widget = FooWidget()
     widget.settings.get_recent_files.return_value = [
         os.path.abspath(f'{i}.bee') for i in range(15)]
@@ -294,6 +300,69 @@ def test_create_recent_files(actions_mock, menu_mock, triggered_mock, qapp):
     assert qaction15.shortcut() == ''
     assert qaction15.isEnabled() is True
     assert widget.bee_actions['recent_files_14'] == qaction15
+
+    assert kb_mock.call_count == 10
+    kb_mock.assert_has_calls(
+        [call('Actions', 'recent_files_0', ['Ctrl+1']),
+         call('Actions', 'recent_files_9', ['Ctrl+0'])],
+        any_order=True)
+
+
+@patch('PyQt6.QtGui.QAction.triggered')
+@patch('beeref.actions.mixin.menu_structure')
+@patch('beeref.actions.mixin.actions')
+@patch('beeref.actions.mixin.KeyboardSettings.get_shortcuts')
+def test_create_recent_files_fewer_files_than_shortcuts(
+        kb_mock, actions_mock, menu_mock, triggered_mock, qapp):
+    kb_mock.side_effect = lambda group, key, default: default
+    widget = FooWidget()
+    widget.settings.get_recent_files.return_value = [
+        os.path.abspath(f'{i}.bee') for i in range(5)]
+    menu_mock.__iter__.return_value = [{
+        'menu': 'Open &Recent',
+        'items': '_build_recent_files',
+    }]
+
+    widget.build_menu_and_actions()
+    triggered_mock.connect.assert_called()
+    assert len(widget.actions()) == 5
+    qaction1 = widget.actions()[0]
+    assert qaction1.text() == '0.bee'
+    assert qaction1.shortcut() == 'Ctrl+1'
+    assert qaction1.isEnabled() is True
+    assert widget.bee_actions['recent_files_0'] == qaction1
+    qaction5 = widget.actions()[4]
+    assert qaction5.text() == '4.bee'
+    assert qaction5.shortcut() == 'Ctrl+5'
+    assert qaction5.isEnabled() is True
+    assert widget.bee_actions['recent_files_4'] == qaction5
+
+    assert kb_mock.call_count == 10
+    kb_mock.assert_has_calls(
+        [call('Actions', 'recent_files_0', ['Ctrl+1']),
+         call('Actions', 'recent_files_9', ['Ctrl+0'])],
+        any_order=True)
+
+
+@patch('beeref.actions.mixin.menu_structure')
+@patch('beeref.actions.mixin.actions')
+@patch('beeref.actions.mixin.KeyboardSettings.get_shortcuts')
+def test_create_recent_files_when_no_files(
+        kb_mock, actions_mock, menu_mock, qapp):
+    kb_mock.side_effect = lambda group, key, default: default
+    widget = FooWidget()
+    widget.settings.get_recent_files.return_value = []
+    menu_mock.__iter__.return_value = [{
+        'menu': 'Open &Recent',
+        'items': '_build_recent_files',
+    }]
+    widget.build_menu_and_actions()
+    assert len(widget.actions()) == 0
+    assert kb_mock.call_count == 10
+    kb_mock.assert_has_calls(
+        [call('Actions', 'recent_files_0', ['Ctrl+1']),
+         call('Actions', 'recent_files_9', ['Ctrl+0'])],
+        any_order=True)
 
 
 @patch('PyQt6.QtGui.QAction.triggered')

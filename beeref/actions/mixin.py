@@ -112,16 +112,26 @@ class ActionsMixin:
 
         files = self.settings.get_recent_files(existing_only=True)
         items = []
+        i = -1
         for i, filename in enumerate(files):
             qaction = QtGui.QAction(os.path.basename(filename), self)
+            action_id = f'recent_files_{i}'
             key = 0 if i == 9 else i + 1
             if key < 10:
-                qaction.setShortcuts([f'Ctrl+{key}'])
+                shortcuts = KeyboardSettings().get_shortcuts(
+                    'Actions', action_id, [f'Ctrl+{key}'])
+                qaction.setShortcuts(shortcuts)
             qaction.triggered.connect(partial(self.open_from_file, filename))
             self.addAction(qaction)
             self._recent_files_submenu.addAction(qaction)
-            self.bee_actions[f'recent_files_{i}'] = qaction
-            items.append(f'recent_files_{i}')
+            self.bee_actions[action_id] = qaction
+            items.append(action_id)
+
+        # Set shorcuts in settings file for remaining slots:
+        for j in range(i + 1, 10):
+            key = 0 if j == 9 else j + 1
+            KeyboardSettings().get_shortcuts(
+                'Actions', f'recent_files_{j}', [f'Ctrl+{key}'])
 
     def _clear_recent_files(self):
         for action in self._recent_files_submenu.actions():

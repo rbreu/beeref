@@ -143,6 +143,8 @@ class BeeSettings(QtCore.QSettings):
 
 class KeyboardSettings(QtCore.QSettings):
 
+    save_unknown_shortcuts = True
+
     def __init__(self):
         settings_format = QtCore.QSettings.Format.IniFormat
         filename = os.path.join(
@@ -159,7 +161,12 @@ class KeyboardSettings(QtCore.QSettings):
             values = list(filter(lambda x: x, values.split(', ')))
             logger.debug(f'Found custom shortcuts for {group}/{key}: {values}')
             return values
-        return default or []
+
+        values = default or []
+        if self.save_unknown_shortcuts:
+            self.set_shortcuts(group, key, values)
+
+        return values
 
 
 def logfile_name():

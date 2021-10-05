@@ -265,4 +265,9 @@ actions = [
         'checkable': True,
         'callback': 'on_action_always_on_top',
     },
+    {
+        'id': 'open_settings_dir',
+        'text': 'Open Settings Folder',
+        'callback': 'on_action_open_settings_dir',
+    },
 ]

@@ -99,6 +99,12 @@ menu_structure = [
         ],
     },
     {
+        'menu': '&Settings',
+        'items': [
+            'open_settings_dir',
+        ],
+    },
+    {
         'menu': '&Help',
         'items': [
             'help',

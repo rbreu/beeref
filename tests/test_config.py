@@ -83,15 +83,36 @@ def test_keyboardsettings_set_shortcuts_multiple(kbsettings):
     assert kbsettings.get_shortcuts('Actions', 'foo') == ['Ctrl+F', 'Alt+O']
 
 
+def test_keyboardsettings_get_shortcuts_existing(kbsettings):
+    kbsettings.set_shortcuts('Actions', 'bar', ['Ctrl+R'])
+    with patch.object(kbsettings, 'set_shortcuts') as set_mock:
+        with patch.object(kbsettings, 'save_unknown_shortcuts', True):
+            shortcuts = kbsettings.get_shortcuts('Actions', 'bar', ['Ctrl+B'])
+            assert shortcuts == ['Ctrl+R']
+            set_mock.assert_not_called()
+
+
 def test_keyboardsettings_get_shortcuts_default(kbsettings):
-    assert kbsettings.get_shortcuts('Actions', 'bar', ['Ctrl+B']) == ['Ctrl+B']
+    with patch.object(kbsettings, 'set_shortcuts') as set_mock:
+        with patch.object(kbsettings, 'save_unknown_shortcuts', True):
+            shortcuts = kbsettings.get_shortcuts('Actions', 'bar', ['Ctrl+B'])
+            assert shortcuts == ['Ctrl+B']
+            set_mock.assert_called_once_with('Actions', 'bar', ['Ctrl+B'])
 
 
-def test_keyboardsettings_get_shortcuts_defaults_dont_overwrite_empty(
+def test_keyboardsettings_get_shortcuts_default_doesnt_override_empty(
         kbsettings):
     kbsettings.set_shortcuts('Actions', 'bar', [])
-    assert kbsettings.get_shortcuts('Actions', 'bar', ['Ctrl+B']) == []
+    with patch.object(kbsettings, 'set_shortcuts') as set_mock:
+        with patch.object(kbsettings, 'save_unknown_shortcuts', True):
+            shortcuts = kbsettings.get_shortcuts('Actions', 'bar', ['Ctrl+B'])
+            assert shortcuts == []
+            set_mock.assert_not_called()
 
 
 def test_keyboardsettings_get_shortcuts_not_set_no_defaults(kbsettings):
-    assert kbsettings.get_shortcuts('Actions', 'baz') == []
+    with patch('beeref.config.KeyboardSettings.set_shortcuts') as set_mock:
+        with patch.object(kbsettings, 'save_unknown_shortcuts', True):
+            shortcuts = kbsettings.get_shortcuts('Actions', 'baz')
+            assert shortcuts == []
+            set_mock.assert_called_once_with('Actions', 'baz', [])

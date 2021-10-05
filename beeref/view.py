@@ -489,6 +489,11 @@ class BeeGraphicsView(MainControlsMixin,
             return
         logger.info('No image data or text in clipboard')
 
+    def on_action_open_settings_dir(self):
+        dirname = os.path.dirname(self.settings.fileName())
+        QtGui.QDesktopServices.openUrl(
+            QtCore.QUrl.fromLocalFile(dirname))
+
     def on_selection_changed(self):
         logger.debug('Currently selected items: %s',
                      len(self.scene.selectedItems(user_only=True)))
