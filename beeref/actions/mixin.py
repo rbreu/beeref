@@ -127,7 +127,7 @@ class ActionsMixin:
             self.bee_actions[action_id] = qaction
             items.append(action_id)
 
-        # Set shorcuts in settings file for remaining slots:
+        # Set shortcuts in settings file for remaining slots:
         for j in range(i + 1, 10):
             key = 0 if j == 9 else j + 1
             KeyboardSettings().get_shortcuts(
