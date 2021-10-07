@@ -204,7 +204,7 @@ class SQLiteIO:
             }
 
             if data['type'] == 'pixmap':
-                data['item'] = BeePixmapItem(QtGui.QImage(), **data['data'])
+                data['item'] = BeePixmapItem(QtGui.QImage())
                 data['item'].pixmap_from_bytes(row[9])
 
             self.scene.add_item_later(data)

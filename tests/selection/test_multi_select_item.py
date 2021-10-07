@@ -14,18 +14,6 @@ def test_init(selectable_mock):
     selectable_mock.assert_called_once()
 
 
-def test_width():
-    item = MultiSelectItem()
-    item.setRect(0, 0, 50, 100)
-    assert item.width == 50
-
-
-def test_height():
-    item = MultiSelectItem()
-    item.setRect(0, 0, 50, 100)
-    assert item.height == 100
-
-
 def test_paint():
     item = MultiSelectItem()
     item.paint_selectable = MagicMock()
@@ -67,8 +55,8 @@ def test_fit_selection_area():
     item.fit_selection_area(QtCore.QRectF(-10, -20, 100, 80))
     assert item.pos().x() == -10
     assert item.pos().y() == -20
-    assert item.width == 100
-    assert item.height == 80
+    assert item.width == 101
+    assert item.height == 81
     assert item.scale() == 1
     assert item.rotation() == 0
     assert item.flip() == 1

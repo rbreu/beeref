@@ -32,10 +32,9 @@ class InsertItems(QtGui.QUndoCommand):
             return
         if self.position:
             rect = self.scene.itemsBoundingRect(items=self.items)
-            center = (rect.topLeft() + rect.bottomRight()) / 2
             for item in self.items:
                 self.old_positions.append(item.pos())
-                item.setPos(item.pos() + self.position - center)
+                item.setPos(item.pos() + self.position - rect.center())
         self.scene.clearSelection()
         for item in self.items:
             self.scene.addItem(item)
@@ -148,13 +147,11 @@ class NormalizeItems(QtGui.QUndoCommand):
         self.old_scale_factors = []
         for item, factor in zip(self.items, self.scale_factors):
             self.old_scale_factors.append(item.scale())
-            item.setScale(item.scale() * factor,
-                          QtCore.QPointF(item.width, item.height) / 2)
+            item.setScale(item.scale() * factor, item.center)
 
     def undo(self):
         for item, factor in zip(self.items, self.old_scale_factors):
-            item.setScale(factor,
-                          QtCore.QPointF(item.width, item.height) / 2)
+            item.setScale(factor, item.center)
 
 
 class FlipItems(QtGui.QUndoCommand):
@@ -226,6 +223,23 @@ class ResetFlip(QtGui.QUndoCommand):
                 item.do_flip(anchor=item.center)
 
 
+class ResetCrop(QtGui.QUndoCommand):
+
+    def __init__(self, items):
+        super().__init__('Reset Crop')
+        self.items = [item for item in items if item.is_croppable]
+
+    def redo(self):
+        self.old_crops = []
+        for item in self.items:
+            self.old_crops.append(item.crop)
+            item.reset_crop()
+
+    def undo(self):
+        for item, crop in zip(self.items, self.old_crops):
+            item.crop = crop
+
+
 class ResetTransforms(QtGui.QUndoCommand):
 
     def __init__(self, items):
@@ -235,11 +249,15 @@ class ResetTransforms(QtGui.QUndoCommand):
     def redo(self):
         self.old_values = []
         for item in self.items:
-            self.old_values.append({
+            values = {
                 'scale': item.scale(),
                 'rotation': item.rotation(),
                 'flip': item.flip(),
-            })
+            }
+            if item.is_croppable:
+                values['crop'] = item.crop
+                item.reset_crop()
+            self.old_values.append(values)
 
             item.setScale(1, anchor=item.center)
             item.setRotation(0, anchor=item.center)
@@ -252,6 +270,8 @@ class ResetTransforms(QtGui.QUndoCommand):
             item.setRotation(old['rotation'], anchor=item.center)
             if old['flip'] == -1:
                 item.do_flip(anchor=item.center)
+            if item.is_croppable:
+                item.crop = old['crop']
 
 
 class ArrangeItems(QtGui.QUndoCommand):
@@ -266,7 +286,7 @@ class ArrangeItems(QtGui.QUndoCommand):
         self.old_positions = []
         for item, pos in zip(self.items, self.positions):
             self.old_positions.append(item.pos())
-            orig_topleft = item.corners_scene_coords[0]
+            orig_topleft = item.mapToScene(QtCore.QPointF(0, 0))
             rect_topleft = self.scene.itemsBoundingRect(
                 items=[item]).topLeft()
             item.setPos(pos + orig_topleft - rect_topleft)
@@ -274,3 +294,17 @@ class ArrangeItems(QtGui.QUndoCommand):
     def undo(self):
         for item, pos in zip(self.items, self.old_positions):
             item.setPos(pos)
+
+
+class CropItem(QtGui.QUndoCommand):
+    def __init__(self, item, crop):
+        super().__init__('Crop item')
+        self.item = item
+        self.crop = crop
+
+    def redo(self):
+        self.old_crop = self.item.crop
+        self.item.crop = self.crop
+
+    def undo(self):
+        self.item.crop = self.old_crop

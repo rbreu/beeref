@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock, PropertyMock
+from unittest.mock import patch, MagicMock
 
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
@@ -25,37 +25,31 @@ def test_init(selectable_mock, qapp):
 
 def test_set_pos_center(qapp):
     item = BeeTextItem('foo bar')
-    with patch('beeref.items.BeeTextItem.width',
-               new_callable=PropertyMock, return_value=200):
-        with patch('beeref.items.BeeTextItem.height',
-                   new_callable=PropertyMock, return_value=100):
-            item.set_pos_center(QtCore.QPointF(0, 0))
-            assert item.pos().x() == -100
-            assert item.pos().y() == -50
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 200, 100)):
+        item.set_pos_center(QtCore.QPointF(0, 0))
+        assert item.pos().x() == -100
+        assert item.pos().y() == -50
 
 
 def test_set_pos_center_when_scaled(qapp):
     item = BeeTextItem('foo bar')
     item.setScale(2)
-    with patch('beeref.items.BeeTextItem.width',
-               new_callable=PropertyMock, return_value=200):
-        with patch('beeref.items.BeeTextItem.height',
-                   new_callable=PropertyMock, return_value=100):
-            item.set_pos_center(QtCore.QPointF(0, 0))
-            assert item.pos().x() == -200
-            assert item.pos().y() == -100
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 200, 100)):
+        item.set_pos_center(QtCore.QPointF(0, 0))
+        assert item.pos().x() == -200
+        assert item.pos().y() == -100
 
 
 def test_set_pos_center_when_rotated(qapp):
     item = BeeTextItem('foo bar')
     item.setRotation(90)
-    with patch('beeref.items.BeeTextItem.width',
-               new_callable=PropertyMock, return_value=200):
-        with patch('beeref.items.BeeTextItem.height',
-                   new_callable=PropertyMock, return_value=100):
-            item.set_pos_center(QtCore.QPointF(0, 0))
-            assert item.pos().x() == 50
-            assert item.pos().y() == -100
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 200, 100)):
+        item.set_pos_center(QtCore.QPointF(0, 0))
+        assert item.pos().x() == 50
+        assert item.pos().y() == -100
 
 
 def test_get_extra_save_data(qapp):
@@ -206,21 +200,26 @@ def test_create_copy(qapp):
     assert item.scale() == 2.2
 
 
-def test_enter_edit_mode(qapp):
+def test_enter_edit_mode(view):
     item = BeeTextItem('foo bar')
+    view.scene.addItem(item)
     item.enter_edit_mode()
     assert item.edit_mode is True
+    assert view.scene.edit_item == item
     flags = item.textInteractionFlags()
     assert flags == Qt.TextInteractionFlag.TextEditorInteraction
 
 
 @patch('PyQt6.QtGui.QTextCursor')
 @patch('beeref.items.BeeTextItem.setTextCursor')
-def test_exit_edit_mode(setcursor_mock, cursor_mock, qapp):
+def test_exit_edit_mode(setcursor_mock, cursor_mock, view):
     item = BeeTextItem('foo bar')
     item.edit_mode = True
+    view.scene.addItem(item)
+    view.scene.edit_item = item
     item.exit_edit_mode()
     assert item.edit_mode is False
+    assert view.scene.edit_item is None
     flags = item.textInteractionFlags()
     assert flags == Qt.TextInteractionFlag.NoTextInteraction
     cursor_mock.assert_called_once_with(item.document())

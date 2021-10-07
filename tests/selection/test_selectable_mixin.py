@@ -1,6 +1,6 @@
 import math
 from pytest import approx, mark
-from unittest.mock import patch, MagicMock, PropertyMock
+from unittest.mock import patch, MagicMock
 
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import Qt
@@ -8,31 +8,6 @@ from PyQt6.QtCore import Qt
 from beeref.assets import BeeAssets
 from beeref import commands
 from beeref.items import BeePixmapItem
-from beeref.scene import BeeGraphicsScene
-
-
-@mark.skip
-class SelectableMixinBaseTestCase():
-
-    def setUp(self):
-        self.scene = BeeGraphicsScene(None)
-        self.item = BeePixmapItem(QtGui.QImage())
-        self.scene.addItem(self.item)
-        self.view = MagicMock(get_scale=MagicMock(return_value=1))
-        views_patcher = patch('beeref.scene.BeeGraphicsScene.views',
-                              return_value=[self.view])
-        views_patcher.start()
-        self.addCleanup(views_patcher.stop)
-        width_patcher = patch('beeref.items.BeePixmapItem.width',
-                              new_callable=PropertyMock,
-                              return_value=100)
-        width_patcher.start()
-        self.addCleanup(width_patcher.stop)
-        height_patcher = patch('beeref.items.BeePixmapItem.height',
-                               new_callable=PropertyMock,
-                               return_value=80)
-        height_patcher.start()
-        self.addCleanup(height_patcher.stop)
 
 
 def test_init_selectable(view):
@@ -195,43 +170,37 @@ def test_paint_when_debug_handles(view):
 
 
 def test_corners(view, item):
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            assert len(item.corners) == 4
-            assert QtCore.QPointF(0, 0) in item.corners
-            assert QtCore.QPointF(100, 0) in item.corners
-            assert QtCore.QPointF(0, 80) in item.corners
-            assert QtCore.QPointF(100, 80) in item.corners
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        assert len(item.corners) == 4
+        assert QtCore.QPointF(0, 0) in item.corners
+        assert QtCore.QPointF(100, 0) in item.corners
+        assert QtCore.QPointF(0, 80) in item.corners
+        assert QtCore.QPointF(100, 80) in item.corners
 
 
 def test_corners_scene_coords_translated(view, item):
     item.setPos(5, 5)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            corners = item.corners_scene_coords
-            assert len(item.corners) == 4
-            assert QtCore.QPointF(5, 5) in corners
-            assert QtCore.QPointF(105, 5) in corners
-            assert QtCore.QPointF(5, 85) in corners
-            assert QtCore.QPointF(105, 85) in corners
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        corners = item.corners_scene_coords
+        assert len(corners) == 4
+        assert QtCore.QPointF(5, 5) in corners
+        assert QtCore.QPointF(105, 5) in corners
+        assert QtCore.QPointF(5, 85) in corners
+        assert QtCore.QPointF(105, 85) in corners
 
 
 def test_corners_scene_coords_scaled(view, item):
     item.setScale(2)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            corners = item.corners_scene_coords
-            assert len(item.corners) == 4
-            assert QtCore.QPointF(0, 0) in corners
-            assert QtCore.QPointF(200, 0) in corners
-            assert QtCore.QPointF(0, 160) in corners
-            assert QtCore.QPointF(200, 160) in corners
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        corners = item.corners_scene_coords
+        assert len(corners) == 4
+        assert QtCore.QPointF(0, 0) in corners
+        assert QtCore.QPointF(200, 0) in corners
+        assert QtCore.QPointF(0, 160) in corners
+        assert QtCore.QPointF(200, 160) in corners
 
 
 def test_get_scale_bounds(view, item):
@@ -279,29 +248,47 @@ def test_rotate_bounds_topleft(view, item):
 def test_get_flip_bounds(view, item):
     item.SELECT_RESIZE_SIZE = 10
     item.SELECT_ROTATE_SIZE = 10
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            edges = item.get_flip_bounds()
-            assert edges[0]['rect'].topLeft() == QtCore.QPointF(5, -5)
-            assert edges[0]['rect'].bottomRight() == QtCore.QPointF(95, 5)
-            assert edges[0]['flip_v'] is True
-            assert edges[1]['rect'].topLeft() == QtCore.QPointF(5, 75)
-            assert edges[1]['rect'].bottomRight() == QtCore.QPointF(95, 85)
-            assert edges[1]['flip_v'] is True
-            assert edges[2]['rect'].topLeft() == QtCore.QPointF(-5, 5)
-            assert edges[2]['rect'].bottomRight() == QtCore.QPointF(5, 75)
-            assert edges[2]['flip_v'] is False
-            assert edges[3]['rect'].topLeft() == QtCore.QPointF(95, 5)
-            assert edges[3]['rect'].bottomRight() == QtCore.QPointF(105, 75)
-            assert edges[3]['flip_v'] is False
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        edges = item.get_flip_bounds()
+        assert edges[0]['rect'].topLeft() == QtCore.QPointF(5, -5)
+        assert edges[0]['rect'].bottomRight() == QtCore.QPointF(95, 5)
+        assert edges[0]['flip_v'] is True
+        assert edges[1]['rect'].topLeft() == QtCore.QPointF(5, 75)
+        assert edges[1]['rect'].bottomRight() == QtCore.QPointF(95, 85)
+        assert edges[1]['flip_v'] is True
+        assert edges[2]['rect'].topLeft() == QtCore.QPointF(-5, 5)
+        assert edges[2]['rect'].bottomRight() == QtCore.QPointF(5, 75)
+        assert edges[2]['flip_v'] is False
+        assert edges[3]['rect'].topLeft() == QtCore.QPointF(95, 5)
+        assert edges[3]['rect'].bottomRight() == QtCore.QPointF(105, 75)
+        assert edges[3]['flip_v'] is False
+
+
+def test_get_flip_bounds_cropped_item(view, item):
+    item.SELECT_RESIZE_SIZE = 10
+    item.SELECT_ROTATE_SIZE = 10
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        edges = item.get_flip_bounds()
+        assert edges[0]['rect'].topLeft() == QtCore.QPointF(10, 0)
+        assert edges[0]['rect'].bottomRight() == QtCore.QPointF(100, 10)
+        assert edges[0]['flip_v'] is True
+        assert edges[1]['rect'].topLeft() == QtCore.QPointF(10, 80)
+        assert edges[1]['rect'].bottomRight() == QtCore.QPointF(100, 90)
+        assert edges[1]['flip_v'] is True
+        assert edges[2]['rect'].topLeft() == QtCore.QPointF(0, 10)
+        assert edges[2]['rect'].bottomRight() == QtCore.QPointF(10, 80)
+        assert edges[2]['flip_v'] is False
+        assert edges[3]['rect'].topLeft() == QtCore.QPointF(100, 10)
+        assert edges[3]['rect'].bottomRight() == QtCore.QPointF(110, 80)
+        assert edges[3]['flip_v'] is False
 
 
 def test_bounding_rect_when_not_selected(view, item):
     item.setSelected(False)
-    with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.boundingRect',
-               return_value=QtCore.QRectF(0, 0, 100, 80)):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
         rect = item.boundingRect()
         assert rect.topLeft().x() == 0
         assert rect.topLeft().y() == 0
@@ -313,22 +300,20 @@ def test_bounding_rect_when_selected(view, item):
     item.SELECT_RESIZE_SIZE = 10
     item.SELECT_ROTATE_SIZE = 10
     item.setSelected(True)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            rect = item.boundingRect()
-            assert rect.topLeft().x() == -15
-            assert rect.topLeft().y() == -15
-            assert rect.bottomRight().x() == 115
-            assert rect.bottomRight().y() == 95
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        rect = item.boundingRect()
+        assert rect.topLeft().x() == -15
+        assert rect.topLeft().y() == -15
+        assert rect.bottomRight().x() == 115
+        assert rect.bottomRight().y() == 95
 
 
 def test_shape_when_not_selected(view, item):
     view.scene.addItem(item)
     item.setSelected(False)
-    with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.boundingRect',
-               return_value=QtCore.QRectF(0, 0, 100, 80)):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
         shape = item.shape().boundingRect()
         assert shape.topLeft().x() == 0
         assert shape.topLeft().y() == 0
@@ -344,17 +329,13 @@ def test_shape_when_selected_single(view, item):
     path = QtGui.QPainterPath()
     path.addRect(QtCore.QRectF(0, 0, 100, 80))
 
-    with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.shape',
-               return_value=path):
-        with patch('beeref.items.BeePixmapItem.width',
-                   new_callable=PropertyMock, return_value=100):
-            with patch('beeref.items.BeePixmapItem.height',
-                       new_callable=PropertyMock, return_value=80):
-                shape = item.shape().boundingRect()
-                assert shape.topLeft().x() == -15
-                assert shape.topLeft().y() == -15
-                assert shape.bottomRight().x() == 115
-                assert shape.bottomRight().y() == 95
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        shape = item.shape().boundingRect()
+        assert shape.topLeft().x() == -15
+        assert shape.topLeft().y() == -15
+        assert shape.bottomRight().x() == 115
+        assert shape.bottomRight().y() == 95
 
 
 def test_shape_when_selected_multi(view, item):
@@ -366,8 +347,8 @@ def test_shape_when_selected_multi(view, item):
     item.SELECT_ROTATE_SIZE = 10
     item.setSelected(True)
 
-    with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.boundingRect',
-               return_value=QtCore.QRectF(0, 0, 100, 80)):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
         shape = item.shape().boundingRect()
         assert shape.topLeft().x() == 0
         assert shape.topLeft().y() == 0
@@ -381,11 +362,20 @@ def test_get_scale_factor_bottomright(view, item):
     item.scale_orig_factor = 1
     event = MagicMock()
     event.scenePos.return_value = QtCore.QPointF(20, 90)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            assert item.get_scale_factor(event) == approx(1.5, 0.01)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        assert item.get_scale_factor(event) == approx(1.5, 0.01)
+
+
+def test_get_scale_factor_bottomright_cropped_item(view, item):
+    item.event_start = QtCore.QPointF(15, 15)
+    item.event_direction = QtCore.QPointF(1, 1) / math.sqrt(2)
+    item.scale_orig_factor = 1
+    event = MagicMock()
+    event.scenePos.return_value = QtCore.QPointF(25, 95)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        assert item.get_scale_factor(event) == approx(1.5, 0.01)
 
 
 def test_get_scale_factor_topleft(view, item):
@@ -394,115 +384,176 @@ def test_get_scale_factor_topleft(view, item):
     item.scale_orig_factor = 0.5
     event = MagicMock()
     event.scenePos.return_value = QtCore.QPointF(-10, -60)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            assert item.get_scale_factor(event) == approx(2, 0.01)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        assert item.get_scale_factor(event) == approx(2, 0.01)
+
+
+def test_get_scale_factor_topleft_cropped_item(view, item):
+    item.event_start = QtCore.QPointF(15, 15)
+    item.event_direction = QtCore.QPointF(-1, -1) / math.sqrt(2)
+    item.scale_orig_factor = 0.5
+    event = MagicMock()
+    event.scenePos.return_value = QtCore.QPointF(-5, -55)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        assert item.get_scale_factor(event) == approx(2, 0.01)
 
 
 def test_get_scale_anchor_topleft(view, item):
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            anchor = item.get_scale_anchor(QtCore.QPointF(0, 0))
-            assert anchor.x() == 100
-            assert anchor.y() == 80
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        anchor = item.get_scale_anchor(QtCore.QPointF(0, 0))
+        assert anchor.x() == 100
+        assert anchor.y() == 80
+
+
+def test_get_scale_anchor_topleft_cropped_item(view, item):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        anchor = item.get_scale_anchor(QtCore.QPointF(5, 5))
+        assert anchor.x() == 105
+        assert anchor.y() == 85
 
 
 def test_get_scale_anchor_bottomright(view, item):
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            anchor = item.get_scale_anchor(QtCore.QPointF(100, 80))
-            assert anchor.x() == 0
-            assert anchor.y() == 0
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        anchor = item.get_scale_anchor(QtCore.QPointF(100, 80))
+        assert anchor.x() == 0
+        assert anchor.y() == 0
+
+
+def test_get_scale_anchor_bottomright_cropped_item(view, item):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        anchor = item.get_scale_anchor(QtCore.QPointF(105, 85))
+        assert anchor.x() == 5
+        assert anchor.y() == 5
 
 
 def test_get_scale_anchor_topright(view, item):
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            anchor = item.get_scale_anchor(QtCore.QPointF(100, 0))
-            assert anchor.x() == 0
-            assert anchor.y() == 80
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        anchor = item.get_scale_anchor(QtCore.QPointF(100, 0))
+        assert anchor.x() == 0
+        assert anchor.y() == 80
+
+
+def test_get_scale_anchor_topright_cropped_item(view, item):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        anchor = item.get_scale_anchor(QtCore.QPointF(105, 5))
+        assert anchor.x() == 5
+        assert anchor.y() == 85
 
 
 def test_get_scale_anchor_bottomleft(view, item):
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            anchor = item.get_scale_anchor(QtCore.QPointF(0, 80))
-            assert anchor.x() == 100
-            assert anchor.y() == 0
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        anchor = item.get_scale_anchor(QtCore.QPointF(0, 80))
+        assert anchor.x() == 100
+        assert anchor.y() == 0
+
+
+def test_get_scale_anchor_bottomleft_cropped_item(view, item):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        anchor = item.get_scale_anchor(QtCore.QPointF(5, 85))
+        assert anchor.x() == 105
+        assert anchor.y() == 5
 
 
 def test_get_corner_direction_topleft(view, item):
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            assert item.get_corner_direction(
-                QtCore.QPointF(0, 0)) == QtCore.QPointF(-1, -1)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        assert item.get_corner_direction(
+            QtCore.QPointF(0, 0)) == QtCore.QPointF(-1, -1)
+
+
+def test_get_corner_direction_topleft_cropped_item(view, item):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        assert item.get_corner_direction(
+            QtCore.QPointF(5, 5)) == QtCore.QPointF(-1, -1)
 
 
 def test_get_corner_direction_bottomright(view, item):
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            assert item.get_corner_direction(
-                QtCore.QPointF(100, 80)) == QtCore.QPointF(1, 1)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        assert item.get_corner_direction(
+            QtCore.QPointF(100, 80)) == QtCore.QPointF(1, 1)
+
+
+def test_get_corner_direction_bottomright_cropped_item(view, item):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        assert item.get_corner_direction(
+            QtCore.QPointF(105, 85)) == QtCore.QPointF(1, 1)
 
 
 def test_get_corner_direction_topright(view, item):
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            assert item.get_corner_direction(
-                QtCore.QPointF(100, 0)) == QtCore.QPointF(1, -1)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        assert item.get_corner_direction(
+            QtCore.QPointF(100, 0)) == QtCore.QPointF(1, -1)
+
+
+def test_get_corner_direction_topright_cropped_item(view, item):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        assert item.get_corner_direction(
+            QtCore.QPointF(105, 5)) == QtCore.QPointF(1, -1)
 
 
 def test_get_corner_direction_bottomleft(view, item):
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            assert item.get_corner_direction(
-                QtCore.QPointF(0, 80)) == QtCore.QPointF(-1, 1)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        assert item.get_corner_direction(
+            QtCore.QPointF(0, 80)) == QtCore.QPointF(-1, 1)
 
 
-def test_get_direction_from_center_bottomright(view, item):
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            direction = item.get_direction_from_center(QtCore.QPointF(100, 90))
-            assert direction == approx(QtCore.QPointF(1, 1) / math.sqrt(2))
+def test_get_corner_direction_bottomleft_cropped_item(view, item):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        assert item.get_corner_direction(
+            QtCore.QPointF(5, 85)) == QtCore.QPointF(-1, 1)
 
 
 def test_get_direction_from_center_topleft(view, item):
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            direction = item.get_direction_from_center(QtCore.QPointF(0, -10))
-            assert direction == approx(QtCore.QPointF(-1, -1) / math.sqrt(2))
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        direction = item.get_direction_from_center(QtCore.QPointF(0, -10))
+        assert direction == approx(QtCore.QPointF(-1, -1) / math.sqrt(2))
+
+
+def test_get_direction_from_center_topleft_cropped_item(view, item):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        direction = item.get_direction_from_center(QtCore.QPointF(5, -5))
+        assert direction == approx(QtCore.QPointF(-1, -1) / math.sqrt(2))
+
+
+def test_get_direction_from_center_bottomright(view, item):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        direction = item.get_direction_from_center(QtCore.QPointF(100, 90))
+        assert direction == approx(QtCore.QPointF(1, 1) / math.sqrt(2))
+
+
+def test_get_direction_from_center_bottomright_cropped_item(view, item):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        direction = item.get_direction_from_center(QtCore.QPointF(105, 95))
+        assert direction == approx(QtCore.QPointF(1, 1) / math.sqrt(2))
 
 
 def test_get_direction_from_center_bottomright_when_rotated_180(view, item):
     item.setRotation(180, QtCore.QPointF(50, 40))
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            direction = item.get_direction_from_center(QtCore.QPointF(100, 90))
-            assert direction == approx(QtCore.QPointF(1, 1) / math.sqrt(2))
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        direction = item.get_direction_from_center(QtCore.QPointF(100, 90))
+        assert direction == approx(QtCore.QPointF(1, 1) / math.sqrt(2))
 
 
 def test_get_rotate_angle(view, item):
@@ -548,12 +599,10 @@ def test_hover_move_event_no_selection(view, item):
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(0, 0)
     item.setCursor = MagicMock()
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            item.setCursor.assert_not_called()
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.hoverMoveEvent(event)
+        item.setCursor.assert_not_called()
 
 
 @mark.parametrize('pos,flipped,rotation, expected',
@@ -575,7 +624,7 @@ def test_hover_move_event_no_selection(view, item):
                    ((0, 0), True, 45, 'SizeVerCursor'),
                    ((0, 0), True, 90, 'SizeFDiagCursor'),
                    ((0, 0), True, 135, 'SizeHorCursor')])
-def test_hover_move_event_topleft_scale(
+def test_hover_move_event_scale(
         pos, flipped, rotation, expected, view, item):
     view.scene.addItem(item)
     item.setSelected(True)
@@ -584,25 +633,21 @@ def test_hover_move_event_topleft_scale(
     item.setRotation(rotation)
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(*pos)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == getattr(Qt.CursorShape, expected)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.hoverMoveEvent(event)
+        assert item.cursor() == getattr(Qt.CursorShape, expected)
 
 
-def test_hover_move_event_bottomright_scale_very_wide_item(view, item):
+def test_hover_move_event_scale_bottomright_very_wide_item(view, item):
     view.scene.addItem(item)
     item.setSelected(True)
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(1000, 100)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=1000):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=100):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == Qt.CursorShape.SizeFDiagCursor
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 1000, 100)):
+        item.hoverMoveEvent(event)
+        assert item.cursor() == Qt.CursorShape.SizeFDiagCursor
 
 
 def test_hover_move_event_rotate(view, item):
@@ -610,12 +655,10 @@ def test_hover_move_event_rotate(view, item):
     item.setSelected(True)
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(115, 95)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == BeeAssets().cursor_rotate
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.hoverMoveEvent(event)
+        assert item.cursor() == BeeAssets().cursor_rotate
 
 
 def test_hover_flip_event_top_edge(view, item):
@@ -623,12 +666,10 @@ def test_hover_flip_event_top_edge(view, item):
     item.setSelected(True)
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(50, 0)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == BeeAssets().cursor_flip_v
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.hoverMoveEvent(event)
+        assert item.cursor() == BeeAssets().cursor_flip_v
 
 
 def test_hover_flip_event_bottom_edge(view, item):
@@ -636,12 +677,10 @@ def test_hover_flip_event_bottom_edge(view, item):
     item.setSelected(True)
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(50, 80)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == BeeAssets().cursor_flip_v
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.hoverMoveEvent(event)
+        assert item.cursor() == BeeAssets().cursor_flip_v
 
 
 def test_hover_flip_event_left_edge(view, item):
@@ -649,12 +688,10 @@ def test_hover_flip_event_left_edge(view, item):
     item.setSelected(True)
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(0, 50)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == BeeAssets().cursor_flip_h
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.hoverMoveEvent(event)
+        assert item.cursor() == BeeAssets().cursor_flip_h
 
 
 def test_hover_flip_event_right_edge(view, item):
@@ -662,12 +699,10 @@ def test_hover_flip_event_right_edge(view, item):
     item.setSelected(True)
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(100, 50)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == BeeAssets().cursor_flip_h
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.hoverMoveEvent(event)
+        assert item.cursor() == BeeAssets().cursor_flip_h
 
 
 def test_hover_flip_event_top_edge_rotated_90(view, item):
@@ -676,12 +711,10 @@ def test_hover_flip_event_top_edge_rotated_90(view, item):
     item.setRotation(90)
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(50, 0)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == BeeAssets().cursor_flip_h
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.hoverMoveEvent(event)
+        assert item.cursor() == BeeAssets().cursor_flip_h
 
 
 def test_hover_flip_event_left_edge_when_rotated_90(view, item):
@@ -690,12 +723,10 @@ def test_hover_flip_event_left_edge_when_rotated_90(view, item):
     item.setSelected(True)
     item.setRotation(90)
     event.pos.return_value = QtCore.QPointF(0, 50)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == BeeAssets().cursor_flip_v
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.hoverMoveEvent(event)
+        assert item.cursor() == BeeAssets().cursor_flip_v
 
 
 def test_hover_move_event_not_in_handles(view, item):
@@ -703,12 +734,10 @@ def test_hover_move_event_not_in_handles(view, item):
     item.setSelected(True)
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(50, 50)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.hoverMoveEvent(event)
-            assert item.cursor() == Qt.CursorShape.ArrowCursor
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.hoverMoveEvent(event)
+        assert item.cursor() == Qt.CursorShape.ArrowCursor
 
 
 def test_hover_enter_event_when_selected(view, item):
@@ -772,17 +801,15 @@ def test_mouse_press_event_bottomright_scale(view, item):
     event.pos.return_value = QtCore.QPointF(99, 79)
     event.scenePos.return_value = QtCore.QPointF(101, 81)
     event.button.return_value = Qt.MouseButton.LeftButton
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.mousePressEvent(event)
-            assert item.scale_active is True
-            assert item.event_start == QtCore.QPointF(101, 81)
-            assert item.event_direction.x() > 0
-            assert item.event_direction.y() > 0
-            assert item.scale_orig_factor == 1
-            event.accept.assert_called_once_with()
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.mousePressEvent(event)
+        assert item.scale_active is True
+        assert item.event_start == QtCore.QPointF(101, 81)
+        assert item.event_direction.x() > 0
+        assert item.event_direction.y() > 0
+        assert item.scale_orig_factor == 1
+        event.accept.assert_called_once_with()
 
 
 def test_mouse_press_event_rotate(view, item):
@@ -792,10 +819,9 @@ def test_mouse_press_event_rotate(view, item):
     event.pos.return_value = QtCore.QPointF(111, 91)
     event.scenePos.return_value = QtCore.QPointF(66, 99)
     event.button.return_value = Qt.MouseButton.LeftButton
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent'):
             item.mousePressEvent(event)
             assert item.rotate_active is True
             assert item.event_anchor == QtCore.QPointF(50, 40)
@@ -810,12 +836,10 @@ def test_mouse_press_event_flip(view, item):
     event.pos.return_value = QtCore.QPointF(0, 40)
     event.button.return_value = Qt.MouseButton.LeftButton
     view.scene.undo_stack = MagicMock(push=MagicMock())
-    with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent'):
-        with patch('beeref.items.BeePixmapItem.width',
-                   new_callable=PropertyMock, return_value=100):
-            with patch('beeref.items.BeePixmapItem.height',
-                       new_callable=PropertyMock, return_value=80):
-                item.mousePressEvent(event)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent'):
+            item.mousePressEvent(event)
     args = view.scene.undo_stack.push.call_args_list[0][0]
     cmd = args[0]
     isinstance(cmd, commands.FlipItems)
@@ -893,14 +917,12 @@ def test_mouse_move_event_when_scale_action(view, item):
     item.scale_orig_factor = 1
 
     with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mouseMoveEvent') as m:
-        with patch('beeref.items.BeePixmapItem.width',
-                   new_callable=PropertyMock, return_value=100):
-            with patch('beeref.items.BeePixmapItem.height',
-                       new_callable=PropertyMock, return_value=80):
-                item.mouseMoveEvent(event)
-                m.assert_not_called()
-                assert item.scale() == approx(1.5, 0.01)
-                event.accept.assert_called_once_with()
+        with patch.object(item, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 100, 80)):
+            item.mouseMoveEvent(event)
+            m.assert_not_called()
+            assert item.scale() == approx(1.5, 0.01)
+            event.accept.assert_called_once_with()
 
 
 def test_mouse_move_event_when_rotate_action(view, item):
@@ -955,21 +977,19 @@ def test_mouse_release_event_when_scale_action(view, item):
     item.scale_orig_factor = 1
     view.scene.undo_stack = MagicMock(push=MagicMock())
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.mouseReleaseEvent(event)
-            view.scene.undo_stack.push.assert_called_once()
-            args = view.scene.undo_stack.push.call_args_list[0][0]
-            cmd = args[0]
-            isinstance(cmd, commands.ScaleItemsBy)
-            assert cmd.items == [item]
-            assert cmd.factor == approx(1.5, 0.01)
-            assert cmd.anchor == QtCore.QPointF(100, 80)
-            assert cmd.ignore_first_redo is True
-            assert item.scale_active is False
-            event.accept.assert_called_once_with()
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.mouseReleaseEvent(event)
+        view.scene.undo_stack.push.assert_called_once()
+        args = view.scene.undo_stack.push.call_args_list[0][0]
+        cmd = args[0]
+        isinstance(cmd, commands.ScaleItemsBy)
+        assert cmd.items == [item]
+        assert cmd.factor == approx(1.5, 0.01)
+        assert cmd.anchor == QtCore.QPointF(100, 80)
+        assert cmd.ignore_first_redo is True
+        assert item.scale_active is False
+        event.accept.assert_called_once_with()
 
 
 def test_mouse_release_event_when_scale_action_zero(view, item):
@@ -983,14 +1003,12 @@ def test_mouse_release_event_when_scale_action_zero(view, item):
     item.scale_orig_factor = 1
     view.scene.undo_stack = MagicMock(push=MagicMock())
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.mouseReleaseEvent(event)
-            view.scene.undo_stack.push.assert_not_called()
-            assert item.scale_active is False
-            event.accept.assert_called_once_with()
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.mouseReleaseEvent(event)
+        view.scene.undo_stack.push.assert_not_called()
+        assert item.scale_active is False
+        event.accept.assert_called_once_with()
 
 
 def test_mouse_release_event_when_rotate_action(view, item):
@@ -1039,11 +1057,9 @@ def test_mouse_release_event_when_flip_action(view, item):
     item.flip_active = True
     view.scene.undo_stack = MagicMock(push=MagicMock())
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            item.mouseReleaseEvent(event)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.mouseReleaseEvent(event)
     view.scene.undo_stack.push.assert_not_called()
     assert item.flip_active is False
     event.accept.assert_called_once_with()

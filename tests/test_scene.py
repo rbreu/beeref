@@ -1,5 +1,5 @@
 import math
-from unittest.mock import patch, MagicMock, PropertyMock
+from unittest.mock import patch, MagicMock
 
 from pytest import approx
 
@@ -15,6 +15,17 @@ def test_add_remove_item(view, item):
     assert view.scene.items() == [item]
     view.scene.removeItem(item)
     assert view.scene.items() == []
+
+
+def test_cancel_crop_mode_when_crop(view, item):
+    view.scene.crop_item = item
+    item.exit_crop_mode = MagicMock()
+    view.scene.cancel_crop_mode()
+    item.exit_crop_mode.assert_called_once_with(confirm=False)
+
+
+def test_cancel_crop_mode_when_no_crop(view, item):
+    view.scene.cancel_crop_mode()
 
 
 def test_copy_selection_to_internal_clipboard(view):
@@ -60,11 +71,13 @@ def test_raise_to_top(view):
     item3 = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item3)
     item3.setZValue(0.07)
+    view.scene.cancel_crop_mode = MagicMock()
 
     view.scene.raise_to_top()
     assert item1.zValue() == 0.11 + view.scene.Z_STEP
     assert item2.zValue() == 0.07 + view.scene.Z_STEP
     assert item3.zValue() == 0.07
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_lower_to_bottom(view):
@@ -79,11 +92,13 @@ def test_lower_to_bottom(view):
     item3 = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item3)
     item3.setZValue(-0.07)
+    view.scene.cancel_crop_mode = MagicMock()
 
     view.scene.lower_to_bottom()
     assert item1.zValue() == -0.11 - view.scene.Z_STEP
     assert item2.zValue() == -0.07 - view.scene.Z_STEP
     assert item3.zValue() == -0.07
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_normalize_height(view):
@@ -94,17 +109,19 @@ def test_normalize_height(view):
     view.scene.addItem(item2)
     item2.setSelected(True)
     item2.setScale(3)
+    view.scene.cancel_crop_mode = MagicMock()
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
+    with patch.object(item1, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        with patch.object(item2, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 100, 80)):
             view.scene.normalize_height()
 
     assert item1.scale() == 2
     assert item1.pos() == QtCore.QPointF(-50, -40)
     assert item2.scale() == 2
     assert item2.pos() == QtCore.QPointF(50, 40)
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_normalize_height_with_rotation(view):
@@ -115,19 +132,23 @@ def test_normalize_height_with_rotation(view):
     view.scene.addItem(item2)
     item2.setSelected(True)
     item2.setRotation(90)
+    view.scene.cancel_crop_mode = MagicMock()
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=200):
+    with patch.object(item1, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 200)):
+        with patch.object(item2, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 100, 200)):
             view.scene.normalize_height()
 
     assert item1.scale() == 0.75
     assert item2.scale() == 1.5
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_normalize_height_when_no_items(view):
+    view.scene.cancel_crop_mode = MagicMock()
     view.scene.normalize_height()
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_normalize_width(view):
@@ -138,17 +159,19 @@ def test_normalize_width(view):
     view.scene.addItem(item2)
     item2.setSelected(True)
     item2.setScale(3)
+    view.scene.cancel_crop_mode = MagicMock()
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=80):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=100):
+    with patch.object(item1, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 80, 100)):
+        with patch.object(item2, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 80, 100)):
             view.scene.normalize_width()
 
     assert item1.scale() == 2
     assert item1.pos() == QtCore.QPointF(-40, -50)
     assert item2.scale() == 2
     assert item2.pos() == QtCore.QPointF(40, 50)
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_normalize_width_with_rotation(view):
@@ -159,19 +182,23 @@ def test_normalize_width_with_rotation(view):
     view.scene.addItem(item2)
     item2.setSelected(True)
     item2.setRotation(90)
+    view.scene.cancel_crop_mode = MagicMock()
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=200):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=100):
+    with patch.object(item1, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 200, 100)):
+        with patch.object(item2, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 200, 100)):
             view.scene.normalize_height()
 
     assert item1.scale() == 1.5
     assert item2.scale() == 0.75
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_normalize_width_when_no_items(view):
+    view.scene.cancel_crop_mode = MagicMock()
     view.scene.normalize_width()
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_normalize_size(view):
@@ -182,15 +209,17 @@ def test_normalize_size(view):
     view.scene.addItem(item2)
     item2.setSelected(True)
     item2.setScale(2)
+    view.scene.cancel_crop_mode = MagicMock()
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=100):
+    with patch.object(item1, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 100)):
+        with patch.object(item2, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 100, 100)):
             view.scene.normalize_size()
 
     assert item1.scale() == approx(math.sqrt(2.5))
     assert item2.scale() == approx(math.sqrt(2.5))
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_normalize_size_with_rotation(view):
@@ -201,19 +230,23 @@ def test_normalize_size_with_rotation(view):
     view.scene.addItem(item2)
     item2.setSelected(True)
     item2.setRotation(90)
+    view.scene.cancel_crop_mode = MagicMock()
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=200):
+    with patch.object(item1, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 200)):
+        with patch.object(item2, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 100, 200)):
             view.scene.normalize_size()
 
     assert item1.scale() == 1
     assert item2.scale() == 1
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_normalize_size_when_no_items(view):
+    view.scene.cancel_crop_mode = MagicMock()
     view.scene.normalize_size()
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_arrange_horizontal(view):
@@ -225,15 +258,17 @@ def test_arrange_horizontal(view):
     view.scene.addItem(item2)
     item2.setSelected(True)
     item2.setPos(-10, 40)
+    view.scene.cancel_crop_mode = MagicMock()
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
+    with patch.object(item1, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        with patch.object(item2, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 100, 80)):
             view.scene.arrange()
 
     assert item2.pos() == QtCore.QPointF(-50, -30)
     assert item1.pos() == QtCore.QPointF(50, -30)
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_arrange_vertical(view):
@@ -245,15 +280,17 @@ def test_arrange_vertical(view):
     view.scene.addItem(item2)
     item2.setSelected(True)
     item2.setPos(-10, 40)
+    view.scene.cancel_crop_mode = MagicMock()
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
+    with patch.object(item1, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        with patch.object(item2, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 100, 80)):
             view.scene.arrange(vertical=True)
 
     assert item1.pos() == QtCore.QPointF(0, -70)
     assert item2.pos() == QtCore.QPointF(0, 10)
+    view.scene.cancel_crop_mode = MagicMock()
 
 
 def test_arrange_when_rotated(view):
@@ -267,19 +304,23 @@ def test_arrange_when_rotated(view):
     item2.setSelected(True)
     item2.setPos(-10, 40)
     item2.setRotation(90)
+    view.scene.cancel_crop_mode = MagicMock()
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
+    with patch.object(item1, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        with patch.object(item2, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 100, 80)):
             view.scene.arrange()
 
     assert item2.pos() == QtCore.QPointF(-40, -30)
     assert item1.pos() == QtCore.QPointF(40, -30)
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_arrange_when_no_items(view):
+    view.scene.cancel_crop_mode = MagicMock()
     view.scene.arrange()
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_arrange_optimal(view):
@@ -287,17 +328,16 @@ def test_arrange_optimal(view):
         item = BeePixmapItem(QtGui.QImage())
         view.scene.addItem(item)
         item.setSelected(True)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            view.scene.arrange_optimal()
+        item.crop = QtCore.QRectF(0, 0, 100, 80)
 
+    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.arrange_optimal()
     expected_positions = {(-50, -40), (50, -40), (-50, 40), (50, 40)}
     actual_positions = {
         (i.pos().x(), i.pos().y())
         for i in view.scene.selectedItems(user_only=True)}
     assert expected_positions == actual_positions
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_arrange_optimal_when_rotated(view):
@@ -306,27 +346,30 @@ def test_arrange_optimal_when_rotated(view):
         view.scene.addItem(item)
         item.setRotation(90)
         item.setSelected(True)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            view.scene.arrange_optimal()
+        item.crop = QtCore.QRectF(0, 0, 100, 80)
+
+    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.arrange_optimal()
 
     expected_positions = {(-40, -50), (40, -50), (-40, 50), (40, 50)}
     actual_positions = {
         (i.pos().x(), i.pos().y())
         for i in view.scene.selectedItems(user_only=True)}
     assert expected_positions == actual_positions
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_arrange_optimal_when_no_items(view):
+    view.scene.cancel_crop_mode = MagicMock()
     view.scene.arrange_optimal()
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_flip_items(view, item):
     view.scene.addItem(item)
     item.setSelected(True)
     view.scene.undo_stack = MagicMock(push=MagicMock())
+    view.scene.cancel_crop_mode = MagicMock()
     with patch('beeref.scene.BeeGraphicsScene.itemsBoundingRect',
                return_value=QtCore.QRectF(10, 20, 100, 60)):
         view.scene.flip_items(vertical=True)
@@ -336,32 +379,86 @@ def test_flip_items(view, item):
         assert cmd.items == [item]
         assert cmd.anchor == QtCore.QPointF(60, 50)
         assert cmd.vertical is True
+        view.scene.cancel_crop_mode.assert_called_once_with()
 
 
-def test_set_selection_all_items_when_true(view):
+def test_crop_items(view, item):
+    view.scene.addItem(item)
+    item.setSelected(True)
+    item.enter_crop_mode = MagicMock()
+
+    view.scene.crop_items()
+    item.enter_crop_mode.assert_called_once_with()
+
+
+def test_crop_items_when_in_crop_mode(view, item):
+    view.scene.addItem(item)
+    item.setSelected(True)
+    item.enter_crop_mode = MagicMock()
+    view.scene.crop_item = item
+
+    view.scene.crop_items()
+    item.enter_crop_mode.assert_not_called()
+
+
+def test_crop_item_multi_select(view, item):
+    view.scene.addItem(item)
+    item.setSelected(True)
+    item.enter_crop_mode = MagicMock()
+    item2 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item2)
+    item2.setSelected(True)
+
+    view.scene.crop_items()
+    item.enter_crop_mode.assert_not_called()
+
+
+def test_crop_item_no_selection(view, item):
+    view.scene.addItem(item)
+    item.setSelected(False)
+    item.enter_crop_mode = MagicMock()
+
+    view.scene.crop_items()
+    item.enter_crop_mode.assert_not_called()
+
+
+def test_crop_item_when_not_croppable(view):
+    item = BeeTextItem('foo')
+    item.setSelected(True)
+    item.enter_crop_mode = MagicMock()
+
+    view.scene.crop_items()
+    item.enter_crop_mode.assert_not_called()
+
+
+def test_set_selected_all_items_when_true(view):
     item1 = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item1)
     item1.setSelected(True)
     item2 = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item2)
     item2.setSelected(True)
+    view.scene.cancel_crop_mode = MagicMock()
 
     view.scene.set_selected_all_items(True)
     assert item1.isSelected() is True
     assert item2.isSelected() is True
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
-def test_set_selection_all_items_when_false(view):
+def test_set_selected_all_items_when_false(view):
     item1 = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item1)
     item1.setSelected(True)
     item2 = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item2)
     item2.setSelected(True)
+    view.scene.cancel_crop_mode = MagicMock()
 
     view.scene.set_selected_all_items(False)
     assert item1.isSelected() is False
     assert item2.isSelected() is False
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_has_selection_when_no_selection(view, item):
@@ -423,6 +520,34 @@ def test_has_multi_selection_when_multi_selection(view):
     assert view.scene.has_multi_selection() is True
 
 
+def test_has_croppable_selection(view, item):
+    view.scene.addItem(item)
+    item.setSelected(True)
+    assert view.scene.has_croppable_selection() is True
+
+
+def test_has_croppable_selection_when_item_not_croppable(view):
+    item = BeeTextItem('foo')
+    view.scene.addItem(item)
+    item.setSelected(True)
+    assert view.scene.has_croppable_selection() is False
+
+
+def test_has_croppable_selection_when_no_selection(view, item):
+    view.scene.addItem(item)
+    item.setSelected(False)
+    assert view.scene.has_croppable_selection() is False
+
+
+def test_has_croppable_selection_when_multi_selection(view, item):
+    view.scene.addItem(item)
+    item.setSelected(True)
+    item2 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item2)
+    item2.setSelected(True)
+    assert view.scene.has_croppable_selection() is False
+
+
 @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
 def test_mouse_press_event_when_right_click(mouse_mock, view):
     event = MagicMock(
@@ -461,7 +586,6 @@ def test_mouse_press_event_when_left_click_over_item_in_edit_mode(
     view.scene.mousePressEvent(event)
     event.accept.assert_not_called()
     mouse_mock.assert_called_once_with(event)
-    assert view.scene.edit_item == item
     item.exit_edit_mode.assert_not_called()
     assert view.scene.move_active is False
     assert view.scene.rubberband_active is False
@@ -481,7 +605,6 @@ def test_mouse_press_event_when_left_click_over_diff_item_in_edit_mode(
     view.scene.mousePressEvent(event)
     event.accept.assert_not_called()
     mouse_mock.assert_called_once_with(event)
-    assert view.scene.edit_item is None
     txtitem.exit_edit_mode.assert_called_once_with()
     assert view.scene.move_active is True
     assert view.scene.rubberband_active is False
@@ -501,8 +624,62 @@ def test_mouse_press_event_when_left_click_over_no_item_in_edit_mode(
     view.scene.mousePressEvent(event)
     event.accept.assert_not_called()
     mouse_mock.assert_called_once_with(event)
-    assert view.scene.edit_item is None
     item.exit_edit_mode.assert_called_once_with()
+    assert view.scene.move_active is False
+    assert view.scene.rubberband_active is True
+
+
+@patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
+def test_mouse_press_event_when_left_click_over_item_in_crop_mode(
+        mouse_mock, view, item):
+    view.scene.addItem(item)
+    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.crop_item = item
+    view.scene.itemAt = MagicMock(return_value=item)
+    event = MagicMock(
+        button=MagicMock(return_value=Qt.MouseButton.LeftButton),
+    )
+    view.scene.mousePressEvent(event)
+    event.accept.assert_not_called()
+    mouse_mock.assert_called_once_with(event)
+    view.scene.cancel_crop_mode.assert_not_called()
+    assert view.scene.move_active is False
+    assert view.scene.rubberband_active is False
+
+
+@patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
+def test_mouse_press_event_when_left_click_over_diff_item_in_crop_mode(
+        mouse_mock, view, item):
+    view.scene.addItem(item)
+    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.crop_item = item
+    other_item = BeePixmapItem(QtGui.QImage())
+    view.scene.itemAt = MagicMock(return_value=other_item)
+    event = MagicMock(
+        button=MagicMock(return_value=Qt.MouseButton.LeftButton),
+    )
+    view.scene.mousePressEvent(event)
+    event.accept.assert_not_called()
+    mouse_mock.assert_called_once_with(event)
+    view.scene.cancel_crop_mode.assert_called_once_with()
+    assert view.scene.move_active is True
+    assert view.scene.rubberband_active is False
+
+
+@patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
+def test_mouse_press_event_when_left_click_over_no_item_in_crop_mode(
+        mouse_mock, view, item):
+    view.scene.addItem(item)
+    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.crop_item = item
+    view.scene.itemAt = MagicMock(return_value=None)
+    event = MagicMock(
+        button=MagicMock(return_value=Qt.MouseButton.LeftButton),
+    )
+    view.scene.mousePressEvent(event)
+    event.accept.assert_not_called()
+    mouse_mock.assert_called_once_with(event)
+    view.scene.cancel_crop_mode.assert_called_once_with()
     assert view.scene.move_active is False
     assert view.scene.rubberband_active is True
 
@@ -549,11 +726,9 @@ def test_mouse_doubleclick_event_when_over_item(mouse_mock, view, item):
     view.scene.itemAt = MagicMock(return_value=item)
     view.fit_rect = MagicMock()
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=100):
-            view.scene.mouseDoubleClickEvent(event)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 100)):
+        view.scene.mouseDoubleClickEvent(event)
 
     assert view.scene.move_active is False
     view.fit_rect.assert_called_once_with(
@@ -575,15 +750,12 @@ def test_mouse_doubleclick_event_when_over_editable_item(
     view.scene.itemAt = MagicMock(return_value=item)
     view.fit_rect = MagicMock()
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=100):
-            view.scene.mouseDoubleClickEvent(event)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 100)):
+        view.scene.mouseDoubleClickEvent(event)
 
     assert view.scene.move_active is False
     item.enter_edit_mode.assert_called_once_with()
-    view.scene.edit_item == item
     double_mock.assert_not_called()
     press_mock.assert_called_once_with(event)
 
@@ -599,11 +771,9 @@ def test_mouse_doubleclick_event_when_item_not_selected(
     view.scene.itemAt = MagicMock(return_value=item)
     view.fit_rect = MagicMock()
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=100):
-            view.scene.mouseDoubleClickEvent(event)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 100)):
+        view.scene.mouseDoubleClickEvent(event)
 
     assert view.scene.move_active is False
     view.fit_rect.assert_called_once_with(
@@ -863,10 +1033,10 @@ def test_items_bounding_rect_given_items(view):
     item3.setSelected(True)
     item3.setPos(1000, 1000)
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=100):
+    with patch.object(item1, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 100)):
+        with patch.object(item2, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 100, 100)):
             rect = view.scene.itemsBoundingRect(items=[item1, item2])
 
     assert rect.topLeft().x() == -33
@@ -889,10 +1059,10 @@ def test_items_bounding_rect_two_items_selection_only(view):
     item3.setSelected(False)
     item3.setPos(1000, 1000)
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=100):
+    with patch.object(item1, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 100)):
+        with patch.object(item2, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 100, 100)):
             rect = view.scene.itemsBoundingRect(selection_only=True)
 
     assert rect.topLeft().x() == -33
@@ -905,11 +1075,9 @@ def test_items_bounding_rect_rotated_item(view, item):
     view.scene.addItem(item)
     item.setRotation(-45)
 
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=100):
-            rect = view.scene.itemsBoundingRect()
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 100)):
+        rect = view.scene.itemsBoundingRect()
 
     assert rect.topLeft().x() == 0
     assert rect.topLeft().y() == approx(-math.sqrt(2) * 50)
@@ -921,11 +1089,9 @@ def test_items_bounding_rect_flipped_item(view):
     item = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item)
     item.do_flip()
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=50):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=100):
-            rect = view.scene.itemsBoundingRect()
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 50, 100)):
+        rect = view.scene.itemsBoundingRect()
 
     assert rect.topLeft().x() == -50
     assert rect.topLeft().y() == 0

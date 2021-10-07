@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock, PropertyMock
+from unittest.mock import patch, MagicMock
 
 from PyQt6 import QtCore, QtGui
 
@@ -118,12 +118,73 @@ def test_do_flip_vertical_anchor(qapp, item):
     assert item.pos() == QtCore.QPointF(0, 200)
 
 
-def test_base_item_mixin_center_scene_coords(view, item):
+def test_width(view, item):
     view.scene.addItem(item)
     item.setPos(5, 5)
     item.setScale(2)
-    with patch('beeref.items.BeePixmapItem.width',
-               new_callable=PropertyMock, return_value=100):
-        with patch('beeref.items.BeePixmapItem.height',
-                   new_callable=PropertyMock, return_value=80):
-            assert item.center_scene_coords == QtCore.QPointF(105, 85)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        assert item.width == 100
+
+
+def test_width_cropped_item(view, item):
+    view.scene.addItem(item)
+    item.setPos(5, 5)
+    item.setScale(2)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        assert item.width == 100
+
+
+def test_height(view, item):
+    view.scene.addItem(item)
+    item.setPos(5, 5)
+    item.setScale(2)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        assert item.height == 80
+
+
+def test_height_cropped_item(view, item):
+    view.scene.addItem(item)
+    item.setPos(5, 5)
+    item.setScale(2)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(5, 5, 100, 80)):
+        assert item.height == 80
+
+
+def test_center(view, item):
+    view.scene.addItem(item)
+    item.setPos(5, 5)
+    item.setScale(2)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        assert item.center == QtCore.QPointF(50, 40)
+
+
+def test_center_cropped_item(view, item):
+    view.scene.addItem(item)
+    item.setPos(5, 5)
+    item.setScale(2)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(10, 10, 40, 30)):
+        assert item.center == QtCore.QPointF(30, 25)
+
+
+def test_center_scene_coords(view, item):
+    view.scene.addItem(item)
+    item.setPos(5, 5)
+    item.setScale(2)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        assert item.center_scene_coords == QtCore.QPointF(105, 85)
+
+
+def test_center_scene_coords_cropped_item(view, item):
+    view.scene.addItem(item)
+    item.setPos(5, 5)
+    item.setScale(2)
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(10, 10, 40, 30)):
+        assert item.center_scene_coords == QtCore.QPointF(65, 55)

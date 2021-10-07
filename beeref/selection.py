@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Classes for items that draw and handle selection stuff."""
+"""Classes that draw and handle selection stuff for items."""
 
 import logging
 import math
@@ -98,9 +98,20 @@ class BaseItemMixin:
         if vertical:
             self.setRotation(self.rotation() + 180)
 
+    def bounding_rect_unselected(self):
+        return super().boundingRect()
+
+    @property
+    def width(self):
+        return self.bounding_rect_unselected().width()
+
+    @property
+    def height(self):
+        return self.bounding_rect_unselected().height()
+
     @property
     def center(self):
-        return QtCore.QPointF(self.width, self.height) / 2
+        return self.bounding_rect_unselected().center()
 
     @property
     def center_scene_coords(self):
@@ -166,7 +177,7 @@ class SelectableMixin(BaseItemMixin):
         else:
             painter.fillPath(shape, color)
 
-    def paint_selectable(self, painter, option, widget):
+    def paint_debug(self, painter, option, widget):
         if commandline_args.debug_shapes:
             self.draw_debug_shape(painter, self.shape(), 255, 0, 0)
         if commandline_args.debug_boundingrects:
@@ -180,6 +191,9 @@ class SelectableMixin(BaseItemMixin):
             for edge in self.get_flip_bounds():
                 self.draw_debug_shape(painter, edge['rect'], 255, 255, 0)
 
+    def paint_selectable(self, painter, option, widget):
+        self.paint_debug(painter, option, widget)
+
         if not self.has_selection_outline():
             return
 
@@ -189,7 +203,7 @@ class SelectableMixin(BaseItemMixin):
         painter.setPen(pen)
 
         # Draw the main selection rectangle
-        painter.drawRect(0, 0, self.width, self.height)
+        painter.drawRect(self.bounding_rect_unselected())
 
         # If it's a single selection, draw the handles:
         if self.has_selection_handles():
@@ -202,10 +216,10 @@ class SelectableMixin(BaseItemMixin):
     @property
     def corners(self):
         """The corners of the item. Used for scale and rotate handles."""
-        return (QtCore.QPointF(0, 0),
-                QtCore.QPointF(self.width, 0),
-                QtCore.QPointF(self.width, self.height),
-                QtCore.QPointF(0, self.height))
+        return (self.bounding_rect_unselected().topLeft(),
+                self.bounding_rect_unselected().topRight(),
+                self.bounding_rect_unselected().bottomRight(),
+                self.bounding_rect_unselected().bottomLeft())
 
     @property
     def corners_scene_coords(self):
@@ -264,65 +278,66 @@ class SelectableMixin(BaseItemMixin):
 
         outer_margin = self.select_resize_size / 2
         inner_margin = self.select_resize_size / 2
+        origin = self.bounding_rect_unselected().topLeft()
         return [
             # top:
             {
-                'rect': QtCore.QRectF(inner_margin,
-                                      -outer_margin,
-                                      self.width - 2 * inner_margin,
-                                      outer_margin + inner_margin),
+                'rect': QtCore.QRectF(
+                    origin.x() + inner_margin,
+                    origin.y() - outer_margin,
+                    self.width - 2 * inner_margin,
+                    outer_margin + inner_margin),
                 'flip_v': True,
             },
             # bottom:
             {
-                'rect': QtCore.QRectF(inner_margin,
-                                      self.height - inner_margin,
-                                      self.width - 2 * inner_margin,
-                                      outer_margin + inner_margin),
+                'rect': QtCore.QRectF(
+                    origin.x() + inner_margin,
+                    origin.y() + self.height - inner_margin,
+                    self.width - 2 * inner_margin,
+                    outer_margin + inner_margin),
                 'flip_v': True,
             },
             # left:
             {
-                'rect': QtCore.QRectF(-outer_margin,
-                                      inner_margin,
-                                      outer_margin + inner_margin,
-                                      self.height - 2 * inner_margin),
+                'rect': QtCore.QRectF(
+                    origin.x() - outer_margin,
+                    origin.y() + inner_margin,
+                    outer_margin + inner_margin,
+                    self.height - 2 * inner_margin),
                 'flip_v': False,
             },
             # right:
             {
-                'rect': QtCore.QRectF(self.width - inner_margin,
-                                      inner_margin,
-                                      outer_margin + inner_margin,
-                                      self.height - 2 * inner_margin),
+                'rect': QtCore.QRectF(
+                    origin.x() + self.width - inner_margin,
+                    origin.y() + inner_margin,
+                    outer_margin + inner_margin,
+                    self.height - 2 * inner_margin),
                 'flip_v': False,
             }
         ]
 
     def boundingRect(self):
         if not self.has_selection_outline():
-            return super().boundingRect()
+            return self.bounding_rect_unselected()
 
         # Add extra space for the interactive areas
         margin = self.select_resize_size / 2 + self.select_rotate_size
-        return QtCore.QRectF(
-            -margin, -margin,
-            self.width + 2 * margin,
-            self.height + 2 * margin)
+        return self.bounding_rect_unselected().marginsAdded(
+            QtCore.QMarginsF(margin, margin, margin, margin))
 
     def shape(self):
         path = QtGui.QPainterPath()
         if self.has_selection_handles():
             margin = self.select_resize_size / 2
-            rect = QtCore.QRectF(
-                -margin, -margin,
-                self.width + 2 * margin,
-                self.height + 2 * margin)
+            rect = self.bounding_rect_unselected().marginsAdded(
+                QtCore.QMarginsF(margin, margin, margin, margin))
             path.addRect(rect)
             for corner in self.corners:
                 path.addPath(self.get_rotate_bounds(corner))
         else:
-            rect = super().boundingRect()
+            rect = self.bounding_rect_unselected()
             path.addRect(rect)
         return path
 
@@ -408,14 +423,15 @@ class SelectableMixin(BaseItemMixin):
 
     def get_scale_anchor(self, corner):
         """Get the anchor around which the scale for this corner operates."""
-        return QtCore.QPointF(self.width - corner.x(),
-                              self.height - corner.y())
+        origin = self.bounding_rect_unselected().topLeft()
+        return QtCore.QPointF(self.width - corner.x() + 2*origin.x(),
+                              self.height - corner.y() + 2*origin.y())
 
     def get_corner_direction(self, corner):
         """Get the direction facing away from the center, e.g. the direction
         in which the scale for this corner increases."""
-        return QtCore.QPointF(1 if corner.x() > 0 else -1,
-                              1 if corner.y() > 0 else -1)
+        return QtCore.QPointF(1 if corner.x() > self.center.x() else -1,
+                              1 if corner.y() > self.center.y() else -1)
 
     def get_direction_from_center(self, pos):
         """The direction of a point in relation to the item's center."""
@@ -444,11 +460,16 @@ class SelectableMixin(BaseItemMixin):
     def get_corner_scale_cursor(self, corner):
         """Gets the scale cursor for the given corner."""
 
+        is_topleft_or_bottomright = corner in (
+            self.bounding_rect_unselected().topLeft(),
+            self.bounding_rect_unselected().bottomRight())
+        return self.get_diag_cursor(is_topleft_or_bottomright)
+
+    def get_diag_cursor(self, is_topleft_or_bottomright):
         rotation = self.rotation() % 180
         flipped = self.flip() == -1
 
-        if corner in (QtCore.QPointF(0, 0),
-                      QtCore.QPointF(self.width, self.height)):
+        if is_topleft_or_bottomright:
             if 22.5 < rotation < 67.5:
                 return Qt.CursorShape.SizeVerCursor
             elif 67.5 < rotation < 112.5:
@@ -571,14 +592,6 @@ class MultiSelectItem(SelectableMixin,
     def __str__(self):
         return (f'MultiSelectItem {self.width} x {self.height}')
 
-    @property
-    def width(self):
-        return self.rect().width()
-
-    @property
-    def height(self):
-        return self.rect().height()
-
     def paint(self, painter, option, widget):
         self.paint_selectable(painter, option, widget)
 
@@ -640,14 +653,6 @@ class RubberbandItem(BaseItemMixin, QtWidgets.QGraphicsRectItem):
 
     def __str__(self):
         return (f'RubberbandItem {self.width} x {self.height}')
-
-    @property
-    def width(self):
-        return self.rect().width()
-
-    @property
-    def height(self):
-        return self.rect().height()
 
     def fit(self, point1, point2):
         """Updates itself to fit the two given points."""

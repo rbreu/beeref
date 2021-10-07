@@ -73,12 +73,14 @@ menu_structure = [
     {
         'menu': '&Transform',
         'items': [
+            'crop',
             'flip_horizontally',
             'flip_vertically',
             MENU_SEPARATOR,
             'reset_scale',
             'reset_rotation',
             'reset_flip',
+            'reset_crop',
             'reset_transforms',
         ],
     },

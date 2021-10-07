@@ -146,6 +146,13 @@ actions = [
         'group': 'active_when_selection',
     },
     {
+        'id': 'crop',
+        'text': '&Crop',
+        'shortcuts': ['Shift+C'],
+        'callback': 'on_action_crop',
+        'group': 'active_when_croppable',
+    },
+    {
         'id': 'flip_horizontally',
         'text': 'Flip &Horizontally',
         'shortcuts': ['H'],
@@ -194,6 +201,12 @@ actions = [
         'id': 'reset_flip',
         'text': 'Reset &Flip',
         'callback': 'on_action_reset_flip',
+        'group': 'active_when_selection',
+    },
+    {
+        'id': 'reset_crop',
+        'text': 'Reset Cro&p',
+        'callback': 'on_action_reset_crop',
         'group': 'active_when_selection',
     },
     {

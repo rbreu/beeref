@@ -22,6 +22,7 @@ import logging
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
+from beeref import commands
 from beeref.constants import COLORS
 from beeref.selection import SelectableMixin
 
@@ -79,12 +80,16 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
     """Class for images added by the user."""
 
     TYPE = 'pixmap'
+    CROP_HANDLE_SIZE = 15
 
     def __init__(self, image, filename=None):
         super().__init__(QtGui.QPixmap.fromImage(image))
         self.save_id = None
         self.filename = filename
+        self.reset_crop()
         logger.debug(f'Initialized {self}')
+        self.is_croppable = True
+        self.crop_mode = False
         self.init_selectable()
 
     @classmethod
@@ -92,21 +97,37 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         item = kwargs.pop('item')
         data = kwargs.pop('data', {})
         item.filename = item.filename or data.get('filename')
+        if 'crop' in data:
+            item.crop = QtCore.QRectF(*data['crop'])
         return item
 
     def __str__(self):
-        return (f'Image "{self.filename}" {self.width} x {self.height}')
+        size = self.pixmap().size()
+        return (f'Image "{self.filename}" {size.width()} x {size.height()}')
 
     @property
-    def width(self):
-        return self.pixmap().size().width()
+    def crop(self):
+        return self._crop
 
-    @property
-    def height(self):
-        return self.pixmap().size().height()
+    @crop.setter
+    def crop(self, value):
+        logger.debug(f'Setting crop for {self} to {value}')
+        self.prepareGeometryChange()
+        self._crop = value
+        self.update()
+
+    def bounding_rect_unselected(self):
+        if self.crop_mode:
+            return QtWidgets.QGraphicsPixmapItem.boundingRect(self)
+        else:
+            return self.crop
 
     def get_extra_save_data(self):
-        return {'filename': self.filename}
+        return {'filename': self.filename,
+                'crop': [self.crop.topLeft().x(),
+                         self.crop.topLeft().y(),
+                         self.crop.width(),
+                         self.crop.height()]}
 
     def pixmap_to_bytes(self):
         """Convert the pixmap data to PNG bytestring."""
@@ -117,15 +138,15 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         img.save(buffer, 'PNG')
         return barray.data()
 
+    def setPixmap(self, pixmap):
+        super().setPixmap(pixmap)
+        self.reset_crop()
+
     def pixmap_from_bytes(self, data):
         """Set image pimap from a bytestring."""
         pixmap = QtGui.QPixmap()
         pixmap.loadFromData(data)
         self.setPixmap(pixmap)
-
-    def paint(self, painter, option, widget):
-        painter.drawPixmap(0, 0, self.pixmap())
-        self.paint_selectable(painter, option, widget)
 
     def create_copy(self):
         item = BeePixmapItem(QtGui.QImage(), self.filename)
@@ -136,10 +157,195 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         item.setRotation(self.rotation())
         if self.flip() == -1:
             item.do_flip()
+        item.crop = self.crop
         return item
 
     def copy_to_clipboard(self, clipboard):
         clipboard.setPixmap(self.pixmap())
+
+    def reset_crop(self):
+        self.crop = QtCore.QRectF(
+            0, 0, self.pixmap().size().width(), self.pixmap().size().height())
+
+    @property
+    def crop_handle_size(self):
+        return self.fixed_length_for_viewport(self.CROP_HANDLE_SIZE)
+
+    def crop_handle_topleft(self):
+        topleft = self.crop_temp.topLeft()
+        return QtCore.QRectF(
+            topleft.x(),
+            topleft.y(),
+            self.crop_handle_size,
+            self.crop_handle_size)
+
+    def crop_handle_bottomleft(self):
+        bottomleft = self.crop_temp.bottomLeft()
+        return QtCore.QRectF(
+            bottomleft.x(),
+            bottomleft.y() - self.crop_handle_size,
+            self.crop_handle_size,
+            self.crop_handle_size)
+
+    def crop_handle_bottomright(self):
+        bottomright = self.crop_temp.bottomRight()
+        return QtCore.QRectF(
+            bottomright.x() - self.crop_handle_size,
+            bottomright.y() - self.crop_handle_size,
+            self.crop_handle_size,
+            self.crop_handle_size)
+
+    def crop_handle_topright(self):
+        topright = self.crop_temp.topRight()
+        return QtCore.QRectF(
+            topright.x() - self.crop_handle_size,
+            topright.y(),
+            self.crop_handle_size,
+            self.crop_handle_size)
+
+    def crop_handles(self):
+        return (self.crop_handle_topleft,
+                self.crop_handle_bottomleft,
+                self.crop_handle_bottomright,
+                self.crop_handle_topright)
+
+    def get_crop_handle_cursor(self, handle):
+        """Gets the crop cursor for the given handle."""
+
+        is_topleft_or_bottomright = handle in (
+            self.crop_handle_topleft, self.crop_handle_bottomright)
+        return self.get_diag_cursor(is_topleft_or_bottomright)
+
+    def draw_crop_rect(self, painter, rect):
+        """Paint a dotted rectangle for the cropping UI."""
+        pen = QtGui.QPen(QtGui.QColor(255, 255, 255))
+        pen.setWidth(2)
+        pen.setCosmetic(True)
+        painter.setPen(pen)
+        painter.drawRect(rect)
+        pen.setColor(QtGui.QColor(0, 0, 0))
+        pen.setStyle(Qt.PenStyle.DotLine)
+        painter.setPen(pen)
+        painter.drawRect(rect)
+
+    def paint(self, painter, option, widget):
+        if self.crop_mode:
+            self.paint_debug(painter, option, widget)
+
+            # Darken image outside of cropped area
+            painter.drawPixmap(0, 0, self.pixmap())
+            path = QtWidgets.QGraphicsPixmapItem.shape(self)
+            path.addRect(self.crop_temp)
+            color = QtGui.QColor(0, 0, 0)
+            color.setAlpha(100)
+            painter.setBrush(QtGui.QBrush(color))
+            painter.setPen(QtGui.QPen())
+            painter.drawPath(path)
+            painter.setBrush(QtGui.QBrush())
+
+            for handle in self.crop_handles():
+                self.draw_crop_rect(painter, handle())
+            self.draw_crop_rect(painter, self.crop_temp)
+        else:
+            painter.drawPixmap(self.crop, self.pixmap(), self.crop)
+            self.paint_selectable(painter, option, widget)
+
+    def enter_crop_mode(self):
+        logger.debug(f'Entering crop mode on {self}')
+        self.prepareGeometryChange()
+        self.crop_mode = True
+        self.crop_temp = QtCore.QRectF(self.crop)
+        self.crop_mode_move = None
+        self.crop_mode_event_start = None
+        self.grabKeyboard()
+        self.update()
+        self.scene().crop_item = self
+
+    def exit_crop_mode(self, confirm):
+        logger.debug(f'Exiting crop mode with {confirm} on {self}')
+        if confirm and self.crop != self.crop_temp:
+            self.scene().undo_stack.push(
+                commands.CropItem(self, self.crop_temp))
+        self.prepareGeometryChange()
+        self.crop_mode = False
+        self.crop_temp = None
+        self.crop_mode_move = None
+        self.crop_mode_event_start = None
+        self.ungrabKeyboard()
+        self.update()
+        self.scene().crop_item = None
+
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            self.exit_crop_mode(confirm=True)
+        elif event.key() == Qt.Key.Key_Escape:
+            self.exit_crop_mode(confirm=False)
+        else:
+            super().keyPressEvent(event)
+
+    def hoverMoveEvent(self, event):
+        if not self.crop_mode:
+            return super().hoverMoveEvent(event)
+
+        for handle in self.crop_handles():
+            if handle().contains(event.pos()):
+                self.setCursor(self.get_crop_handle_cursor(handle))
+                return
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+
+    def mousePressEvent(self, event):
+        if not self.crop_mode:
+            return super().mousePressEvent(event)
+
+        event.accept()
+        for handle in self.crop_handles():
+            # Click into a handle?
+            if handle().contains(event.pos()):
+                self.crop_mode_event_start = event.pos()
+                self.crop_mode_move = handle
+                return
+        # Click not in handle, end cropping mode:
+        self.exit_crop_mode(
+            confirm=self.crop_temp.contains(event.pos()))
+
+    def ensure_point_within_pixmap_bounds(self, point):
+        """Returns the point, or the nearest point within the pixmap."""
+        point.setX(min(self.pixmap().size().width(), max(0, point.x())))
+        point.setY(min(self.pixmap().size().height(), max(0, point.y())))
+        return point
+
+    def mouseMoveEvent(self, event):
+        if self.crop_mode:
+            diff = event.pos() - self.crop_mode_event_start
+            if self.crop_mode_move == self.crop_handle_topleft:
+                new = self.ensure_point_within_pixmap_bounds(
+                    self.crop_temp.topLeft() + diff)
+                self.crop_temp.setTopLeft(new)
+            if self.crop_mode_move == self.crop_handle_bottomleft:
+                new = self.ensure_point_within_pixmap_bounds(
+                    self.crop_temp.bottomLeft() + diff)
+                self.crop_temp.setBottomLeft(new)
+            if self.crop_mode_move == self.crop_handle_bottomright:
+                new = self.ensure_point_within_pixmap_bounds(
+                    self.crop_temp.bottomRight() + diff)
+                self.crop_temp.setBottomRight(new)
+            if self.crop_mode_move == self.crop_handle_topright:
+                new = self.ensure_point_within_pixmap_bounds(
+                    self.crop_temp.topRight() + diff)
+                self.crop_temp.setTopRight(new)
+            self.update()
+            self.crop_mode_event_start = event.pos()
+            event.accept()
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if self.crop_mode:
+            self.crop_mode_move = None
+            self.crop_mode_event_start = None
+            event.accept()
+        else:
+            super().mouseReleaseEvent(event)
 
 
 @register_item
@@ -152,6 +358,7 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
         super().__init__(text or "Text")
         self.save_id = None
         logger.debug(f'Initialized {self}')
+        self.is_croppable = False
         self.init_selectable()
         self.is_editable = True
         self.edit_mode = False
@@ -166,14 +373,6 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
     def __str__(self):
         txt = self.toPlainText()[:40]
         return (f'Text "{txt}"')
-
-    @property
-    def width(self):
-        return QtWidgets.QGraphicsTextItem.boundingRect(self).width()
-
-    @property
-    def height(self):
-        return QtWidgets.QGraphicsTextItem.boundingRect(self).height()
 
     def get_extra_save_data(self):
         return {'text': self.toPlainText()}
@@ -203,15 +402,19 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
         return item
 
     def enter_edit_mode(self):
+        logger.debug(f'Entering edit mode on {self}')
         self.edit_mode = True
         self.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextEditorInteraction)
+        self.scene().edit_item = self
 
     def exit_edit_mode(self):
+        logger.debug(f'Exiting edit mode on {self}')
         self.edit_mode = False
         # reset selection:
         self.setTextCursor(QtGui.QTextCursor(self.document()))
         self.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+        self.scene().edit_item = None
 
     def has_selection_handles(self):
         return super().has_selection_handles() and not self.edit_mode

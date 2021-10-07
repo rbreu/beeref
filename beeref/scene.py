@@ -47,6 +47,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.items_to_add = Queue()
         self.internal_clipboard = []
         self.edit_item = None
+        self.crop_item = None
 
     def addItem(self, item):
         logger.debug(f'Adding item {item}')
@@ -55,6 +56,11 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
     def removeItem(self, item):
         logger.debug(f'Removing item {item}')
         super().removeItem(item)
+
+    def cancel_crop_mode(self):
+        """Cancels an ongoing crop mode, if there is any."""
+        if self.crop_item:
+            self.crop_item.exit_crop_mode(confirm=False)
 
     def copy_selection_to_internal_clipboard(self):
         self.internal_clipboard = []
@@ -70,6 +76,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.undo_stack.push(commands.InsertItems(self, copies, position))
 
     def raise_to_top(self):
+        self.cancel_crop_mode()
         items = self.selectedItems(user_only=True)
         z_values = map(lambda i: i.zValue(), items)
         delta = self.max_z + self.Z_STEP - min(z_values)
@@ -78,6 +85,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             item.setZValue(item.zValue() + delta)
 
     def lower_to_bottom(self):
+        self.cancel_crop_mode()
         items = self.selectedItems(user_only=True)
         z_values = map(lambda i: i.zValue(), items)
         delta = self.min_z - self.Z_STEP - max(z_values)
@@ -93,6 +101,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         :param mode: "width" or "height".
         """
 
+        self.cancel_crop_mode()
         values = []
         items = self.selectedItems(user_only=True)
         for item in items:
@@ -124,6 +133,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         Size meaning the area = widh * height.
         """
 
+        self.cancel_crop_mode()
         sizes = []
         items = self.selectedItems(user_only=True)
         for item in items:
@@ -145,6 +155,8 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
     def arrange(self, vertical=False):
         """Arrange items in a line (horizontally or vertically)."""
+
+        self.cancel_crop_mode()
 
         items = self.selectedItems(user_only=True)
         if len(items) < 2:
@@ -184,6 +196,8 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
                                   positions))
 
     def arrange_optimal(self):
+        self.cancel_crop_mode()
+
         items = self.selectedItems(user_only=True)
         if len(items) < 2:
             return
@@ -218,13 +232,25 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
     def flip_items(self, vertical=False):
         """Flip selected items."""
+        self.cancel_crop_mode()
         self.undo_stack.push(
             commands.FlipItems(self.selectedItems(user_only=True),
                                self.get_selection_center(),
                                vertical=vertical))
 
+    def crop_items(self):
+        """Crop selected item."""
+
+        if self.crop_item:
+            return
+        if self.has_croppable_selection():
+            item = self.selectedItems(user_only=True)[0]
+            if item.is_croppable:
+                item.enter_crop_mode()
+
     def set_selected_all_items(self, value):
         """Sets the selection mode of all items to ``value``."""
+        self.cancel_crop_mode()
         for item in self.items():
             item.setSelected(value)
 
@@ -243,6 +269,14 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         return len(self.selectedItems(user_only=True)) > 1
 
+    def has_croppable_selection(self):
+        """Checks whether the current selection is croppable, i.e. a
+        single selection whose item is croppable."""
+
+        if self.has_single_selection():
+            return self.selectedItems(user_only=True)[0].is_croppable
+        return False
+
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.RightButton:
             # Right-click invokes the context menu on the
@@ -257,7 +291,12 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             if self.edit_item:
                 if item_at_pos != self.edit_item:
                     self.edit_item.exit_edit_mode()
-                    self.edit_item = None
+                else:
+                    super().mousePressEvent(event)
+                    return
+            if self.crop_item:
+                if item_at_pos != self.crop_item:
+                    self.cancel_crop_mode()
                 else:
                     super().mousePressEvent(event)
                     return
@@ -275,7 +314,6 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             if not item.isSelected():
                 item.setSelected(True)
             if item.is_editable:
-                self.edit_item = item
                 item.enter_edit_mode()
                 self.mousePressEvent(event)
             else:

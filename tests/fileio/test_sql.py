@@ -4,7 +4,7 @@ import os.path
 import stat
 from unittest.mock import MagicMock, patch
 
-from PyQt6 import QtGui
+from PyQt6 import QtCore, QtGui
 import pytest
 
 from beeref.fileio import schema, is_bee_file
@@ -233,6 +233,7 @@ def test_sqliteio_write_inserts_new_pixmap_item(tmpfile, view):
     item.setZValue(0.22)
     item.setRotation(33)
     item.do_flip()
+    item.crop = QtCore.QRectF(5, 5, 100, 80)
     item.pixmap_to_bytes = MagicMock(return_value=b'abc')
     io = SQLiteIO(tmpfile, view.scene, create_new=True)
     io.write()
@@ -249,7 +250,10 @@ def test_sqliteio_write_inserts_new_pixmap_item(tmpfile, view):
     assert result[3] == 1.3
     assert result[4] == 33
     assert result[5] == -1
-    assert json.loads(result[6]) == {'filename': 'bee.jpg'}
+    assert json.loads(result[6]) == {
+        'filename': 'bee.jpg',
+        'crop': [5, 5, 100, 80],
+    }
     assert result[7] == 'pixmap'
     assert result[8] == b'abc'
     assert result[9] == '0001-bee.png'
@@ -265,7 +269,7 @@ def test_sqliteio_write_inserts_new_pixmap_item_without_filename(
     result = io.fetchone(
         'SELECT items.data, sqlar.name FROM items '
         'INNER JOIN sqlar on sqlar.item_id = items.id')
-    assert json.loads(result[0]) == {'filename': None}
+    assert json.loads(result[0])['filename'] is None
     assert result[1] == '0001.png'
 
 
@@ -311,6 +315,7 @@ def test_sqliteio_write_updates_existing_pixmap_item(tmpfile, view):
     item.setZValue(0.22)
     item.setRotation(33)
     item.save_id = 1
+    item.crop = QtCore.QRectF(5, 5, 80, 100)
     item.pixmap_to_bytes = MagicMock(return_value=b'abc')
     io = SQLiteIO(tmpfile, view.scene, create_new=True)
     io.write()
@@ -319,6 +324,7 @@ def test_sqliteio_write_updates_existing_pixmap_item(tmpfile, view):
     item.setZValue(0.33)
     item.setRotation(100)
     item.do_flip()
+    item.crop = QtCore.QRectF(1, 2, 30, 40)
     item.filename = 'new.png'
     item.pixmap_to_bytes.return_value = b'updated'
     io.create_new = False
@@ -335,7 +341,10 @@ def test_sqliteio_write_updates_existing_pixmap_item(tmpfile, view):
     assert result[3] == 0.7
     assert result[4] == 100
     assert result[5] == -1
-    assert json.loads(result[6]) == {'filename': 'new.png'}
+    assert json.loads(result[6]) == {
+        'filename': 'new.png',
+        'crop': [1, 2, 30, 40],
+    }
     assert result[7] == b'abc'
 
 

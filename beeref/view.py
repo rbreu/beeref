@@ -215,10 +215,12 @@ class BeeGraphicsView(MainControlsMixin,
 
     def on_action_undo(self):
         logger.debug('Undo: %s' % self.undo_stack.undoText())
+        self.scene.cancel_crop_mode()
         self.undo_stack.undo()
 
     def on_action_redo(self):
         logger.debug('Redo: %s' % self.undo_stack.redoText())
+        self.scene.cancel_crop_mode()
         self.undo_stack.redo()
 
     def on_action_select_all(self):
@@ -229,6 +231,7 @@ class BeeGraphicsView(MainControlsMixin,
 
     def on_action_delete_items(self):
         logger.debug('Deleting items...')
+        self.scene.cancel_crop_mode()
         self.undo_stack.push(
             commands.DeleteItems(
                 self.scene, self.scene.selectedItems(user_only=True)))
@@ -264,6 +267,9 @@ class BeeGraphicsView(MainControlsMixin,
     def on_action_arrange_optimal(self):
         self.scene.arrange_optimal()
 
+    def on_action_crop(self):
+        self.scene.crop_items()
+
     def on_action_flip_horizontally(self):
         self.scene.flip_items(vertical=False)
 
@@ -271,18 +277,27 @@ class BeeGraphicsView(MainControlsMixin,
         self.scene.flip_items(vertical=True)
 
     def on_action_reset_scale(self):
+        self.scene.cancel_crop_mode()
         self.undo_stack.push(commands.ResetScale(
             self.scene.selectedItems(user_only=True)))
 
     def on_action_reset_rotation(self):
+        self.scene.cancel_crop_mode()
         self.undo_stack.push(commands.ResetRotation(
             self.scene.selectedItems(user_only=True)))
 
     def on_action_reset_flip(self):
+        self.scene.cancel_crop_mode()
         self.undo_stack.push(commands.ResetFlip(
             self.scene.selectedItems(user_only=True)))
 
+    def on_action_reset_crop(self):
+        self.scene.cancel_crop_mode()
+        self.undo_stack.push(commands.ResetCrop(
+            self.scene.selectedItems(user_only=True)))
+
     def on_action_reset_transforms(self):
+        self.scene.cancel_crop_mode()
         self.undo_stack.push(commands.ResetTransforms(
             self.scene.selectedItems(user_only=True)))
 
@@ -316,6 +331,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.worker.start()
 
     def on_action_open(self):
+        self.scene.cancel_crop_mode()
         filename, f = QtWidgets.QFileDialog.getOpenFileName(
             parent=self,
             caption='Open file',
@@ -349,6 +365,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.worker.start()
 
     def on_action_save_as(self):
+        self.scene.cancel_crop_mode()
         filename, f = QtWidgets.QFileDialog.getSaveFileName(
             parent=self,
             caption='Save file',
@@ -357,6 +374,7 @@ class BeeGraphicsView(MainControlsMixin,
             self.do_save(filename, create_new=True)
 
     def on_action_save(self):
+        self.scene.cancel_crop_mode()
         if not self.filename:
             self.on_action_save_as()
         else:
@@ -429,6 +447,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.worker.start()
 
     def on_action_insert_images(self):
+        self.scene.cancel_crop_mode()
         formats = self.get_supported_image_formats(QtGui.QImageReader)
         logger.debug(f'Supported image types for reading: {formats}')
         filenames, f = QtWidgets.QFileDialog.getOpenFileNames(
@@ -438,6 +457,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.do_insert_images(filenames)
 
     def on_action_insert_text(self):
+        self.scene.cancel_crop_mode()
         item = BeeTextItem()
         pos = self.mapToScene(self.mapFromGlobal(self.cursor().pos()))
         item.setScale(1 / self.get_scale())
@@ -445,6 +465,7 @@ class BeeGraphicsView(MainControlsMixin,
 
     def on_action_copy(self):
         logger.debug('Copying to clipboard...')
+        self.scene.cancel_crop_mode()
         clipboard = QtWidgets.QApplication.clipboard()
         items = self.scene.selectedItems(user_only=True)
 
@@ -462,6 +483,7 @@ class BeeGraphicsView(MainControlsMixin,
             'beeref/items', QtCore.QByteArray.number(len(items)))
 
     def on_action_paste(self):
+        self.scene.cancel_crop_mode()
         logger.debug('Pasting from clipboard...')
         clipboard = QtWidgets.QApplication.clipboard()
         pos = self.mapToScene(self.mapFromGlobal(self.cursor().pos()))
@@ -499,6 +521,8 @@ class BeeGraphicsView(MainControlsMixin,
                      len(self.scene.selectedItems(user_only=True)))
         self.actiongroup_set_enabled('active_when_selection',
                                      self.scene.has_selection())
+        self.actiongroup_set_enabled('active_when_croppable',
+                                     self.scene.has_croppable_selection())
         self.viewport().repaint()
 
     def recalc_scene_rect(self):
