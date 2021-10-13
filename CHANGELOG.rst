@@ -1,11 +1,10 @@
-0.2.1 - (unreleased)
+0.3.0 - (unreleased)
 ====================
 
 Added
 -----
 
 * Image cropping (Go to "Transform -> Crop", or press Shift + C)
-  Note that older version of BeeRef will display the images uncropped.
 * Show list of recent files on welcome screen
 * Keyboard shortcuts can now be configured via a settings file.
   Go to "Settings -> Open Settings Folder" and edit KeyboardSettings.ini
