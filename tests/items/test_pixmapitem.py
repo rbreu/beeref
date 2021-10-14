@@ -237,6 +237,29 @@ def test_crop_handle_topright(qapp, item):
     assert item.crop_handle_topright() == QtCore.QRectF(385, 200, 15, 15)
 
 
+@pytest.mark.parametrize('edge,rotation,expected',
+                         [('crop_edge_top', 0, 'SizeVerCursor'),
+                          ('crop_edge_top', 90, 'SizeHorCursor'),
+                          ('crop_edge_top', 180, 'SizeVerCursor'),
+                          ('crop_edge_top', 270, 'SizeHorCursor'),
+                          ('crop_edge_bottom', 0, 'SizeVerCursor'),
+                          ('crop_edge_bottom', 90, 'SizeHorCursor'),
+                          ('crop_edge_bottom', 180, 'SizeVerCursor'),
+                          ('crop_edge_bottom', 270, 'SizeHorCursor'),
+                          ('crop_edge_left', 0, 'SizeHorCursor'),
+                          ('crop_edge_left', 90, 'SizeVerCursor'),
+                          ('crop_edge_left', 180, 'SizeHorCursor'),
+                          ('crop_edge_left', 270, 'SizeVerCursor'),
+                          ('crop_edge_right', 0, 'SizeHorCursor'),
+                          ('crop_edge_right', 90, 'SizeVerCursor'),
+                          ('crop_edge_right', 180, 'SizeHorCursor'),
+                          ('crop_edge_right', 270, 'SizeVerCursor')])
+def test_get_crop_edge_cursor(edge, rotation, expected, qapp, item):
+    item.setRotation(rotation)
+    cursor = item.get_crop_edge_cursor(getattr(item, edge))
+    assert cursor == getattr(Qt.CursorShape, expected)
+
+
 def test_paint(qapp, item):
     item.pixmap = MagicMock()
     item.paint_selectable = MagicMock()
@@ -391,6 +414,18 @@ def test_hover_move_event_crop_mode_inside_handle(hover_mock, qapp, item):
 
 
 @patch('beeref.selection.SelectableMixin.hoverMoveEvent')
+def test_hover_move_event_crop_mode_inside_edge(hover_mock, qapp, item):
+    item.crop_mode = True
+    item.crop_temp = QtCore.QRectF(0, 0, 100, 80)
+    event = MagicMock()
+    event.pos.return_value = QtCore.QPointF(5, 40)
+
+    item.hoverMoveEvent(event)
+    item.cursor() == Qt.CursorShape.SizeHorCursor
+    hover_mock.assert_not_called()
+
+
+@patch('beeref.selection.SelectableMixin.hoverMoveEvent')
 def test_hover_move_event_crop_mode_outside_handle(hover_mock, qapp, item):
     item.crop_mode = True
     item.crop_temp = QtCore.QRectF(0, 0, 100, 80)
@@ -429,6 +464,23 @@ def test_mouse_press_event_crop_mode_inside_handle(mouse_mock, qapp, item):
     item.mousePressEvent(event)
     assert item.crop_mode_move == item.crop_handle_topleft
     assert item.crop_mode_event_start == QtCore.QPointF(5, 5)
+    item.exit_crop_mode.assert_not_called()
+    mouse_mock.assert_not_called()
+    event.accept.assert_called_once_with()
+
+
+@patch('beeref.selection.SelectableMixin.mousePressEvent')
+def test_mouse_press_event_crop_mode_inside_edge(mouse_mock, qapp, item):
+    item.crop_mode = True
+    item.crop_temp = QtCore.QRectF(0, 0, 100, 80)
+    item.crop_mode_move = None
+    item.exit_crop_mode = MagicMock()
+    event = MagicMock()
+    event.pos.return_value = QtCore.QPointF(5, 40)
+
+    item.mousePressEvent(event)
+    assert item.crop_mode_move == item.crop_edge_left
+    assert item.crop_mode_event_start == QtCore.QPointF(5, 40)
     item.exit_crop_mode.assert_not_called()
     mouse_mock.assert_not_called()
     event.accept.assert_called_once_with()
@@ -482,74 +534,31 @@ def test_ensure_point_within_pixmap_bounds_inside(point, expected, qapp, item):
     assert result == QtCore.QPointF(*expected)
 
 
+@pytest.mark.parametrize(
+    'start,pos,handle,expected',
+    [[(10, 10), (5, 5), 'crop_handle_topleft', (5, 15, 35, 45)],
+     [(10, 60), (5, 55), 'crop_handle_bottomleft', (5, 20, 35, 35)],
+     [(40, 60), (35, 55), 'crop_handle_bottomright', (10, 20, 25, 35)],
+     [(40, 10), (35, 5), 'crop_handle_topright', (10, 15, 25, 45)],
+     [(25, 10), (20, 5), 'crop_edge_top', (10, 15, 30, 45)],
+     [(10, 40), (5, 35), 'crop_edge_left', (5, 20, 35, 40)],
+     [(35, 25), (30, 20), 'crop_edge_bottom', (10, 20, 30, 35)],
+     [(40, 40), (35, 35), 'crop_edge_right', (10, 20, 25, 40)]])
 @patch('beeref.selection.SelectableMixin.mouseMoveEvent')
-def test_mouse_move_when_crop_mode_bottomleft(mouse_mock, qapp, item):
+def test_mouse_move_when_crop_mode_inside_handle(
+        mouse_mock, start, pos, handle, expected, qapp, item):
     pixmap = MagicMock()
     pixmap.size.return_value = QtCore.QRectF(0, 0, 100, 80)
     item.crop_mode = True
     item.pixmap = MagicMock(return_value=pixmap)
     item.crop_temp = QtCore.QRectF(10, 20, 30, 40)
-    item.crop_mode_event_start = QtCore.QPointF(15, 75)
-    item.crop_mode_move = item.crop_handle_bottomleft
+    item.crop_mode_event_start = QtCore.QPointF(*start)
+    item.crop_mode_move = getattr(item, handle)
     event = MagicMock()
-    event.pos.return_value = QtCore.QPointF(10, 70)
+    event.pos.return_value = QtCore.QPointF(*pos)
 
     item.mouseMoveEvent(event)
-    assert item.crop_temp == QtCore.QRectF(5, 20, 35, 35)
-    event.accept.assert_called_once()
-    mouse_mock.assert_not_called()
-
-
-@patch('beeref.selection.SelectableMixin.mouseMoveEvent')
-def test_mouse_move_when_crop_mode_bottomright(mouse_mock, qapp, item):
-    pixmap = MagicMock()
-    pixmap.size.return_value = QtCore.QRectF(0, 0, 100, 80)
-    item.crop_mode = True
-    item.pixmap = MagicMock(return_value=pixmap)
-    item.crop_temp = QtCore.QRectF(10, 20, 30, 40)
-    item.crop_mode_event_start = QtCore.QPointF(95, 75)
-    item.crop_mode_move = item.crop_handle_bottomright
-    event = MagicMock()
-    event.pos.return_value = QtCore.QPointF(90, 70)
-
-    item.mouseMoveEvent(event)
-    assert item.crop_temp == QtCore.QRectF(10, 20, 25, 35)
-    event.accept.assert_called_once()
-    mouse_mock.assert_not_called()
-
-
-@patch('beeref.selection.SelectableMixin.mouseMoveEvent')
-def test_mouse_move_when_crop_mode_topleft(mouse_mock, qapp, item):
-    pixmap = MagicMock()
-    pixmap.size.return_value = QtCore.QRectF(0, 0, 100, 80)
-    item.crop_mode = True
-    item.pixmap = MagicMock(return_value=pixmap)
-    item.crop_temp = QtCore.QRectF(10, 20, 30, 40)
-    item.crop_mode_event_start = QtCore.QPointF(15, 25)
-    item.crop_mode_move = item.crop_handle_topleft
-    event = MagicMock()
-    event.pos.return_value = QtCore.QPointF(10, 20)
-
-    item.mouseMoveEvent(event)
-    assert item.crop_temp == QtCore.QRectF(5, 15, 35, 45)
-    event.accept.assert_called_once()
-    mouse_mock.assert_not_called()
-
-
-@patch('beeref.selection.SelectableMixin.mouseMoveEvent')
-def test_mouse_move_when_crop_mode_topright(mouse_mock, qapp, item):
-    pixmap = MagicMock()
-    pixmap.size.return_value = QtCore.QRectF(0, 0, 100, 80)
-    item.crop_mode = True
-    item.pixmap = MagicMock(return_value=pixmap)
-    item.crop_temp = QtCore.QRectF(10, 20, 30, 40)
-    item.crop_mode_event_start = QtCore.QPointF(35, 55)
-    item.crop_mode_move = item.crop_handle_topright
-    event = MagicMock()
-    event.pos.return_value = QtCore.QPointF(30, 50)
-
-    item.mouseMoveEvent(event)
-    assert item.crop_temp == QtCore.QRectF(10, 15, 25, 45)
+    assert item.crop_temp == QtCore.QRectF(*expected)
     event.accept.assert_called_once()
     mouse_mock.assert_not_called()
 

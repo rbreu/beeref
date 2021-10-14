@@ -209,12 +209,63 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
                 self.crop_handle_bottomright,
                 self.crop_handle_topright)
 
+    def crop_edge_top(self):
+        topleft = self.crop_temp.topLeft()
+        return QtCore.QRectF(
+            topleft.x() + self.crop_handle_size,
+            topleft.y(),
+            self.crop_temp.width() - 2 * self.crop_handle_size,
+            self.crop_handle_size)
+
+    def crop_edge_left(self):
+        topleft = self.crop_temp.topLeft()
+        return QtCore.QRectF(
+            topleft.x(),
+            topleft.y() + self.crop_handle_size,
+            self.crop_handle_size,
+            self.crop_temp.height() - 2 * self.crop_handle_size)
+
+    def crop_edge_bottom(self):
+        bottomleft = self.crop_temp.bottomLeft()
+        return QtCore.QRectF(
+            bottomleft.x() + self.crop_handle_size,
+            bottomleft.y() - self.crop_handle_size,
+            self.crop_temp.width() - 2 * self.crop_handle_size,
+            self.crop_handle_size)
+
+    def crop_edge_right(self):
+        topright = self.crop_temp.topRight()
+        return QtCore.QRectF(
+            topright.x() - self.crop_handle_size,
+            topright.y() + self.crop_handle_size,
+            self.crop_handle_size,
+            self.crop_temp.height() - 2 * self.crop_handle_size)
+
+    def crop_edges(self):
+        return (self.crop_edge_top,
+                self.crop_edge_left,
+                self.crop_edge_bottom,
+                self.crop_edge_right)
+
     def get_crop_handle_cursor(self, handle):
         """Gets the crop cursor for the given handle."""
 
         is_topleft_or_bottomright = handle in (
             self.crop_handle_topleft, self.crop_handle_bottomright)
         return self.get_diag_cursor(is_topleft_or_bottomright)
+
+    def get_crop_edge_cursor(self, edge):
+        """Gets the crop edge cursor for the given edge."""
+
+        top_or_bottom = edge in (
+            self.crop_edge_top, self.crop_edge_bottom)
+        sideways = (45 < self.rotation() < 135
+                    or 225 < self.rotation() < 315)
+
+        if top_or_bottom is sideways:
+            return Qt.CursorShape.SizeHorCursor
+        else:
+            return Qt.CursorShape.SizeVerCursor
 
     def draw_crop_rect(self, painter, rect):
         """Paint a dotted rectangle for the cropping UI."""
@@ -291,6 +342,10 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
             if handle().contains(event.pos()):
                 self.setCursor(self.get_crop_handle_cursor(handle))
                 return
+        for edge in self.crop_edges():
+            if edge().contains(event.pos()):
+                self.setCursor(self.get_crop_edge_cursor(edge))
+                return
         self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def mousePressEvent(self, event):
@@ -303,6 +358,12 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
             if handle().contains(event.pos()):
                 self.crop_mode_event_start = event.pos()
                 self.crop_mode_move = handle
+                return
+        for edge in self.crop_edges():
+            # Click into an edge handle?
+            if edge().contains(event.pos()):
+                self.crop_mode_event_start = event.pos()
+                self.crop_mode_move = edge
                 return
         # Click not in handle, end cropping mode:
         self.exit_crop_mode(
@@ -333,6 +394,22 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
                 new = self.ensure_point_within_pixmap_bounds(
                     self.crop_temp.topRight() + diff)
                 self.crop_temp.setTopRight(new)
+            if self.crop_mode_move == self.crop_edge_top:
+                new = self.ensure_point_within_pixmap_bounds(
+                    self.crop_temp.topLeft() + diff)
+                self.crop_temp.setTop(new.y())
+            if self.crop_mode_move == self.crop_edge_left:
+                new = self.ensure_point_within_pixmap_bounds(
+                    self.crop_temp.topLeft() + diff)
+                self.crop_temp.setLeft(new.x())
+            if self.crop_mode_move == self.crop_edge_bottom:
+                new = self.ensure_point_within_pixmap_bounds(
+                    self.crop_temp.bottomLeft() + diff)
+                self.crop_temp.setBottom(new.y())
+            if self.crop_mode_move == self.crop_edge_right:
+                new = self.ensure_point_within_pixmap_bounds(
+                    self.crop_temp.topRight() + diff)
+                self.crop_temp.setRight(new.x())
             self.update()
             self.crop_mode_event_start = event.pos()
             event.accept()
