@@ -16,7 +16,6 @@ def test_init_selectable(view):
     assert item.scale_active is False
     assert item.rotate_active is False
     assert item.flip_active is False
-    assert item.just_selected is False
 
 
 def test_is_action_active_when_no_action(view, item):
@@ -781,7 +780,6 @@ def test_hover_enter_event_when_not_selected(view, item):
 
 def test_mouse_press_event_just_selected(view, item):
     view.scene.addItem(item)
-    item.just_selected = False
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(0, 0)
     event.button.return_value = Qt.MouseButton.LeftButton
@@ -789,23 +787,8 @@ def test_mouse_press_event_just_selected(view, item):
         with patch.object(item, 'bounding_rect_unselected',
                           return_value=QtCore.QRectF(0, 0, 100, 80)):
             item.mousePressEvent(event)
-    assert item.just_selected is True
     event.accept.assert_not_called()
     m.assert_called_once_with(event)
-
-
-def test_mouse_press_event_previously_selected(view, item):
-    view.scene.addItem(item)
-    item.setSelected(True)
-    item.just_selected = True
-    event = MagicMock()
-    event.pos.return_value = QtCore.QPointF(0, 0)
-    event.scenePos.return_value = QtCore.QPointF(-1, -1)
-    event.button.return_value = Qt.MouseButton.LeftButton
-    with patch.object(item, 'bounding_rect_unselected',
-                      return_value=QtCore.QRectF(0, 0, 100, 80)):
-        item.mousePressEvent(event)
-    assert item.just_selected is False
 
 
 def test_mouse_press_event_small_item_inside_handle_free_center(view, item):

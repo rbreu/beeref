@@ -142,7 +142,6 @@ class SelectableMixin(BaseItemMixin):
         self.scale_active = False
         self.rotate_active = False
         self.flip_active = False
-        self.just_selected = False
 
     def is_action_active(self):
         return any((self.scale_active,
@@ -394,11 +393,10 @@ class SelectableMixin(BaseItemMixin):
         self.event_start = event.scenePos()
         self.scene().views()[0].reset_previous_transform(toggle_item=self)
         if not self.isSelected():
-            self.just_selected = True
+            # User has just selected this item with this click; don't
+            # activate any transformations yet
             super().mousePressEvent(event)
             return
-
-        self.just_selected = False
 
         if event.pos() in self.select_handle_free_center():
             # This area should always trigger regular move operations,
@@ -566,8 +564,6 @@ class SelectableMixin(BaseItemMixin):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        just_selected = self.just_selected
-        self.just_selected = False
         if self.scale_active:
             if self.get_scale_factor(event) != 1:
                 self.scene().undo_stack.push(
@@ -591,7 +587,7 @@ class SelectableMixin(BaseItemMixin):
             event.accept()
             self.reset_actions()
             return
-        elif self.flip_active and not just_selected:
+        elif self.flip_active:
             for edge in self.get_flip_bounds():
                 if edge['rect'].contains(event.pos()):
                     # We have already flipped on MousePress, but we

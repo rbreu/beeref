@@ -16,6 +16,8 @@ Fixed
 * Various typos (by luzpaz)
 * Ensure that small items always have an area in the middle for
   moving/editing that doesn't trigger transform actions
+* Ensure that the first click to select an item doesn't immediately trigger
+  transform actions
 
 
 0.2.0 - 2021-09-06
