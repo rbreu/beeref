@@ -14,6 +14,8 @@ Fixed
 -----
 
 * Various typos (by luzpaz)
+* Ensure that small items always have an area in the middle for
+  moving/editing that doesn't trigger transform actions
 
 
 0.2.0 - 2021-09-06

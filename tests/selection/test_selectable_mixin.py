@@ -75,6 +75,16 @@ def test_rotate_size_when_scaled(view, item):
     assert item.select_rotate_size == 25
 
 
+def test_select_handle_free_center(view, item):
+    view.scene.addItem(item)
+    view.scale(0.5, 0.5)
+    item.SELECT_FREE_CENTER = 10
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        assert item.select_handle_free_center() == QtCore.QRectF(
+            40, 30, 20, 20)
+
+
 def test_draw_debug_shape_rect(view, item):
     view.scene.addItem(item)
     painter = MagicMock()
@@ -605,6 +615,18 @@ def test_hover_move_event_no_selection(view, item):
         item.setCursor.assert_not_called()
 
 
+def test_hover_move_event_small_item_inside_handle_free_center(view, item):
+    view.scene.addItem(item)
+    item.setSelected(True)
+    event = MagicMock()
+    event.pos.return_value = QtCore.QPointF(10, 10)
+    item.setCursor = MagicMock()
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 20, 20)):
+        item.hoverMoveEvent(event)
+        item.setCursor.assert_called_once_with(Qt.CursorShape.ArrowCursor)
+
+
 @mark.parametrize('pos,flipped,rotation, expected',
                   [((0, 0), False, 0, 'SizeFDiagCursor'),
                    ((100, 80), False, 0, 'SizeFDiagCursor'),
@@ -735,7 +757,7 @@ def test_hover_move_event_not_in_handles(view, item):
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(50, 50)
     with patch.object(item, 'bounding_rect_unselected',
-                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+                      return_value=QtCore.QRectF(0, 0, 1000, 800)):
         item.hoverMoveEvent(event)
         assert item.cursor() == Qt.CursorShape.ArrowCursor
 
@@ -759,23 +781,46 @@ def test_hover_enter_event_when_not_selected(view, item):
 
 def test_mouse_press_event_just_selected(view, item):
     view.scene.addItem(item)
+    item.just_selected = False
     event = MagicMock()
-    event.pos.return_value = QtCore.QPointF(-100, -100)
-    with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent'):
-        item.mousePressEvent(event)
+    event.pos.return_value = QtCore.QPointF(0, 0)
+    event.button.return_value = Qt.MouseButton.LeftButton
+    with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent') as m:
+        with patch.object(item, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 100, 80)):
+            item.mousePressEvent(event)
     assert item.just_selected is True
     event.accept.assert_not_called()
+    m.assert_called_once_with(event)
 
 
 def test_mouse_press_event_previously_selected(view, item):
     view.scene.addItem(item)
     item.setSelected(True)
+    item.just_selected = True
     event = MagicMock()
-    event.pos.return_value = QtCore.QPointF(-100, -100)
-    with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent'):
+    event.pos.return_value = QtCore.QPointF(0, 0)
+    event.scenePos.return_value = QtCore.QPointF(-1, -1)
+    event.button.return_value = Qt.MouseButton.LeftButton
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
         item.mousePressEvent(event)
     assert item.just_selected is False
+
+
+def test_mouse_press_event_small_item_inside_handle_free_center(view, item):
+    view.scene.addItem(item)
+    item.setSelected(True)
+    event = MagicMock()
+    event.pos.return_value = QtCore.QPointF(10, 10)
+    event.button.return_value = Qt.MouseButton.LeftButton
+    with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent') as m:
+        with patch.object(item, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 20, 20)):
+            item.mousePressEvent(event)
+
     event.accept.assert_not_called()
+    m.assert_called_once_with(event)
 
 
 def test_mouse_press_event_topleft_scale(view, item):
@@ -785,13 +830,15 @@ def test_mouse_press_event_topleft_scale(view, item):
     event.pos.return_value = QtCore.QPointF(2, 2)
     event.scenePos.return_value = QtCore.QPointF(-1, -1)
     event.button.return_value = Qt.MouseButton.LeftButton
-    item.mousePressEvent(event)
-    assert item.scale_active is True
-    assert item.event_start == QtCore.QPointF(-1, -1)
-    assert item.event_direction.x() < 0
-    assert item.event_direction.y() < 0
-    assert item.scale_orig_factor == 1
-    event.accept.assert_called_once_with()
+    with patch.object(item, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        item.mousePressEvent(event)
+        assert item.scale_active is True
+        assert item.event_start == QtCore.QPointF(-1, -1)
+        assert item.event_direction.x() < 0
+        assert item.event_direction.y() < 0
+        assert item.scale_orig_factor == 1
+        event.accept.assert_called_once_with()
 
 
 def test_mouse_press_event_bottomright_scale(view, item):
@@ -848,20 +895,6 @@ def test_mouse_press_event_flip(view, item):
     assert cmd.vertical is False
     assert item.flip_active is True
     event.accept.assert_called_once_with()
-
-
-def test_mouse_press_event_not_selected(view, item):
-    view.scene.addItem(item)
-    view.reset_previous_transform = MagicMock()
-    item.setSelected(False)
-    event = MagicMock()
-    with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent') as m:
-        item.mousePressEvent(event)
-        m.assert_called_once_with(event)
-        assert item.scale_active is False
-        assert item.rotate_active is False
-        assert item.flip_active is False
-        event.accept.assert_not_called()
 
 
 def test_mouse_press_event_not_in_handles(view, item):

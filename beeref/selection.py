@@ -126,6 +126,7 @@ class SelectableMixin(BaseItemMixin):
     SELECT_HANDLE_SIZE = 15  # size of selection handles for scaling
     SELECT_RESIZE_SIZE = 20  # size of hover area for scaling
     SELECT_ROTATE_SIZE = 10  # size of hover area for rotating
+    SELECT_FREE_CENTER = 20  # size of handle-free area in the center
 
     def init_selectable(self):
         self.setAcceptHoverEvents(True)
@@ -170,6 +171,18 @@ class SelectableMixin(BaseItemMixin):
     def select_rotate_size(self):
         return self.fixed_length_for_viewport(self.SELECT_ROTATE_SIZE)
 
+    def select_handle_free_center(self):
+        """This area should always trigger regular move operations,
+         even if it is covered by selection scale/flip/... handles.
+         This ensures that small items can always still be moved/edited.
+        """
+        size = self.fixed_length_for_viewport(self.SELECT_FREE_CENTER)
+        return QtCore.QRectF(
+            self.center.x() - size/2,
+            self.center.y() - size/2,
+            size,
+            size)
+
     def draw_debug_shape(self, painter, shape, r, g, b):
         color = QtGui.QColor(r, g, b, 50)
         if isinstance(shape, QtCore.QRectF):
@@ -190,6 +203,8 @@ class SelectableMixin(BaseItemMixin):
                     painter, self.get_rotate_bounds(corner), 0, 255, 255)
             for edge in self.get_flip_bounds():
                 self.draw_debug_shape(painter, edge['rect'], 255, 255, 0)
+            self.draw_debug_shape(
+                painter, self.select_handle_free_center(), 255, 0, 255)
 
     def paint_selectable(self, painter, option, widget):
         self.paint_debug(painter, option, widget)
@@ -345,6 +360,13 @@ class SelectableMixin(BaseItemMixin):
         if not self.has_selection_handles():
             return
 
+        if event.pos() in self.select_handle_free_center():
+            # This area should always trigger regular move operations,
+            # even if it is covered by selection scale/flip/... handles.
+            # This ensures that small items can always still be moved/edited.
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+            return
+
         for corner in self.corners:
             # See if we need to change the cursor for interactable areas
             if self.get_scale_bounds(corner).contains(event.pos()):
@@ -373,6 +395,18 @@ class SelectableMixin(BaseItemMixin):
         self.scene().views()[0].reset_previous_transform(toggle_item=self)
         if not self.isSelected():
             self.just_selected = True
+            super().mousePressEvent(event)
+            return
+
+        self.just_selected = False
+
+        if event.pos() in self.select_handle_free_center():
+            # This area should always trigger regular move operations,
+            # even if it is covered by selection scale/flip/... handles.
+            # This ensures that small items can always still be moved/edited.
+            super().mousePressEvent(event)
+            return
+
         if (event.button() == Qt.MouseButton.LeftButton
                 and self.has_selection_handles()):
             for corner in self.corners:
