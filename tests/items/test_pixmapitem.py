@@ -520,17 +520,55 @@ def test_mouse_press_event_crop_mode_outside_handle_outside_crop(
     event.accept.assert_called_once_with()
 
 
-@pytest.mark.parametrize('point,expected',
-                         [((45, 56), (45, 56)),
-                          ((0, 0), (0, 0)),
-                          ((-5, -5), (0, 0)),
-                          ((100, 80), (100, 80)),
-                          ((105, 85), (100, 80))])
-def test_ensure_point_within_pixmap_bounds_inside(point, expected, qapp, item):
+@pytest.mark.parametrize('point,handle,expected',
+                         [((25, 40), 'crop_handle_topleft', (25, 40)),
+                          ((0, 0), 'crop_handle_topleft', (0, 0)),
+                          ((-5, -5), 'crop_handle_topleft', (0, 0)),
+                          ((40, 60), 'crop_handle_topleft', (40, 60)),
+                          ((100, 80), 'crop_handle_topleft', (40, 60)),
+                          ((25, 40), 'crop_handle_bottomleft', (25, 40)),
+                          ((0, 80), 'crop_handle_bottomleft', (0, 80)),
+                          ((-5, 85), 'crop_handle_bottomleft', (0, 80)),
+                          ((40, 20), 'crop_handle_bottomleft', (40, 20)),
+                          ((45, 15), 'crop_handle_bottomleft', (40, 20)),
+                          ((25, 40), 'crop_handle_bottomright', (25, 40)),
+                          ((10, 20), 'crop_handle_bottomright', (10, 20)),
+                          ((5, 15), 'crop_handle_bottomright', (10, 20)),
+                          ((100, 80), 'crop_handle_bottomright', (100, 80)),
+                          ((105, 85), 'crop_handle_bottomright', (100, 80)),
+                          ((25, 40), 'crop_handle_topright', (25, 40)),
+                          ((10, 0), 'crop_handle_topright', (10, 0)),
+                          ((5, -5), 'crop_handle_topright', (10, 0)),
+                          ((100, 60), 'crop_handle_topright', (100, 60)),
+                          ((105, 65), 'crop_handle_topright', (100, 60)),
+                          ((25, 40), 'crop_edge_top', (25, 40)),
+                          ((0, 0), 'crop_edge_top', (0, 0)),
+                          ((-5, -5), 'crop_edge_top', (0, 0)),
+                          ((100, 60), 'crop_edge_top', (100, 60)),
+                          ((105, 65), 'crop_edge_top', (100, 60)),
+                          ((25, 40), 'crop_edge_bottom', (25, 40)),
+                          ((0, 20), 'crop_edge_bottom', (0, 20)),
+                          ((-5, 15), 'crop_edge_bottom', (0, 20)),
+                          ((100, 80), 'crop_edge_bottom', (100, 80)),
+                          ((105, 85), 'crop_edge_bottom', (100, 80)),
+                          ((25, 40), 'crop_edge_left', (25, 40)),
+                          ((0, 0), 'crop_edge_left', (0, 0)),
+                          ((-5, -5), 'crop_edge_left', (0, 0)),
+                          ((40, 80), 'crop_edge_left', (40, 80)),
+                          ((45, 85), 'crop_edge_left', (40, 80)),
+                          ((25, 40), 'crop_edge_right', (25, 40)),
+                          ((10, 0), 'crop_edge_right', (10, 0)),
+                          ((5, -5), 'crop_edge_right', (10, 0)),
+                          ((100, 80), 'crop_edge_right', (100, 80)),
+                          ((105, 85), 'crop_edge_right', (100, 80))])
+def test_ensure_point_within_crop_bounds(
+        point, handle, expected, qapp, item):
     pixmap = MagicMock()
     pixmap.size.return_value = QtCore.QRectF(0, 0, 100, 80)
     item.pixmap = MagicMock(return_value=pixmap)
-    result = item.ensure_point_within_pixmap_bounds(QtCore.QPointF(*point))
+    item.crop_temp = QtCore.QRectF(10, 20, 30, 40)
+    result = item.ensure_point_within_crop_bounds(
+        QtCore.QPointF(*point), getattr(item, handle))
     assert result == QtCore.QPointF(*expected)
 
 
