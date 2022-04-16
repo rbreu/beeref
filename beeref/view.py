@@ -20,6 +20,7 @@ import os.path
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPainter
 
 from beeref.actions import ActionsMixin
 from beeref import commands
@@ -77,6 +78,10 @@ class BeeGraphicsView(MainControlsMixin,
         if commandline_args.filename:
             self.open_from_file(commandline_args.filename)
         self.update_window_title()
+
+        # improve render quality of images and primitives
+        self.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
 
     @property
     def filename(self):
