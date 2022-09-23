@@ -583,9 +583,9 @@ class BeeGraphicsView(MainControlsMixin,
             return
 
         hscroll = self.horizontalScrollBar()
-        hscroll.setValue(hscroll.value() + delta.x())
+        hscroll.setValue(round(hscroll.value() + delta.x()))
         vscroll = self.verticalScrollBar()
-        vscroll.setValue(vscroll.value() + delta.y())
+        vscroll.setValue(round(vscroll.value() + delta.y()))
 
     def zoom(self, delta, anchor):
         if not self.scene.items():
