@@ -20,6 +20,7 @@ import os.path
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPainter
 
 from beeref.actions import ActionsMixin
 from beeref import commands
@@ -67,6 +68,12 @@ class BeeGraphicsView(MainControlsMixin,
         self.scene.changed.connect(self.on_scene_changed)
         self.scene.selectionChanged.connect(self.on_selection_changed)
         self.setScene(self.scene)
+
+        self.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.setRenderHint(QPainter.RenderHint.TextAntialiasing)
+        # self.setRenderHint(QPainter.RenderHint.LosslessImageRendering)
+        # self.setRenderHint(QPainter.RenderHint.VerticalSubpixelPositioning)
 
         # Context menu and actions
         self.build_menu_and_actions()
