@@ -69,9 +69,9 @@ class BeeGraphicsView(MainControlsMixin,
         self.scene.selectionChanged.connect(self.on_selection_changed)
         self.setScene(self.scene)
 
-        self.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-        self.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self.setRenderHint(QPainter.RenderHint.TextAntialiasing)
+        # self.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        # self.setRenderHint(QPainter.RenderHint.Antialiasing)
+        # self.setRenderHint(QPainter.RenderHint.TextAntialiasing)
         # self.setRenderHint(QPainter.RenderHint.LosslessImageRendering)
         # self.setRenderHint(QPainter.RenderHint.VerticalSubpixelPositioning)
 
