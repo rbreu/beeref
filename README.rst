@@ -3,26 +3,19 @@ BeeRef — A Simple Reference Image Viewer
 
 .. raw:: html
 
-   <img align="left" width="100" height="100" src="https://raw.githubusercontent.com/rbreu/beeref/main/beeref/assets/logo.png">
+   <img align="left" width="100" height="100" src="./beeref/assets/logo.png">
 
 `BeeRef <https://beeref.org>`_ lets you quickly arrange your reference images and view them while you create. Its minimal interface is designed not to get in the way of your creative process.
 
-|python-version| |github-ci-flake8| |github-ci-pytest| |codecov|
+|python-version| |github-ci-flake8|
 
-.. image:: https://github.com/rbreu/beeref/blob/main/images/screenshot.png
+.. image:: ./images/screenshot.png
 
-.. |python-version| image:: https://github.com/rbreu/beeref/blob/main/images/python_version_badge.svg
+.. |python-version| image:: https://img.shields.io/badge/python%20-3.9%20%7C%203.10-blue
    :target: https://www.python.org/
 
-.. |github-ci-flake8| image:: https://github.com/rbreu/beeref/actions/workflows/flake8.yml/badge.svg
-   :target: https://github.com/rbreu/beeref/actions/workflows/flake8.yml
-
-.. |github-ci-pytest| image:: https://github.com/rbreu/beeref/actions/workflows/pytest.yml/badge.svg
-   :target: https://github.com/rbreu/beeref/actions/workflows/pytest.yml
-
-.. |codecov| image:: https://codecov.io/gh/rbreu/beeref/branch/main/graph/badge.svg?token=QA8HR1VVAL
-   :target: https://codecov.io/gh/rbreu/beeref
-
+.. |github-ci-flake8| image:: https://img.shields.io/badge/flake8-checked-blueviolet
+   :target: https://github.com/mini-ninja-64/beeref/actions/workflows/flake8.yml
 
 Installation
 ------------
