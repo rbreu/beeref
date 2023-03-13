@@ -48,8 +48,8 @@ class RecentFilesModel(QtCore.QAbstractListModel):
 
 class RecentFilesView(QtWidgets.QListView):
 
-    def __init__(self, parent, files=None):
-        super().__init__(parent)
+    def __init__(self, files=None):
+        super().__init__()
         self.files = files or []
         self.clicked.connect(self.on_clicked)
         self.setModel(RecentFilesModel(self.files))
@@ -65,11 +65,13 @@ class RecentFilesView(QtWidgets.QListView):
 
     def sizeHint(self):
         size = QtCore.QSize()
-        height = sum(
-            (self.sizeHintForRow(i) + 2) for i in range(len(self.files)))
-        width = max(self.sizeHintForColumn(i) for i in range(len(self.files)))
-        size.setHeight(height)
-        size.setWidth(width + 2)
+        if (self.files):
+            height = sum(
+                (self.sizeHintForRow(i) + 2) for i in range(len(self.files)))
+            size.setHeight(height)
+
+            width = max(self.sizeHintForColumn(i) for i in range(len(self.files)))
+            size.setWidth(width + 2)
         return size
 
     def mouseMoveEvent(self, event):
@@ -96,15 +98,6 @@ class WelcomeOverlay(MainControlsMixin, QtWidgets.QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
         self.init_main_controls()
 
-        # Recent files
-        self.files_layout = QtWidgets.QVBoxLayout()
-        self.files_layout.addStretch(50)
-        self.files_layout.addWidget(
-            QtWidgets.QLabel('<h3>Recent Files</h3>', self))
-        self.files_view = RecentFilesView(self)
-        self.files_layout.addWidget(self.files_view)
-        self.files_layout.addStretch(50)
-
         # Help text
         label = QtWidgets.QLabel(self.txt, self)
         label.setAlignment(Qt.AlignmentFlag.AlignVCenter
@@ -114,6 +107,15 @@ class WelcomeOverlay(MainControlsMixin, QtWidgets.QWidget):
         self.layout.addWidget(label)
         self.layout.addStretch(50)
         self.setLayout(self.layout)
+
+        # Recent files
+        self.files_layout = QtWidgets.QVBoxLayout()
+        self.files_layout.addStretch(50)
+        self.files_layout.addWidget(
+            QtWidgets.QLabel('<h3>Recent Files</h3>'))
+        self.files_view = RecentFilesView()
+        self.files_layout.addWidget(self.files_view)
+        self.files_layout.addStretch(50)
 
     def show(self):
         files = BeeSettings().get_recent_files(existing_only=True)
