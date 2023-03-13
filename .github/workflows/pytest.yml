@@ -10,9 +10,9 @@ jobs:
       matrix:
         python-version: [ '3.9', '3.10']
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -26,5 +26,3 @@ jobs:
       - name: Run Unittests with pytest
         run: |
           xvfb-run --auto-servernum --server-num=1 --server-args="-screen 1 1920x1200x24 -ac +extension GLX" coverage run --source=beeref -m pytest -v -s
-      - name: Upload Coverage report to Codecov
-        uses: codecov/codecov-action@v1
