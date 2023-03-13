@@ -20,7 +20,6 @@ import os.path
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPainter
 
 from beeref.actions import ActionsMixin
 from beeref import commands

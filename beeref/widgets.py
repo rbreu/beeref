@@ -70,7 +70,8 @@ class RecentFilesView(QtWidgets.QListView):
                 (self.sizeHintForRow(i) + 2) for i in range(len(self.files)))
             size.setHeight(height)
 
-            width = max(self.sizeHintForColumn(i) for i in range(len(self.files)))
+            width = max(
+                self.sizeHintForColumn(i) for i in range(len(self.files)))
             size.setWidth(width + 2)
         return size
 
