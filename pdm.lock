@@ -292,7 +292,7 @@ dependencies = [
 [metadata]
 lock_version = "4.2"
 groups = ["default", "dev"]
-content_hash = "sha256:7339c57ec1ae02e26c4c0429fc640f070c988fe21b1ba4183ec7fad627ce0e2f"
+content_hash = "sha256:bb4096cef0aa1aea6fc1e1ead29fbe65697e0a8cdc628cea490f8f9a2d79c074"
 
 [metadata.files]
 "altgraph 0.17.3" = [
