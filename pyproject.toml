@@ -1,0 +1,41 @@
+[tool.pdm]
+[tool.pdm.dev-dependencies]
+dev = [
+    "flake8>=6.0.0",
+    "pybadges>=3.0.0",
+    "pyinstaller>=5.9.0",
+    "yamllint>=1.30.0",
+    "coverage>=7.2.2",
+    "httpretty>=1.1.4",
+    "pytest>=7.2.2",
+    "pytest-qt>=4.2.0",
+]
+
+[project]
+name = "BeeRef"
+version = "0.3.0"
+description = "A simple reference image viewer"
+readme = "README.rst"
+authors = [
+    {name = "Rebecca Breu", email = "rebecca@rbreu.de"},
+    {name = "mini-ninja-64", email = "github@callumh.art"},
+]
+dependencies = [
+    "exif",
+    "pyQt6-Qt6>=6.2.0",
+    "pyQt6>=6.2.0",
+    "rectangle-packer>=2.0.1",
+]
+license = {text = "LICENSE"}
+requires-python = "==3.10.*"
+
+[project.urls]
+Homepage = "https://github.com/rbreu/beeref"
+
+[project.gui-scripts]
+beeref = "beeref.__main__:main"
+
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"

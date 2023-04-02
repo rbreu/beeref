@@ -1,6 +1,0 @@
--r test.txt
-
-flake8
-pybadges
-pyinstaller >= 4.5
-yamllint

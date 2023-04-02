@@ -4,11 +4,7 @@ import os
 from os.path import join
 import sys
 
-from beeref import constants
-
-
 block_cipher = None
-appname = f'{constants.APPNAME}-{constants.VERSION}'
 
 if sys.platform.startswith('win'):
     icon = 'logo.ico'
@@ -34,6 +30,10 @@ a = Analysis(
     noarchive=False)
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+from beeref import constants
+appname = f'{constants.APPNAME}-{constants.VERSION}'
+
 
 exe = EXE(
     pyz,

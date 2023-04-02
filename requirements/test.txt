@@ -1,4 +1,0 @@
-coverage
-httpretty
-pytest
-pytest-qt>=4
