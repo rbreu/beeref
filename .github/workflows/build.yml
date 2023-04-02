@@ -25,16 +25,21 @@ jobs:
           sudo apt update
           sudo apt --yes install qt6-base-dev libgl1-mesa-glx 
 
-              
       - name: Install MacOS dependencies
         if: runner.os == 'macOS'
         run: |
           echo "macOS setup"
-      
+
       - name: Install Windows dependencies
         if: runner.os == 'Windows'
+        # Currently pyQt6-Qt6 does not ship with a correctly formatted 
+        # path for RECORD on windows, to workaround this we can run pdm install twice
+        # and rely on the cached download. 
+        # For more information: https://github.com/pdm-project/pdm/issues/1223
+        continue-on-error: true
         run: |
-          echo "Windows setup"
+          pip install pdm
+          pdm install
 
       - name: Install Python dependencies
         run: |
