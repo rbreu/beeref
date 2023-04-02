@@ -9,7 +9,8 @@ dev = [
     "httpretty>=1.1.4",
     "pytest>=7.2.2",
     "pytest-qt>=4.2.0",
-    "coverage>=7.2.2"
+    "coverage>=7.2.2",
+    "psutil>=5.9.4",
 ]
 
 [project]

@@ -23,6 +23,7 @@ jobs:
         run: |
           pip install pdm
           pdm install
-      - name: Run Unittests with pytest
-        run: |
-          xvfb-run --auto-servernum --server-num=1 --server-args="-screen 1 1920x1200x24 -ac +extension GLX" coverage run --source=beeref -m pytest -v -s
+      - name: Run tests with pytest
+        run: >
+          xvfb-run --auto-servernum --server-num=1 --server-args="-screen 1 1920x1200x24 -ac +extension GLX" 
+          pdm run coverage run --source=beeref -m pytest tests
