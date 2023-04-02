@@ -1,9 +1,12 @@
-name: build
+name: Build and Release
 
-on: workflow_dispatch
+on:
+  workflow_dispatch: {}
+  push:
+    tags:
+      - '*'
 
 jobs:
-
   build:
     name: build
 
@@ -45,12 +48,26 @@ jobs:
         run: |
           pip install pdm
           pdm install
+
       - name: Run Pyinstaller
-        run: |
-          pdm run pyinstaller BeeRef.spec
-      - name: Upload artifact
+        run: pdm run pyinstaller BeeRef.spec
+
+      - name: Upload temporary artifact for branch builds
+        if: startsWith(github.ref, 'refs/heads/')
         uses: actions/upload-artifact@v3
         with:
           name: build-${{ matrix.os }}
           path: dist/*
-          retention-days: 5
+          retention-days: 1
+
+      - name: Upload release artifact
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: ncipollo/release-action@v1        
+        with:
+          allowUpdates: true
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
+
+          generateReleaseNotes: true
+          name: BeeRef-${{ matrix.os }}
+          artifacts: dist/*
