@@ -9,10 +9,10 @@ setup(
     license='LICENSE',
     description='A simple reference image viewer',
     install_requires=[
-        'pyQt6>=6.2.0',
-        'pyQt6-Qt6>=6.2.0',
-        'rectangle-packer>=2.0.1',
-        'exif',
+        'pyQt6==6.4.0',
+        'pyQt6-Qt6==6.4.0',
+        'rectangle-packer==2.0.1',
+        'exif==1.3.5',
     ],
     packages=[
         'beeref',

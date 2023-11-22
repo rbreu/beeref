@@ -1,6 +1,8 @@
--r test.txt
+# For developers
 
-flake8
-pybadges
-pyinstaller >= 4.5
-yamllint
+-r test.txt
+-r build.txt
+
+flake8==5.0.4
+pybadges==3.0.0
+yamllint==1.28.0
