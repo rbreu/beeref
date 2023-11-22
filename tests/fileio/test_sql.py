@@ -25,7 +25,7 @@ def test_sqliteio_migrate_does_nothing_when_version_ok(tmpfile):
     io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
     io.ex('PRAGMA user_version=%s' % schema.USER_VERSION)
     io.connection.commit()
-    del(io)
+    del io
     with patch('beeref.fileio.sql.SQLiteIO.ex') as ex_mock:
         SQLiteIO(tmpfile, MagicMock())
         ex_mock.assert_not_called()
@@ -40,7 +40,7 @@ def test_sqliteio_migrate_migrates(tmpfile):
     io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
     io.ex('PRAGMA user_version=1')
     io.connection.commit()
-    del(io)
+    del io
     io = SQLiteIO(tmpfile, MagicMock())
     io.ex('INSERT INTO foo (col1, col2) VALUES (22, "hello world")')
     io.ex('INSERT INTO bar (baz) VALUES (55)')
@@ -57,7 +57,7 @@ def test_sqliteio_migrate_migrates_when_file_not_writable(tmpfile):
     io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
     io.ex('PRAGMA user_version=1')
     io.connection.commit()
-    del(io)
+    del io
     os.chmod(tmpfile, stat.S_IREAD)
     with pytest.raises(PermissionError):
         open(tmpfile, 'w')
@@ -67,7 +67,7 @@ def test_sqliteio_migrate_migrates_when_file_not_writable(tmpfile):
     result = io.fetchone('PRAGMA user_version')
     assert result[0] == 3
     newdir = io._tmpdir.name
-    del(io)
+    del io
     assert os.path.exists(newdir) is False
 
 
@@ -106,7 +106,7 @@ def test_all_migrations(tmpfile):
     io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)',
           (1, b'bla'))
     io.connection.commit()
-    del(io)
+    del io
 
     io = SQLiteIO(tmpfile, MagicMock(), create_new=False)
     result = io.fetchone('PRAGMA user_version')
@@ -426,7 +426,7 @@ def test_sqliteio_read_reads_readonly_text_item(tmpfile, view):
           ('text', 22.2, 33.3, 0.22, 3.4, 45, -1,
            json.dumps({'text': 'foo bar'})))
     io.connection.commit()
-    del(io)
+    del io
 
     io = SQLiteIO(tmpfile, view.scene, readonly=True)
     io.read()
@@ -456,7 +456,7 @@ def test_sqliteio_read_reads_readonly_pixmap_item(tmpfile, view, imgdata3x3):
     io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)',
           (1, imgdata3x3))
     io.connection.commit()
-    del(io)
+    del io
 
     io = SQLiteIO(tmpfile, view.scene, readonly=True)
     io.read()
