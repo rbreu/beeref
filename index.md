@@ -22,7 +22,7 @@ Get the file for your operating system (Windows, Linux, macOS) from the [latest 
 
 ## Features
 
-* Move, scale, rotate and flip images
+* Move, scale, rotate, crop and flip images
 * Mass-scale images to the same width, height or size
 * Mass-arrange images vertically, horizontally or for optimal usage of space
 * Add text notes
