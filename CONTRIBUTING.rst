@@ -44,7 +44,7 @@ Building the app
 
 To build the app, run::
 
-  pyinstaller --onefile BeeRef.spec
+  pyinstaller BeeRef.spec
 
 You will find the generated executable in the folder ``dist``.
 

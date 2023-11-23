@@ -58,7 +58,7 @@ This should tell you whether you need to install any additional libraries.
 Features
 --------
 
-* Move, scale, rotate and flip images
+* Move, scale, rotate, crop and flip images
 * Mass-scale images to the same width, height or size
 * Mass-arrange images vertically, horizontally or for optimal usage of space
 * Add text notes
