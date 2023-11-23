@@ -13,9 +13,9 @@ jobs:
         os: ['ubuntu-20.04', 'macos-10.15', 'windows-latest']
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up Python 3.9
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
       - name: Install dependencies
@@ -27,7 +27,7 @@ jobs:
         run: |
           pyinstaller BeeRef.spec
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.os }}
           path: dist/*
