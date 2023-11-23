@@ -27,4 +27,4 @@ jobs:
         run: |
           xvfb-run --auto-servernum --server-num=1 --server-args="-screen 1 1920x1200x24 -ac +extension GLX" coverage run --source=beeref -m pytest -v -s
       - name: Upload Coverage report to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v3
