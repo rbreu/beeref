@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -18,7 +18,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt install libgl1-mesa-glx libegl1 libglib2.0-0 libxcb-image0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 xserver-xephyr libfontconfig1 libxkbcommon-dev libdbus-1-3 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0
+          sudo apt install libgl1-mesa-glx libegl1 libglib2.0-0 libxcb-image0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 xserver-xephyr libfontconfig1 libxkbcommon-dev libdbus-1-3 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libxcb-cursor0
           sudo apt install xvfb
           python -m pip install --upgrade pip
           pip install .
