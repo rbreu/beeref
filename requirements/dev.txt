@@ -6,4 +6,3 @@
 flake8==6.1.0
 pybadges==3.0.1
 yamllint==1.33.0
-pytest-cov==4.1.0
