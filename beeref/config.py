@@ -208,6 +208,11 @@ logging_conf = {
             'level': 'TRACE',
             'propagate': False,
         },
+        'Qt': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
     },
     'root': {
         'handlers': ['console', 'file'],

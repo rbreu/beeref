@@ -48,12 +48,6 @@ To get the current development version, you need to have a working Python 3 envi
 
 Then run ``beeref`` or ``beeref filename.bee``.
 
-If there are issues starting the application, run it with the environment variable ``QT_DEBUG_PLUGINS`` set to 1, for example from a Linux shell::
-
-  QT_DEBUG_PLUGINS=1 beeref
-
-This should tell you whether you need to install any additional libraries.
-
 
 Features
 --------
@@ -77,6 +71,20 @@ The bee file format is a sqlite database inside which the images are stored in a
   sqlite3 myfile.bee -Axv
 
 Options for exporting from inside BeeRef are planned, but the above always works independently of BeeRef.
+
+
+Troubleshooting
+---------------
+
+You can access the log output via *Help -> Show Debug Log*. In case BeeRef doesn't start at all, you can find the log file here:
+
+Windows:
+
+  C:\Documents and Settings\USERNAME\Application Data\BeeRef\BeeRef.log
+
+Linux and MacOS:
+
+  /home/USERNAME/.config/BeeRef/BeeRef.log
 
 
 Notes for developers
