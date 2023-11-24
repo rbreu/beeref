@@ -42,3 +42,19 @@ sqlite3 myfile.bee -Axv
 ```
 
 Options for exporting from inside BeeRef are planned, but the above always works independently of BeeRef.
+
+## Troubleshooting
+
+You can access the log output via *Help -> Show Debug Log*. In case BeeRef doesn't start at all, you can find the log file here:
+
+Windows:
+
+```
+C:\Documents and Settings\USERNAME\Application Data\BeeRef\BeeRef.log
+```
+
+Linux and MacOS:
+
+```
+/home/USERNAME/.config/BeeRef/BeeRef.log
+```
