@@ -14,7 +14,7 @@ BeeRef lets you quickly arrange your reference images and view them while you cr
 
 ## Installation
 
-Get the file for your operating system (Windows, Linux, macOS) from the [latest release]({{ site.github.latest_release.html_url }}).
+Get the file for your operating system (Windows, Linux, macOS) from the [latest release]({{ site.github.latest_release.html_url }}). The different Linux versions are built on different versions of Ubuntu. The should work on other distros as well, but you might have to try which one works.
 
 **Linux users** need to give the file executable rights before running it. Optional: If you want to have BeeRef appear in the app menu, save the desktop file from the [release section]({{ site.github.latest_release.html_url }}) in `~/.local/share/applications`, save the [logo]({{ site.baseurl}}/assets/images/logo.png), and adjust the path names in the desktop file to match the location of your BeeRef installation.
 
