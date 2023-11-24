@@ -33,9 +33,7 @@ Get the file for your operating system (Windows, Linux, macOS) from the [latest 
 
 ### Regarding the bee file format
 
-Currently, all images are embedded into the bee file as png files. While png is a lossless format, it may also produce larger file sizes than compressed jpg files, so bee files may become bigger than the imported images on their own. More embedding options are to come later.
-
-The bee file format is a sqlite database inside which the images are stored in an sqlar table—meaning they can be extracted with the [sqlite command line program](<https://www.sqlite.org/cli.html>):
+All images are embedded into the bee file as PNG or JPG. The bee file format is a sqlite database inside which the images are stored in an sqlar table—meaning they can be extracted with the [sqlite command line program](<https://www.sqlite.org/cli.html>):
 
 ```
 sqlite3 myfile.bee -Axv
