@@ -23,6 +23,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
 from beeref import commands
+from beeref.config import BeeSettings
 from beeref.constants import COLORS
 from beeref.selection import SelectableMixin
 
@@ -91,6 +92,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         self.is_croppable = True
         self.crop_mode = False
         self.init_selectable()
+        self.settings = BeeSettings()
 
     @classmethod
     def create_from_data(self, **kwargs):
@@ -129,14 +131,32 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
                          self.crop.width(),
                          self.crop.height()]}
 
+    def get_imgformat(self, img):
+        """Determines the format for storing this image."""
+
+        formt = self.settings.valueOrDefault('FileIO/image_storage_format')
+        if formt not in ('png', 'jpg', 'best'):
+            formt = 'best'
+
+        if formt == 'best':
+            if (img.hasAlphaChannel()
+                    or (img.height() < 200 and img.width() < 200)):
+                formt = 'png'
+            else:
+                formt = 'jpg'
+
+        logger.debug(f'Found format {formt} for {self}')
+        return formt
+
     def pixmap_to_bytes(self):
         """Convert the pixmap data to PNG bytestring."""
         barray = QtCore.QByteArray()
         buffer = QtCore.QBuffer(barray)
         buffer.open(QtCore.QIODevice.OpenModeFlag.WriteOnly)
         img = self.pixmap().toImage()
-        img.save(buffer, 'PNG')
-        return barray.data()
+        imgformat = self.get_imgformat(img)
+        img.save(buffer, imgformat.upper())
+        return (barray.data(), imgformat)
 
     def setPixmap(self, pixmap):
         super().setPixmap(pixmap)

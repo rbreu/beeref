@@ -225,7 +225,7 @@ def test_sqliteio_write_inserts_new_text_item(tmpfile, view):
     assert result[9] is None
 
 
-def test_sqliteio_write_inserts_new_pixmap_item(tmpfile, view):
+def test_sqliteio_write_inserts_new_pixmap_item_png(tmpfile, view):
     item = BeePixmapItem(QtGui.QImage(), filename='bee.jpg')
     view.scene.addItem(item)
     item.setScale(1.3)
@@ -234,7 +234,7 @@ def test_sqliteio_write_inserts_new_pixmap_item(tmpfile, view):
     item.setRotation(33)
     item.do_flip()
     item.crop = QtCore.QRectF(5, 5, 100, 80)
-    item.pixmap_to_bytes = MagicMock(return_value=b'abc')
+    item.pixmap_to_bytes = MagicMock(return_value=(b'abc', 'png'))
     io = SQLiteIO(tmpfile, view.scene, create_new=True)
     io.write()
 
@@ -257,6 +257,23 @@ def test_sqliteio_write_inserts_new_pixmap_item(tmpfile, view):
     assert result[7] == 'pixmap'
     assert result[8] == b'abc'
     assert result[9] == '0001-bee.png'
+
+
+def test_sqliteio_write_inserts_new_pixmap_item_jpg(tmpfile, view):
+    item = BeePixmapItem(QtGui.QImage(), filename='bee.jpg')
+    view.scene.addItem(item)
+    item.pixmap_to_bytes = MagicMock(return_value=(b'abc', 'jpg'))
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
+    io.write()
+
+    assert item.save_id == 1
+    result = io.fetchone(
+        'SELECT type, sqlar.data, sqlar.name '
+        'FROM items '
+        'INNER JOIN sqlar on sqlar.item_id = items.id')
+    assert result[0] == 'pixmap'
+    assert result[1] == b'abc'
+    assert result[2] == '0001-bee.jpg'
 
 
 def test_sqliteio_write_inserts_new_pixmap_item_without_filename(
@@ -316,7 +333,7 @@ def test_sqliteio_write_updates_existing_pixmap_item(tmpfile, view):
     item.setRotation(33)
     item.save_id = 1
     item.crop = QtCore.QRectF(5, 5, 80, 100)
-    item.pixmap_to_bytes = MagicMock(return_value=b'abc')
+    item.pixmap_to_bytes = MagicMock(return_value=(b'abc', 'png'))
     io = SQLiteIO(tmpfile, view.scene, create_new=True)
     io.write()
     item.setScale(0.7)

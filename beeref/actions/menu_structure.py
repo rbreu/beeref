@@ -103,6 +103,7 @@ menu_structure = [
     {
         'menu': '&Settings',
         'items': [
+            'settings',
             'open_settings_dir',
         ],
     },

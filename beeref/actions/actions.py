@@ -279,6 +279,11 @@ actions = [
         'callback': 'on_action_always_on_top',
     },
     {
+        'id': 'settings',
+        'text': '&Settings',
+        'callback': 'on_action_settings',
+    },
+    {
         'id': 'open_settings_dir',
         'text': 'Open Settings Folder',
         'callback': 'on_action_open_settings_dir',

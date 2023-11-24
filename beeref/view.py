@@ -384,6 +384,9 @@ class BeeGraphicsView(MainControlsMixin,
         logger.info('User quit. Exiting...')
         self.app.quit()
 
+    def on_action_settings(self):
+        widgets.settings.SettingsDialog(self)
+
     def on_action_help(self):
         widgets.HelpDialog(self)
 

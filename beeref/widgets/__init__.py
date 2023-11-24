@@ -22,6 +22,7 @@ from PyQt6.QtCore import Qt
 from beeref import constants
 from beeref.config import logfile_name, BeeSettings
 from beeref.main_controls import MainControlsMixin
+from beeref.widgets import settings  # noqa: F401
 
 
 logger = logging.getLogger(__name__)
@@ -158,6 +159,7 @@ class HelpDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle(f'{constants.APPNAME} Help')
         docdir = os.path.join(os.path.dirname(__file__),
+                              '..',
                               'documentation')
         tabs = QtWidgets.QTabWidget()
 

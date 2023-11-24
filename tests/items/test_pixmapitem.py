@@ -81,9 +81,83 @@ def test_get_extra_save_data(item):
     }
 
 
-def test_pixmap_to_bytes(qapp, imgfilename3x3):
+def test_get_imgformat_test_with_real_image(
+        qapp, imgfilename3x3, item, settings):
+    settings.setValue('FileIO/image_storage_format', 'best')
+    img = QtGui.QImage(imgfilename3x3)
+    assert item.get_imgformat(img) == 'png'
+
+
+def test_get_imgformat_unknown_option_defaults_to_best(
+        qapp, imgfilename3x3, item, settings):
+    settings.setValue('FileIO/image_storage_format', 'foo')
+    img = QtGui.QImage(imgfilename3x3)
+    assert item.get_imgformat(img) == 'png'
+
+
+def test_get_imgformat_jpg_for_large_nonalpha_image_when_setting_best(
+        qapp, settings, item):
+    settings.setValue('FileIO/image_storage_format', 'best')
+    img = MagicMock(
+        hasAlphaChannel=MagicMock(return_value=False),
+        height=MagicMock(return_value=1600),
+        width=MagicMock(return_value=1200))
+    assert item.get_imgformat(img) == 'jpg'
+
+
+def test_get_imgformat_png_for_large_alpha_image_when_setting_best(
+        qapp, settings, item):
+    settings.setValue('FileIO/image_storage_format', 'best')
+    img = MagicMock(
+        hasAlphaChannel=MagicMock(return_value=True),
+        height=MagicMock(return_value=1600),
+        width=MagicMock(return_value=1200))
+    assert item.get_imgformat(img) == 'png'
+
+
+def test_get_imgformat_png_for_small_nonalpha_image_when_setting_best(
+        qapp, settings, item):
+    settings.setValue('FileIO/image_storage_format', 'best')
+    img = MagicMock(
+        hasAlphaChannel=MagicMock(return_value=False),
+        height=MagicMock(return_value=100),
+        width=MagicMock(return_value=100))
+    assert item.get_imgformat(img) == 'png'
+
+
+def test_get_imgformat_jpg_when_setting_jpg(
+        qapp, settings, item):
+    settings.setValue('FileIO/image_storage_format', 'jpg')
+    img = MagicMock(
+        hasAlphaChannel=MagicMock(return_value=True),
+        height=MagicMock(return_value=100),
+        width=MagicMock(return_value=100))
+    assert item.get_imgformat(img) == 'jpg'
+
+
+def test_get_imgformat_png_when_setting_png(
+        qapp, settings, item):
+    settings.setValue('FileIO/image_storage_format', 'png')
+    img = MagicMock(
+        hasAlphaChannel=MagicMock(return_value=False),
+        height=MagicMock(return_value=1600),
+        width=MagicMock(return_value=1020))
+    assert item.get_imgformat(img) == 'png'
+
+
+def test_pixmap_to_bytes_png(qapp, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
-    assert item.pixmap_to_bytes().startswith(b'\x89PNG')
+    data, imgformat = item.pixmap_to_bytes()
+    assert imgformat == 'png'
+    assert data.startswith(b'\x89PNG')
+
+
+def test_pixmap_to_bytes_jpg(qapp, imgfilename3x3, settings):
+    settings.setValue('FileIO/image_storage_format', 'jpg')
+    item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
+    data, imgformat = item.pixmap_to_bytes()
+    assert imgformat == 'jpg'
+    assert data.startswith(b'\xff\xd8\xff\xe0\x00\x10JFIF')
 
 
 def test_pixmap_from_bytes(qapp, item, imgfilename3x3):

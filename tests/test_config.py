@@ -35,6 +35,28 @@ def test_command_line_args_get_unknown():
     CommandlineArgs._instance = None
 
 
+def test_settings_value_or_default_gets_default(settings):
+    assert settings.valueOrDefault('FileIO/image_storage_format') == 'best'
+
+
+def test_settings_value_or_default_gets_overriden_value(settings):
+    settings.setValue('FileIO/image_storage_format', 'png')
+    assert settings.valueOrDefault('FileIO/image_storage_format') == 'png'
+
+
+def test_restore_defaults_restores(settings):
+    settings.setValue('FileIO/image_storage_format', 'png')
+    settings.restore_defaults()
+    assert settings.contains('FileIO/image_storage_format') is False
+
+
+def test_restore_defaults_leaves_other_settings(settings):
+    settings.setValue('foo/bar', 'baz')
+    settings.restore_defaults()
+    assert settings.contains('foo/bar') is True
+    assert settings.value('foo/bar') == 'baz'
+
+
 def test_settings_recent_files_get_empty(settings):
     settings.get_recent_files() == []
 

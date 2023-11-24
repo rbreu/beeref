@@ -29,18 +29,13 @@ Install additional development requirements::
 
 Run unittests with::
 
-  pytest .
+  pytest --cov .
+
+This will also generate a coverage report:  ``htmlcov/index.html``.
 
 Run codechecks with::
 
   flake8 .
-
-Run unittests with coverage report::
-
-  coverage run --source=beeref -m pytest
-  coverage html
-
-If your browser doesn't open automatically, view ``htmlcov/index.html``.
 
 Beeref files are sqlite databases, so they can be inspected with any sqlite browser.
 

@@ -1,7 +1,14 @@
 0.3.1 - (not released yet)
 ==========================
 
-tbd
+Added
+-----
+
+* Embedded images can now be JPG or PNG. By default, small images and
+  images with an alpha channel will be stored as PNG, the rest as
+  JPG. In the newly created settings dialog, this behaviour can be
+  changed to always use PNG (the former behaviour) always JPG.
+
 
 0.3.0 - 2023-11-23
 ==================

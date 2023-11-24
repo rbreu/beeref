@@ -93,7 +93,22 @@ class CommandlineArgs:
             return getattr(self._args, name)
 
 
+class BeeSettingsEvents(QtCore.QObject):
+    restore_defaults = QtCore.pyqtSignal()
+
+
+# We want to send and receive settings events globally, not per
+# BeeSettings instance. Since we can't instantiate BeeSettings
+# globally on module level (because the Qt app doesn't exist yet), we
+# use this events proxy
+settings_events = BeeSettingsEvents()
+
+
 class BeeSettings(QtCore.QSettings):
+
+    DEFAULTS = {
+        'FileIO/image_storage_format': 'best',
+    }
 
     def __init__(self):
         settings_format = QtCore.QSettings.Format.IniFormat
@@ -107,6 +122,18 @@ class BeeSettings(QtCore.QSettings):
             settings_scope,
             constants.APPNAME,
             constants.APPNAME)
+
+    def valueOrDefault(self, key, type=None):
+        val = self.value(key, type)
+        if val is None:
+            val = self.DEFAULTS.get(key)
+        return val
+
+    def restore_defaults(self):
+        logger.debug('Restoring settings to defaults')
+        for key in self.DEFAULTS.keys():
+            self.remove(key)
+        settings_events.restore_defaults.emit()
 
     def fileName(self):
         return os.path.normpath(super().fileName())
