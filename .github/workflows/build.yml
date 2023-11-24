@@ -11,9 +11,9 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-20.04',
-             'ubuntu-latest',
+             'ubuntu-22.04',
              'macos-11',
-             'macos-latest',
+             'macos-12',
              'windows-latest']
 
     steps:
