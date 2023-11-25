@@ -19,7 +19,7 @@ SCHEMA = [
     """
     CREATE TABLE sqlar (
         name TEXT PRIMARY KEY,
-        item_id INTEGER NOT NULL,
+        item_id INTEGER NOT NULL UNIQUE,
         mode INT,
         mtime INT default current_timestamp,
         sz INT,
