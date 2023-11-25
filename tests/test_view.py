@@ -602,13 +602,13 @@ def test_scale(view_scale_mock, recalc_mock, view):
 @patch('PyQt6.QtWidgets.QScrollBar.setValue')
 def test_pan(scroll_value_mock, view, item):
     view.scene.addItem(item)
-    view.pan(QtCore.QPointF(5, 10))
+    view.pan(QtCore.QPointF(5.0, 10.0))
     assert scroll_value_mock.call_count == 2
 
 
 @patch('PyQt6.QtWidgets.QScrollBar.setValue')
 def test_pan_when_no_items(scroll_value_mock, view):
-    view.pan(QtCore.QPointF(5, 10))
+    view.pan(QtCore.QPointF(5.0, 10.0))
     scroll_value_mock.assert_not_called()
 
 
@@ -617,7 +617,7 @@ def test_pan_when_no_items(scroll_value_mock, view):
 def test_zoom_in(pan_mock, reset_mock, view, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scene.addItem(item)
-    view.zoom(40, QtCore.QPointF(10, 10))
+    view.zoom(40, QtCore.QPointF(10.0, 10.0))
     assert view.get_scale() == 1.04
     reset_mock.assert_called_once_with()
     pan_mock.assert_called_once()
@@ -629,7 +629,7 @@ def test_zoom_in_max_zoom_size(pan_mock, reset_mock, view, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scale(10000000, 10000000)
     view.scene.addItem(item)
-    view.zoom(40, QtCore.QPointF(10, 10))
+    view.zoom(40, QtCore.QPointF(10.0, 10.0))
     assert view.get_scale() == 10000000
     reset_mock.assert_not_called()
     pan_mock.assert_not_called()
@@ -641,7 +641,7 @@ def test_zoom_out(pan_mock, reset_mock, view, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scale(100, 100)
     view.scene.addItem(item)
-    view.zoom(-40, QtCore.QPointF(10, 10))
+    view.zoom(-40, QtCore.QPointF(10.0, 10.0))
     assert view.get_scale() == 100 / 1.04
     reset_mock.assert_called_once_with()
     pan_mock.assert_called_once()
@@ -651,7 +651,7 @@ def test_zoom_out(pan_mock, reset_mock, view, imgfilename3x3):
 @patch('beeref.view.BeeGraphicsView.pan')
 def test_zoom_out_min_zoom_size(pan_mock, reset_mock, view, item):
     view.scene.addItem(item)
-    view.zoom(-40, QtCore.QPointF(10, 10))
+    view.zoom(-40, QtCore.QPointF(10.0, 10.0))
     assert view.get_scale() == 1
     reset_mock.assert_not_called()
     pan_mock.assert_not_called()
@@ -660,7 +660,7 @@ def test_zoom_out_min_zoom_size(pan_mock, reset_mock, view, item):
 @patch('beeref.view.BeeGraphicsView.reset_previous_transform')
 @patch('beeref.view.BeeGraphicsView.pan')
 def test_no_items(pan_mock, reset_mock, view, item):
-    view.zoom(40, QtCore.QPointF(10, 10))
+    view.zoom(40, QtCore.QPointF(10.0, 10.0))
     assert view.get_scale() == 1
     reset_mock.assert_not_called()
     pan_mock.assert_not_called()
@@ -670,7 +670,7 @@ def test_no_items(pan_mock, reset_mock, view, item):
 @patch('beeref.view.BeeGraphicsView.pan')
 def test_delta_zero(pan_mock, reset_mock, view, item):
     view.scene.addItem(item)
-    view.zoom(0, QtCore.QPointF(10, 10))
+    view.zoom(0, QtCore.QPointF(10.0, 10.0))
     assert view.get_scale() == 1
     reset_mock.assert_not_called()
     pan_mock.assert_not_called()
@@ -679,25 +679,25 @@ def test_delta_zero(pan_mock, reset_mock, view, item):
 @patch('beeref.view.BeeGraphicsView.zoom')
 def test_wheel_event(zoom_mock, view):
     event = MagicMock()
-    event.angleDelta.return_value = QtCore.QPointF(0, 40)
-    event.position.return_value = QtCore.QPointF(10, 20)
+    event.angleDelta.return_value = QtCore.QPointF(0.0, 40.0)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
     view.wheelEvent(event)
-    zoom_mock.assert_called_once_with(40, QtCore.QPointF(10, 20))
+    zoom_mock.assert_called_once_with(40, QtCore.QPointF(10.0, 20.0))
     event.accept.assert_called_once_with()
 
 
 @patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
 def test_mouse_press_zoom(mouse_event_mock, view):
     event = MagicMock()
-    event.position.return_value = QtCore.QPointF(10, 20)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
     event.button.return_value = Qt.MouseButton.MiddleButton
     event.modifiers.return_value = Qt.KeyboardModifier.ControlModifier
     view.mousePressEvent(event)
     assert view.zoom_active is True
     assert view.pan_active is False
     assert view.movewin_active is False
-    assert view.event_start == QtCore.QPointF(10, 20)
-    assert view.event_anchor == QtCore.QPointF(10, 20)
+    assert view.event_start == QtCore.QPointF(10.0, 20.0)
+    assert view.event_anchor == QtCore.QPointF(10.0, 20.0)
     mouse_event_mock.assert_not_called()
     event.accept.assert_called_once_with()
 
@@ -705,14 +705,14 @@ def test_mouse_press_zoom(mouse_event_mock, view):
 @patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
 def test_mouse_press_pan_middle_drag(mouse_event_mock, view):
     event = MagicMock()
-    event.position.return_value = QtCore.QPointF(10, 20)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
     event.button.return_value = Qt.MouseButton.MiddleButton
     event.modifiers.return_value = None
     view.mousePressEvent(event)
     assert view.pan_active is True
     assert view.zoom_active is False
     assert view.movewin_active is False
-    assert view.event_start == QtCore.QPointF(10, 20)
+    assert view.event_start == QtCore.QPointF(10.0, 20.0)
     mouse_event_mock.assert_not_called()
     view.cursor() == Qt.CursorShape.ClosedHandCursor
     event.accept.assert_called_once_with()
@@ -721,14 +721,14 @@ def test_mouse_press_pan_middle_drag(mouse_event_mock, view):
 @patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
 def test_mouse_press_pan_alt_left_drag(mouse_event_mock, view):
     event = MagicMock()
-    event.position.return_value = QtCore.QPointF(10, 20)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
     event.button.return_value = Qt.MouseButton.LeftButton
     event.modifiers.return_value = Qt.KeyboardModifier.AltModifier
     view.mousePressEvent(event)
     assert view.pan_active is True
     assert view.zoom_active is False
     assert view.movewin_active is False
-    assert view.event_start == QtCore.QPointF(10, 20)
+    assert view.event_start == QtCore.QPointF(10.0, 20.0)
     mouse_event_mock.assert_not_called()
     view.cursor() == Qt.CursorShape.ClosedHandCursor
     event.accept.assert_called_once_with()
@@ -737,7 +737,7 @@ def test_mouse_press_pan_alt_left_drag(mouse_event_mock, view):
 @patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
 def test_mouse_press_move_window(mouse_event_mock, view):
     event = MagicMock()
-    event.position.return_value = QtCore.QPointF(10, 20)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
     event.button.return_value = Qt.MouseButton.LeftButton
     event.modifiers.return_value = (
         Qt.KeyboardModifier.AltModifier | Qt.KeyboardModifier.ControlModifier)
@@ -745,7 +745,7 @@ def test_mouse_press_move_window(mouse_event_mock, view):
     assert view.pan_active is False
     assert view.zoom_active is False
     assert view.movewin_active is True
-    assert view.event_start == view.mapToGlobal(QtCore.QPointF(10, 20))
+    assert view.event_start == view.mapToGlobal(QtCore.QPointF(10.0, 20.0))
     mouse_event_mock.assert_not_called()
     event.accept.assert_called_once_with()
 
@@ -767,11 +767,11 @@ def test_mouse_press_unhandled(mouse_event_mock, view):
 @patch('beeref.view.BeeGraphicsView.pan')
 def test_mouse_move_pan(pan_mock, mouse_event_mock, view):
     view.pan_active = True
-    view.event_start = QtCore.QPointF(55, 66)
+    view.event_start = QtCore.QPointF(55.0, 66.0)
     event = MagicMock()
-    event.position.return_value = QtCore.QPointF(10, 20)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
     view.mouseMoveEvent(event)
-    pan_mock.assert_called_once_with(QtCore.QPointF(45, 46))
+    pan_mock.assert_called_once_with(QtCore.QPointF(45.0, 46.0))
     mouse_event_mock.assert_not_called()
     event.accept.assert_called_once_with()
 
@@ -780,12 +780,12 @@ def test_mouse_move_pan(pan_mock, mouse_event_mock, view):
 @patch('beeref.view.BeeGraphicsView.zoom')
 def test_mouse_move_zoom(zoom_mock, mouse_event_mock, view):
     view.zoom_active = True
-    view.event_anchor = QtCore.QPointF(55, 66)
-    view.event_start = QtCore.QPointF(10, 20)
+    view.event_anchor = QtCore.QPointF(55.0, 66.0)
+    view.event_start = QtCore.QPointF(10.0, 20.0)
     event = MagicMock()
-    event.position.return_value = QtCore.QPointF(10, 18)
+    event.position.return_value = QtCore.QPointF(10.0, 18.0)
     view.mouseMoveEvent(event)
-    zoom_mock.assert_called_once_with(40, QtCore.QPointF(55, 66))
+    zoom_mock.assert_called_once_with(40, QtCore.QPointF(55.0, 66.0))
     mouse_event_mock.assert_not_called()
     event.accept.assert_called_once_with()
 
@@ -794,9 +794,9 @@ def test_mouse_move_zoom(zoom_mock, mouse_event_mock, view):
 @patch('PyQt6.QtWidgets.QWidget.move')
 def test_mouse_move_movewin(move_mock, mouse_event_mock, view):
     view.movewin_active = True
-    view.event_start = QtCore.QPointF(10, 20)
+    view.event_start = QtCore.QPointF(10.0, 20.0)
     event = MagicMock()
-    event.position.return_value = QtCore.QPointF(15, 18)
+    event.position.return_value = QtCore.QPointF(15.0, 18.0)
     view.mouseMoveEvent(event)
     move_mock.assert_called_once_with(5, -2)
     mouse_event_mock.assert_not_called()
@@ -806,7 +806,7 @@ def test_mouse_move_movewin(move_mock, mouse_event_mock, view):
 @patch('PyQt6.QtWidgets.QGraphicsView.mouseMoveEvent')
 def test_mouse_move_unhandled(mouse_event_mock, view):
     event = MagicMock()
-    event.position.return_value = QtCore.QPointF(10, 20)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
     view.mouseMoveEvent(event)
     mouse_event_mock.assert_called_once_with(event)
     event.accept.assert_not_called()
@@ -896,7 +896,7 @@ def test_drop_when_url(insert_mock, view, imgfilename3x3):
     mimedata.setUrls([url])
     event = MagicMock()
     event.mimeData.return_value = mimedata
-    event.position.return_value = QtCore.QPointF(10, 20)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
 
     view.dropEvent(event)
     insert_mock.assert_called_once_with([url], QtCore.QPoint(10, 20))
@@ -911,7 +911,7 @@ def test_drop_when_url_beefile_and_scene_empty(open_mock, view):
     mimedata.setUrls([url])
     event = MagicMock()
     event.mimeData.return_value = mimedata
-    event.position.return_value = QtCore.QPointF(10, 20)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
 
     view.dropEvent(event)
     open_mock.assert_called_once_with(filename)
@@ -929,7 +929,7 @@ def test_drop_when_url_beefile_and_scene_not_empty(
     mimedata.setUrls([url])
     event = MagicMock()
     event.mimeData.return_value = mimedata
-    event.position.return_value = QtCore.QPointF(10, 20)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
 
     view.dropEvent(event)
     open_mock.assert_not_called()
@@ -940,7 +940,7 @@ def test_drop_when_img(view, imgfilename3x3):
     mimedata.setImageData(QtGui.QImage(imgfilename3x3))
     event = MagicMock()
     event.mimeData.return_value = mimedata
-    event.position.return_value = QtCore.QPointF(10, 20)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
 
     view.dropEvent(event)
     assert len(view.scene.items()) == 1
