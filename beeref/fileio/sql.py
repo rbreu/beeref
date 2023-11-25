@@ -261,6 +261,7 @@ class SQLiteIO:
 
     def delete_items(self, to_delete):
         self.exmany('DELETE FROM items WHERE id=?', to_delete)
+        self.exmany('DELETE FROM sqlar WHERE item_id=?', to_delete)
         self.connection.commit()
 
     def insert_item(self, item):

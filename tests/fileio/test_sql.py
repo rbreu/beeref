@@ -388,8 +388,12 @@ def test_sqliteio_write_removes_nonexisting_pixmap_item(tmpfile, view):
     view.scene.addItem(item)
     io = SQLiteIO(tmpfile, view.scene, create_new=True)
     io.write()
+    assert io.fetchone('SELECT COUNT(*) from items') == (1,)
+    assert io.fetchone('SELECT COUNT(*) from sqlar') == (1,)
 
     view.scene.removeItem(item)
+
+    io = SQLiteIO(tmpfile, view.scene, create_new=False)
     io.create_new = False
     io.write()
 

@@ -9,6 +9,12 @@ Added
   JPG. In the newly created settings dialog, this behaviour can be
   changed to always use PNG (the former behaviour) always JPG.
 
+Fixed
+-----
+
+* Fixed a bug where the binary data of deleted images would still hang
+  around in the bee file.
+
 
 0.3.0 - 2023-11-23
 ==================
