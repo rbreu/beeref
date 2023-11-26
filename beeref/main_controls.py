@@ -31,6 +31,7 @@ class MainControlsMixin:
 
     * Right-click menu
     * Dropping files
+    * Moving the window without title bar
     """
 
     def init_main_controls(self, main_window):
@@ -41,6 +42,21 @@ class MainControlsMixin:
             self.control_target.on_context_menu)
         self.setAcceptDrops(True)
         self.movewin_active = False
+
+    def enter_movewin_mode(self):
+        logger.debug('Entering movewin mode')
+        self.setMouseTracking(True)
+        self.movewin_active = True
+        self.event_start = QtCore.QPointF(self.cursor().pos())
+        if hasattr(self, 'disable_mouse_events'):
+            self.disable_mouse_events()
+
+    def exit_movewin_mode(self):
+        logger.debug('Exiting movewin mode')
+        self.setMouseTracking(False)
+        self.movewin_active = False
+        if hasattr(self, 'enable_mouse_events'):
+            self.enable_mouse_events()
 
     def dragEnterEvent(self, event):
         mimedata = event.mimeData()
@@ -80,11 +96,14 @@ class MainControlsMixin:
             logger.info('Drop not an image')
 
     def mousePressEventMainControls(self, event):
+        if self.movewin_active:
+            self.exit_movewin_mode()
+            event.accept()
+            return True
         if (event.button() == Qt.MouseButton.LeftButton
                 and event.modifiers() == (Qt.KeyboardModifier.ControlModifier
                                           | Qt.KeyboardModifier.AltModifier)):
-            self.movewin_active = True
-            self.event_start = self.mapToGlobal(event.position())
+            self.enter_movewin_mode()
             event.accept()
             return True
 
@@ -100,6 +119,12 @@ class MainControlsMixin:
 
     def mouseReleaseEventMainControls(self, event):
         if self.movewin_active:
-            self.movewin_active = False
+            self.exit_movewin_mode()
+            event.accept()
+            return True
+
+    def keyPressEventMainControls(self, event):
+        if self.movewin_active:
+            self.exit_movewin_mode()
             event.accept()
             return True

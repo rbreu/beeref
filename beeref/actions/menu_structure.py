@@ -62,6 +62,8 @@ menu_structure = [
             'show_scrollbars',
             'show_menubar',
             'show_titlebar',
+            MENU_SEPARATOR,
+            'move_window',
         ],
     },
     {

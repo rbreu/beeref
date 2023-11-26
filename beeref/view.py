@@ -105,9 +105,13 @@ class BeeGraphicsView(MainControlsMixin,
         if not self.scene.items():
             logger.debug('No items in scene')
             self.setTransform(QtGui.QTransform())
+            self.welcome_overlay.setFocus()
+            self.clearFocus()
             self.welcome_overlay.show()
             self.actiongroup_set_enabled('active_when_items_in_scene', False)
         else:
+            self.setFocus()
+            self.welcome_overlay.clearFocus()
             self.welcome_overlay.hide()
             self.actiongroup_set_enabled('active_when_items_in_scene', True)
         self.recalc_scene_rect()
@@ -215,6 +219,12 @@ class BeeGraphicsView(MainControlsMixin,
         self.parent.destroy()
         self.parent.create()
         self.parent.show()
+
+    def on_action_move_window(self):
+        if self.welcome_overlay.isHidden():
+            self.enter_movewin_mode()
+        else:
+            self.welcome_overlay.enter_movewin_mode()
 
     def on_action_undo(self):
         logger.debug('Undo: %s' % self.undo_stack.undoText())
@@ -662,6 +672,9 @@ class BeeGraphicsView(MainControlsMixin,
         event.accept()
 
     def mousePressEvent(self, event):
+        if self.mousePressEventMainControls(event):
+            return
+
         if (event.button() == Qt.MouseButton.MiddleButton
                 and event.modifiers() == Qt.KeyboardModifier.ControlModifier):
             self.zoom_active = True
@@ -679,8 +692,6 @@ class BeeGraphicsView(MainControlsMixin,
             event.accept()
             return
 
-        if self.mousePressEventMainControls(event):
-            return
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -723,3 +734,8 @@ class BeeGraphicsView(MainControlsMixin,
         super().resizeEvent(event)
         self.recalc_scene_rect()
         self.welcome_overlay.resize(self.size())
+
+    def keyPressEvent(self, event):
+        if self.keyPressEventMainControls(event):
+            return
+        super().keyPressEvent(event)

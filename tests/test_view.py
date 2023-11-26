@@ -598,6 +598,25 @@ def test_on_action_show_titlebar_unchecked(
     create_mock.assert_called_once()
 
 
+@patch('beeref.widgets.WelcomeOverlay.cursor')
+def test_on_action_move_window_when_welcome_overlay(cursor_mock, view):
+    cursor_mock.return_value = MagicMock(
+        pos=MagicMock(return_value=QtCore.QPointF(10.0, 20.0)))
+    view.on_action_move_window()
+    assert view.welcome_overlay.movewin_active is True
+    assert view.welcome_overlay.event_start == QtCore.QPointF(10.0, 20.0)
+
+
+@patch('beeref.view.BeeGraphicsView.cursor')
+def test_on_action_move_window_when_scene(cursor_mock, view):
+    cursor_mock.return_value = MagicMock(
+        pos=MagicMock(return_value=QtCore.QPointF(10.0, 20.0)))
+    view.welcome_overlay.hide()
+    view.on_action_move_window()
+    assert view.movewin_active is True
+    assert view.event_start == QtCore.QPointF(10.0, 20.0)
+
+
 def test_on_action_delete_items(view, item):
     view.scene.cancel_crop_mode = MagicMock()
     view.scene.addItem(item)
@@ -781,9 +800,11 @@ def test_mouse_press_pan_alt_left_drag(mouse_event_mock, view):
 
 
 @patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
-def test_mouse_press_move_window(mouse_event_mock, view):
+@patch('beeref.view.BeeGraphicsView.cursor')
+def test_mouse_press_move_window(cursor_mock, mouse_event_mock, view):
     event = MagicMock()
-    event.position.return_value = QtCore.QPointF(10.0, 20.0)
+    cursor_mock.return_value = MagicMock(
+        pos=MagicMock(return_value=QtCore.QPointF(10.0, 20.0)))
     event.button.return_value = Qt.MouseButton.LeftButton
     event.modifiers.return_value = (
         Qt.KeyboardModifier.AltModifier | Qt.KeyboardModifier.ControlModifier)
@@ -794,6 +815,22 @@ def test_mouse_press_move_window(mouse_event_mock, view):
     assert view.event_start == view.mapToGlobal(QtCore.QPointF(10.0, 20.0))
     mouse_event_mock.assert_not_called()
     event.accept.assert_called_once_with()
+
+
+@patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
+def test_mouse_press_when_move_window_active(mouse_event_mock, view):
+    view.movewin_active = True
+    view.mousePressEvent(MagicMock())
+    assert view.movewin_active is False
+    mouse_event_mock.assert_not_called()
+
+
+@patch('PyQt6.QtWidgets.QGraphicsView.keyPressEvent')
+def test_key_press_when_move_window_active(key_event_mock, view):
+    view.movewin_active = True
+    view.keyPressEvent(MagicMock())
+    assert view.movewin_active is False
+    key_event_mock.assert_not_called()
 
 
 @patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')

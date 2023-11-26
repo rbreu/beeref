@@ -107,12 +107,12 @@ class WelcomeOverlay(MainControlsMixin, QtWidgets.QWidget):
         self.files_layout.addStretch(50)
 
         # Help text
-        label = QtWidgets.QLabel(self.txt, self)
-        label.setAlignment(Qt.AlignmentFlag.AlignVCenter
-                           | Qt.AlignmentFlag.AlignCenter)
+        self.label = QtWidgets.QLabel(self.txt, self)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignVCenter
+                                | Qt.AlignmentFlag.AlignCenter)
         self.layout = QtWidgets.QHBoxLayout()
         self.layout.addStretch(50)
-        self.layout.addWidget(label)
+        self.layout.addWidget(self.label)
         self.layout.addStretch(50)
         self.setLayout(self.layout)
 
@@ -122,6 +122,20 @@ class WelcomeOverlay(MainControlsMixin, QtWidgets.QWidget):
         if files and self.layout.indexOf(self.files_layout) < 0:
             self.layout.insertLayout(0, self.files_layout)
         super().show()
+
+    def disable_mouse_events(self):
+        self.files_view.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.label.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+    def enable_mouse_events(self):
+        self.files_view.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+            on=False)
+        self.label.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+            on=False)
 
     def mousePressEvent(self, event):
         if self.mousePressEventMainControls(event):
@@ -137,6 +151,11 @@ class WelcomeOverlay(MainControlsMixin, QtWidgets.QWidget):
         if self.mouseReleaseEventMainControls(event):
             return
         super().mouseReleaseEvent(event)
+
+    def keyPressEvent(self, event):
+        if self.keyPressEventMainControls(event):
+            return
+        super().keyPressEvent(event)
 
 
 class BeeProgressDialog(QtWidgets.QProgressDialog):

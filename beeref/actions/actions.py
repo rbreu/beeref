@@ -275,6 +275,12 @@ actions = [
         'callback': 'on_action_show_titlebar',
     },
     {
+        'id': 'move_window',
+        'text': 'Move &Window',
+        'shortcuts': ['Ctrl+M'],
+        'callback': 'on_action_move_window',
+    },
+    {
         'id': 'fullscreen',
         'text': '&Fullscreen',
         'shortcuts': ['F11'],

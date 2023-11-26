@@ -10,18 +10,20 @@ Added
   behaviour can be changed to always use PNG (the former behaviour) or
   always JPG. To apply this behaviour to already saved images in
   existing bee files, you can save them as new files.
-* Enable antialiasing/smoothing. Images that are being displayed at a
+* Enabled antialiasing/smoothing. Images that are being displayed at a
   large zoom factor are exempt to make sure that icons, pixel sprites
   etc can be viewed correctly.
 * A scene can now be exported to a single image (File -> Export Scene...)
-* Editing of text items will now be undoable after leaving edit mode
-* Empty text items will be deleted after leaving edit mode
-* Text edit mode can now be aborted with Escape
+* Alternative way to move the BeeRef window without the title bar:
+  View -> Move Window (or press "M")
 
 
 Changed
 -------
 
+* Editing of text items will now be undoable after leaving edit mode
+* Empty text items will be deleted after leaving edit mode
+* Text edit mode can now be aborted with Escape
 * "Save as" will now open pre-select the folder of the currently opened file
 * "Save" and "Save as" are now inactive when the scene is empty
 
