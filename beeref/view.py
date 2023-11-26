@@ -61,7 +61,6 @@ class BeeGraphicsView(MainControlsMixin,
         self.previous_transform = None
         self.pan_active = False
         self.zoom_active = False
-        self.movewin_active = False
 
         self.scene = BeeGraphicsScene(self.undo_stack)
         self.scene.changed.connect(self.on_scene_changed)
@@ -71,7 +70,7 @@ class BeeGraphicsView(MainControlsMixin,
         # Context menu and actions
         self.build_menu_and_actions()
         self.control_target = self
-        self.init_main_controls()
+        self.init_main_controls(main_window=parent)
 
         # Load file given via command line
         if commandline_args.filename:
@@ -646,14 +645,8 @@ class BeeGraphicsView(MainControlsMixin,
             event.accept()
             return
 
-        if (event.button() == Qt.MouseButton.LeftButton
-                and event.modifiers() == (Qt.KeyboardModifier.ControlModifier
-                                          | Qt.KeyboardModifier.AltModifier)):
-            self.movewin_active = True
-            self.event_start = self.mapToGlobal(event.position())
-            event.accept()
+        if self.mousePressEventMainControls(event):
             return
-
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -674,15 +667,8 @@ class BeeGraphicsView(MainControlsMixin,
             event.accept()
             return
 
-        if self.movewin_active:
-            pos = self.mapToGlobal(event.position())
-            delta = pos - self.event_start
-            self.event_start = pos
-            self.parent.move(self.parent.x() + int(delta.x()),
-                             self.parent.y() + int(delta.y()))
-            event.accept()
+        if self.mouseMoveEventMainControls(event):
             return
-
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
@@ -695,11 +681,8 @@ class BeeGraphicsView(MainControlsMixin,
             self.zoom_active = False
             event.accept()
             return
-        if self.movewin_active:
-            self.movewin_active = False
-            event.accept()
+        if self.mouseReleaseEventMainControls(event):
             return
-
         super().mouseReleaseEvent(event)
 
     def resizeEvent(self, event):

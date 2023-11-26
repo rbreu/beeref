@@ -95,7 +95,7 @@ class WelcomeOverlay(MainControlsMixin, QtWidgets.QWidget):
         super().__init__(parent)
         self.control_target = parent
         self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
-        self.init_main_controls()
+        self.init_main_controls(main_window=parent.parent)
 
         # Recent files
         self.files_layout = QtWidgets.QVBoxLayout()
@@ -122,6 +122,21 @@ class WelcomeOverlay(MainControlsMixin, QtWidgets.QWidget):
         if files and self.layout.indexOf(self.files_layout) < 0:
             self.layout.insertLayout(0, self.files_layout)
         super().show()
+
+    def mousePressEvent(self, event):
+        if self.mousePressEventMainControls(event):
+            return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self.mouseMoveEventMainControls(event):
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if self.mouseReleaseEventMainControls(event):
+            return
+        super().mouseReleaseEvent(event)
 
 
 class BeeProgressDialog(QtWidgets.QProgressDialog):
