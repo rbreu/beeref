@@ -134,13 +134,14 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
     def get_imgformat(self, img):
         """Determines the format for storing this image."""
 
-        formt = self.settings.valueOrDefault('FileIO/image_storage_format')
+        formt = self.settings.valueOrDefault('Items/image_storage_format')
         if formt not in ('png', 'jpg', 'best'):
             formt = 'best'
 
         if formt == 'best':
+            # Images with alpha channel and small images are stored as png
             if (img.hasAlphaChannel()
-                    or (img.height() < 200 and img.width() < 200)):
+                    or (img.height() < 300 and img.width() < 300)):
                 formt = 'png'
             else:
                 formt = 'jpg'
@@ -300,6 +301,12 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         painter.drawRect(rect)
 
     def paint(self, painter, option, widget):
+        if painter.combinedTransform().m11() < 3:
+            # We want image smoothing, but only for images where we
+            # are not zoomed in a lot. This is to ensure that for
+            # example icons and pixel sprites can be viewed correctly.
+            painter.setRenderHint(painter.RenderHint.SmoothPixmapTransform)
+
         if self.crop_mode:
             self.paint_debug(painter, option, widget)
 

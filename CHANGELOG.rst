@@ -4,10 +4,15 @@
 Added
 -----
 
-* Embedded images can now be JPG or PNG. By default, small images and
-  images with an alpha channel will be stored as PNG, the rest as
-  JPG. In the newly created settings dialog, this behaviour can be
-  changed to always use PNG (the former behaviour) always JPG.
+* Images can now be stored JPG or PNG inside the bee file. By default,
+  small images and images with an alpha channel will be stored as PNG,
+  the rest as JPG. In the newly created settings dialog, this
+  behaviour can be changed to always use PNG (the former behaviour) or
+  always JPG.
+* Antialias/smoothing for displaying images. For images being
+  displayed at a large zoom factor, smoothing will turn off to make
+  sure that icons, pixel sprites etc can be viewed correctly.
+
 
 Fixed
 -----

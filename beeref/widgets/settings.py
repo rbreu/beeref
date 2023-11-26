@@ -25,28 +25,23 @@ from beeref.config import BeeSettings, settings_events
 logger = logging.getLogger(__name__)
 
 
-class ImageStorageFormatWidget(QtWidgets.QGroupBox):
-    KEY = 'FileIO/image_storage_format'
-    OPTIONS = (
-        ('best', 'Best Guess',
-         ('Small images and images with alpha channel are stored as png,'
-          ' everything else as jpg')),
-        ('png', 'Always PNG', 'Lossless, but large bee file'),
-        ('jpg', 'Always JPG',
-         'Small bee file, but lossy and no transparency support'))
+class RadioGroup(QtWidgets.QGroupBox):
+    TITLE = None
+    HELPTEXT = None
+    KEY = None
+    OPTIONS = None
 
-    def __init__(self, parent):
-        super().__init__('Image Storage Format:')
-        parent.settings_widgets.append(self)
+    def __init__(self):
+        super().__init__(self.TITLE)
         self.settings = BeeSettings()
-        settings_events.restore_defaults.connect(self.on_restore_defaults)
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
-        helptxt = QtWidgets.QLabel(
-            'How images are stored inside bee files.'
-            ' Changes will only take effect on newly saved images.')
-        helptxt.setWordWrap(True)
-        layout.addWidget(helptxt)
+        settings_events.restore_defaults.connect(self.on_restore_defaults)
+
+        if self.HELPTEXT:
+            helptxt = QtWidgets.QLabel(self.HELPTEXT)
+            helptxt.setWordWrap(True)
+            layout.addWidget(helptxt)
 
         self.ignore_values_changed = True
         self.buttons = {}
@@ -78,19 +73,31 @@ class ImageStorageFormatWidget(QtWidgets.QGroupBox):
         self.ignore_values_changed = False
 
 
+class ImageStorageFormatWidget(RadioGroup):
+    TITLE = 'Image Storage Format:'
+    HELPTEXT = ('How images are stored inside bee files.'
+                ' Changes will only take effect on newly saved images.')
+    KEY = 'Items/image_storage_format'
+    OPTIONS = (
+        ('best', 'Best Guess',
+         ('Small images and images with alpha channel are stored as png,'
+          ' everything else as jpg')),
+        ('png', 'Always PNG', 'Lossless, but large bee file'),
+        ('jpg', 'Always JPG',
+         'Small bee file, but lossy and no transparency support'))
+
+
 class SettingsDialog(QtWidgets.QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle(f'{constants.APPNAME} Settings')
         tabs = QtWidgets.QTabWidget()
 
-        self.settings_widgets = []
-
         # Miscellaneous
         misc = QtWidgets.QWidget()
         misc_layout = QtWidgets.QGridLayout()
         misc.setLayout(misc_layout)
-        misc_layout.addWidget(ImageStorageFormatWidget(self), 0, 0)
+        misc_layout.addWidget(ImageStorageFormatWidget(), 0, 0)
         tabs.addTab(misc, '&Miscellaneous')
 
         layout = QtWidgets.QVBoxLayout()

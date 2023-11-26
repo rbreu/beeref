@@ -107,7 +107,7 @@ settings_events = BeeSettingsEvents()
 class BeeSettings(QtCore.QSettings):
 
     DEFAULTS = {
-        'FileIO/image_storage_format': 'best',
+        'Items/image_storage_format': 'best',
     }
 
     def __init__(self):

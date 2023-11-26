@@ -83,21 +83,21 @@ def test_get_extra_save_data(item):
 
 def test_get_imgformat_test_with_real_image(
         qapp, imgfilename3x3, item, settings):
-    settings.setValue('FileIO/image_storage_format', 'best')
+    settings.setValue('Items/image_storage_format', 'best')
     img = QtGui.QImage(imgfilename3x3)
     assert item.get_imgformat(img) == 'png'
 
 
 def test_get_imgformat_unknown_option_defaults_to_best(
         qapp, imgfilename3x3, item, settings):
-    settings.setValue('FileIO/image_storage_format', 'foo')
+    settings.setValue('Items/image_storage_format', 'foo')
     img = QtGui.QImage(imgfilename3x3)
     assert item.get_imgformat(img) == 'png'
 
 
 def test_get_imgformat_jpg_for_large_nonalpha_image_when_setting_best(
         qapp, settings, item):
-    settings.setValue('FileIO/image_storage_format', 'best')
+    settings.setValue('Items/image_storage_format', 'best')
     img = MagicMock(
         hasAlphaChannel=MagicMock(return_value=False),
         height=MagicMock(return_value=1600),
@@ -107,7 +107,7 @@ def test_get_imgformat_jpg_for_large_nonalpha_image_when_setting_best(
 
 def test_get_imgformat_png_for_large_alpha_image_when_setting_best(
         qapp, settings, item):
-    settings.setValue('FileIO/image_storage_format', 'best')
+    settings.setValue('Items/image_storage_format', 'best')
     img = MagicMock(
         hasAlphaChannel=MagicMock(return_value=True),
         height=MagicMock(return_value=1600),
@@ -117,7 +117,7 @@ def test_get_imgformat_png_for_large_alpha_image_when_setting_best(
 
 def test_get_imgformat_png_for_small_nonalpha_image_when_setting_best(
         qapp, settings, item):
-    settings.setValue('FileIO/image_storage_format', 'best')
+    settings.setValue('Items/image_storage_format', 'best')
     img = MagicMock(
         hasAlphaChannel=MagicMock(return_value=False),
         height=MagicMock(return_value=100),
@@ -127,7 +127,7 @@ def test_get_imgformat_png_for_small_nonalpha_image_when_setting_best(
 
 def test_get_imgformat_jpg_when_setting_jpg(
         qapp, settings, item):
-    settings.setValue('FileIO/image_storage_format', 'jpg')
+    settings.setValue('Items/image_storage_format', 'jpg')
     img = MagicMock(
         hasAlphaChannel=MagicMock(return_value=True),
         height=MagicMock(return_value=100),
@@ -137,7 +137,7 @@ def test_get_imgformat_jpg_when_setting_jpg(
 
 def test_get_imgformat_png_when_setting_png(
         qapp, settings, item):
-    settings.setValue('FileIO/image_storage_format', 'png')
+    settings.setValue('Items/image_storage_format', 'png')
     img = MagicMock(
         hasAlphaChannel=MagicMock(return_value=False),
         height=MagicMock(return_value=1600),
@@ -153,7 +153,7 @@ def test_pixmap_to_bytes_png(qapp, imgfilename3x3):
 
 
 def test_pixmap_to_bytes_jpg(qapp, imgfilename3x3, settings):
-    settings.setValue('FileIO/image_storage_format', 'jpg')
+    settings.setValue('Items/image_storage_format', 'jpg')
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     data, imgformat = item.pixmap_to_bytes()
     assert imgformat == 'jpg'
@@ -338,7 +338,10 @@ def test_paint(qapp, item):
     item.pixmap = MagicMock()
     item.paint_selectable = MagicMock()
     item.crop = QtCore.QRectF(10, 20, 30, 40)
-    painter = MagicMock()
+    painter = MagicMock(
+        combinedTransform=MagicMock(
+            return_value=MagicMock(
+                m11=MagicMock(return_value=0.5))))
     item.paint(painter, None, None)
     item.paint_selectable.assert_called_once()
     painter.drawPixmap.assert_called_with(
@@ -353,7 +356,10 @@ def test_paint_when_crop_mode(qapp, item):
     item.crop = QtCore.QRectF(10, 20, 30, 40)
     item.crop_mode = True
     item.crop_temp = QtCore.QRectF(11, 22, 29, 39)
-    painter = MagicMock()
+    painter = MagicMock(
+        combinedTransform=MagicMock(
+            return_value=MagicMock(
+                m11=MagicMock(return_value=0.5))))
     item.paint(painter, None, None)
     item.paint_selectable.assert_not_called()
     painter.drawPixmap.assert_called_with(0, 0, item.pixmap())

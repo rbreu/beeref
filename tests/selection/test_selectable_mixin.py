@@ -86,7 +86,10 @@ def test_select_handle_free_center(view, item):
 
 def test_draw_debug_shape_rect(view, item):
     view.scene.addItem(item)
-    painter = MagicMock()
+    painter = MagicMock(
+        combinedTransform=MagicMock(
+            return_value=MagicMock(
+                m11=MagicMock(return_value=0.5))))
     item.draw_debug_shape(
         painter,
         QtCore.QRectF(5, 6, 20, 30),
@@ -97,7 +100,10 @@ def test_draw_debug_shape_rect(view, item):
 
 def test_draw_debug_shape_path(view, item):
     view.scene.addItem(item)
-    painter = MagicMock()
+    painter = MagicMock(
+        combinedTransform=MagicMock(
+            return_value=MagicMock(
+                m11=MagicMock(return_value=0.5))))
     path = QtGui.QPainterPath()
     path.addRect(QtCore.QRectF(5, 6, 20, 30))
     item.draw_debug_shape(
@@ -111,7 +117,10 @@ def test_draw_debug_shape_path(view, item):
 @patch('beeref.items.BeePixmapItem.draw_debug_shape')
 def test_paint_when_not_selected(debug_mock, view, item):
     view.scene.addItem(item)
-    painter = MagicMock()
+    painter = MagicMock(
+        combinedTransform=MagicMock(
+            return_value=MagicMock(
+                m11=MagicMock(return_value=0.5))))
     item.setSelected(False)
     item.paint(painter, None, None)
     painter.drawPixmap.assert_called_once()
@@ -122,7 +131,10 @@ def test_paint_when_not_selected(debug_mock, view, item):
 
 def test_paint_when_selected_single_selection(view, item):
     view.scene.addItem(item)
-    painter = MagicMock()
+    painter = MagicMock(
+        combinedTransform=MagicMock(
+            return_value=MagicMock(
+                m11=MagicMock(return_value=0.5))))
     item.setSelected(True)
     item.paint(painter, None, None)
     painter.drawPixmap.assert_called_once()
@@ -135,7 +147,10 @@ def test_paint_when_selected_multi_selection(view, item):
     item2 = BeePixmapItem(QtGui.QImage())
     item2.setSelected(True)
     view.scene.addItem(item2)
-    painter = MagicMock()
+    painter = MagicMock(
+        combinedTransform=MagicMock(
+            return_value=MagicMock(
+                m11=MagicMock(return_value=0.5))))
     item.setSelected(True)
     item.paint(painter, None, None)
     painter.drawPixmap.assert_called_once()
@@ -150,7 +165,11 @@ def test_paint_when_debug_shapes(view):
             args_mock.debug_boundingrects = False
             args_mock.debug_handles = False
             item = BeePixmapItem(QtGui.QImage())
-            item.paint(MagicMock(), None, None)
+            painter = MagicMock(
+                combinedTransform=MagicMock(
+                    return_value=MagicMock(
+                        m11=MagicMock(return_value=0.5))))
+            item.paint(painter, None, None)
             m.assert_called_once()
 
 
@@ -161,7 +180,11 @@ def test_paint_when_debug_boundingrects(view):
             args_mock.debug_boundingrects = True
             args_mock.debug_handles = False
             item = BeePixmapItem(QtGui.QImage())
-            item.paint(MagicMock(), None, None)
+            painter = MagicMock(
+                combinedTransform=MagicMock(
+                    return_value=MagicMock(
+                        m11=MagicMock(return_value=0.5))))
+            item.paint(painter, None, None)
             m.assert_called_once()
 
 
@@ -174,7 +197,11 @@ def test_paint_when_debug_handles(view):
             item = BeePixmapItem(QtGui.QImage())
             view.scene.addItem(item)
             item.setSelected(True)
-            item.paint(MagicMock(), None, None)
+            painter = MagicMock(
+                combinedTransform=MagicMock(
+                    return_value=MagicMock(
+                        m11=MagicMock(return_value=0.5))))
+            item.paint(painter, None, None)
             m.assert_called()
 
 

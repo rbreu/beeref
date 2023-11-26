@@ -36,18 +36,18 @@ def test_command_line_args_get_unknown():
 
 
 def test_settings_value_or_default_gets_default(settings):
-    assert settings.valueOrDefault('FileIO/image_storage_format') == 'best'
+    assert settings.valueOrDefault('Items/image_storage_format') == 'best'
 
 
 def test_settings_value_or_default_gets_overriden_value(settings):
-    settings.setValue('FileIO/image_storage_format', 'png')
-    assert settings.valueOrDefault('FileIO/image_storage_format') == 'png'
+    settings.setValue('Items/image_storage_format', 'png')
+    assert settings.valueOrDefault('Items/image_storage_format') == 'png'
 
 
 def test_restore_defaults_restores(settings):
-    settings.setValue('FileIO/image_storage_format', 'png')
+    settings.setValue('Items/image_storage_format', 'png')
     settings.restore_defaults()
-    assert settings.contains('FileIO/image_storage_format') is False
+    assert settings.contains('Items/image_storage_format') is False
 
 
 def test_restore_defaults_leaves_other_settings(settings):
