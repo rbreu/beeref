@@ -8,10 +8,12 @@ Added
   small images and images with an alpha channel will be stored as PNG,
   the rest as JPG. In the newly created settings dialog, this
   behaviour can be changed to always use PNG (the former behaviour) or
-  always JPG.
+  always JPG. To apply this behaviour to your old bee files, you can
+  save them as new files.
 * Antialias/smoothing for displaying images. For images being
   displayed at a large zoom factor, smoothing will turn off to make
   sure that icons, pixel sprites etc can be viewed correctly.
+* "Save as" will now open pre-select the folder of the currently opened file
 
 
 Fixed

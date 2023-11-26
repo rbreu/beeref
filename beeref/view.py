@@ -366,9 +366,11 @@ class BeeGraphicsView(MainControlsMixin,
 
     def on_action_save_as(self):
         self.scene.cancel_crop_mode()
+        directory = os.path.dirname(self.filename) if self.filename else None
         filename, f = QtWidgets.QFileDialog.getSaveFileName(
             parent=self,
             caption='Save file',
+            directory=directory,
             filter=f'{constants.APPNAME} File (*.bee)')
         if filename:
             self.do_save(filename, create_new=True)
