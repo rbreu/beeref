@@ -173,7 +173,7 @@ class SQLiteIO:
     def write_meta(self):
         self.ex('PRAGMA application_id=%s' % APPLICATION_ID)
         self.ex('PRAGMA user_version=%s' % USER_VERSION)
-        self.ex('PRAGMA foreign_keys=1')
+        self.ex('PRAGMA foreign_keys=ON')
 
     def create_schema_on_new(self):
         if self.create_new:
@@ -186,7 +186,14 @@ class SQLiteIO:
         rows = self.fetchall(
             'SELECT items.id, type, x, y, z, scale, rotation, flip, '
             'items.data, sqlar.data '
-            'FROM items LEFT OUTER JOIN sqlar on sqlar.item_id = items.id')
+            'FROM sqlar JOIN items on sqlar.item_id = items.id')
+        # Avoid OUTER JOIN for performance reasons; fetch text items
+        # separately instead
+        rows.extend(self.fetchall(
+            'SELECT items.id, type, x, y, z, scale, rotation, flip, '
+            ' items.data, null as data '
+            'FROM items '
+            'WHERE items.type = "text"'))
         if self.worker:
             self.worker.begin_processing.emit(len(rows))
 
