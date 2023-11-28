@@ -292,6 +292,52 @@ def test_on_action_save_when_no_filename(save_as_mock, view, imgfilename3x3):
     view.scene.cancel_crop_mode.assert_called_once_with()
 
 
+@patch('beeref.widgets.SceneToPixmapExporterDialog.exec')
+@patch('beeref.widgets.SceneToPixmapExporterDialog.value')
+@patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName')
+def test_on_action_export_scene(
+        file_mock, value_mock, exec_mock, view, tmpdir):
+    item = BeeTextItem('foo')
+    view.scene.addItem(item)
+    filename = os.path.join(tmpdir, 'test.png')
+    assert os.path.exists(filename) is False
+    file_mock.return_value = (filename, None)
+    exec_mock.return_value = 1
+    value_mock.return_value = QtCore.QSize(100, 100)
+    view.on_action_export_scene()
+    img = QtGui.QImage(filename)
+    assert img.size() == QtCore.QSize(100, 100)
+
+
+@patch('beeref.widgets.SceneToPixmapExporterDialog.exec')
+@patch('beeref.widgets.SceneToPixmapExporterDialog.value')
+@patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName')
+def test_on_action_export_scene_no_filename(
+        file_mock, value_mock, exec_mock, view):
+    item = BeeTextItem('foo')
+    view.scene.addItem(item)
+    file_mock.return_value = (None, None)
+    view.on_action_export_scene()
+    exec_mock.assert_not_called()
+    value_mock.assert_not_called()
+
+
+@patch('beeref.widgets.SceneToPixmapExporterDialog.exec')
+@patch('beeref.widgets.SceneToPixmapExporterDialog.value')
+@patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName')
+def test_on_action_export_scene_settings_input_canceled(
+        file_mock, value_mock, exec_mock, view, tmpdir):
+    item = BeeTextItem('foo')
+    view.scene.addItem(item)
+    filename = os.path.join(tmpdir, 'test.png')
+    assert os.path.exists(filename) is False
+    file_mock.return_value = (filename, None)
+    exec_mock.return_value = 0
+    view.on_action_export_scene()
+    value_mock.assert_not_called()
+    assert os.path.exists(filename) is False
+
+
 @patch('beeref.widgets.settings.SettingsDialog.show')
 def test_on_action_settings(show_mock, view):
     view.on_action_settings()

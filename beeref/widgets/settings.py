@@ -105,19 +105,18 @@ class SettingsDialog(QtWidgets.QDialog):
         layout.addWidget(tabs)
 
         # Bottom row of buttons
-        buttons = QtWidgets.QWidget()
-        btn_layout = QtWidgets.QHBoxLayout()
-        buttons.setLayout(btn_layout)
+        buttons = QtWidgets.QDialogButtonBox()
         reset_btn = QtWidgets.QPushButton('&Restore Defaults')
         reset_btn.setAutoDefault(False)
         reset_btn.clicked.connect(self.on_restore_defaults)
-        btn_layout.addWidget(reset_btn)
+        buttons.addButton(reset_btn,
+                          QtWidgets.QDialogButtonBox.ButtonRole.ActionRole)
 
         close_btn = QtWidgets.QPushButton('&Close')
         close_btn.setAutoDefault(True)
         close_btn.clicked.connect(self.on_close)
-        btn_layout.addWidget(close_btn)
-        btn_layout.insertStretch(1)
+        buttons.addButton(close_btn,
+                          QtWidgets.QDialogButtonBox.ButtonRole.ActionRole)
 
         layout.addWidget(buttons)
         self.show()

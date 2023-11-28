@@ -8,12 +8,19 @@ Added
   small images and images with an alpha channel will be stored as PNG,
   the rest as JPG. In the newly created settings dialog, this
   behaviour can be changed to always use PNG (the former behaviour) or
-  always JPG. To apply this behaviour to your old bee files, you can
-  save them as new files.
-* Antialias/smoothing for displaying images. For images being
+  always JPG. To apply this behaviour to already saved images in
+  existing bee files, you can save them as new files.
+* Antialias/smoothing for displaying images. (For images being
   displayed at a large zoom factor, smoothing will turn off to make
-  sure that icons, pixel sprites etc can be viewed correctly.
+  sure that icons, pixel sprites etc can be viewed correctly.)
+* A scene can now be exported to a single image (File -> Export Scene...)
+
+
+Changed
+-------
+
 * "Save as" will now open pre-select the folder of the currently opened file
+* "Save" and "Save as" are now inactive when the scene is empty
 
 
 Fixed

@@ -25,12 +25,21 @@ actions = [
         'text': '&Save',
         'shortcuts': ['Ctrl+S'],
         'callback': 'on_action_save',
+        'group': 'active_when_items_in_scene',
     },
     {
         'id': 'save_as',
         'text': 'Save &As...',
         'shortcuts': ['Ctrl+Shift+S'],
         'callback': 'on_action_save_as',
+        'group': 'active_when_items_in_scene',
+    },
+    {
+        'id': 'export_scene',
+        'text': 'E&xport Scene...',
+        'shortcuts': ['Ctrl+Shift+E'],
+        'callback': 'on_action_export_scene',
+        'group': 'active_when_items_in_scene',
     },
     {
         'id': 'quit',

@@ -28,6 +28,7 @@ menu_structure = [
             MENU_SEPARATOR,
             'save',
             'save_as',
+            'export_scene',
             MENU_SEPARATOR,
             'quit',
         ],

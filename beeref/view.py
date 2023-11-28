@@ -26,6 +26,7 @@ from beeref import commands
 from beeref.config import CommandlineArgs, BeeSettings
 from beeref import constants
 from beeref import fileio
+from beeref.fileio.export import SceneToPixmapExporter
 from beeref import widgets
 from beeref.items import BeePixmapItem, BeeTextItem
 from beeref.main_controls import MainControlsMixin
@@ -104,8 +105,10 @@ class BeeGraphicsView(MainControlsMixin,
             logger.debug('No items in scene')
             self.setTransform(QtGui.QTransform())
             self.welcome_overlay.show()
+            self.actiongroup_set_enabled('active_when_items_in_scene', False)
         else:
             self.welcome_overlay.hide()
+            self.actiongroup_set_enabled('active_when_items_in_scene', True)
         self.recalc_scene_rect()
 
     def on_can_redo_changed(self, can_redo):
@@ -380,6 +383,36 @@ class BeeGraphicsView(MainControlsMixin,
             self.on_action_save_as()
         else:
             self.do_save(self.filename, create_new=False)
+
+    def on_action_export_scene(self):
+        directory = os.path.dirname(self.filename) if self.filename else None
+        filename, f = QtWidgets.QFileDialog.getSaveFileName(
+            parent=self,
+            caption='Export Scene to Image',
+            directory=directory,
+            filter=';;'.join(('Image Files (*.png *.jpg *.jpeg)',
+                              'PNG (*.png)',
+                              'JPEG (*.jpg *.jpeg)')))
+        print(';;'.join(('Image Files (*.png *.jpg *.jpeg)',
+                         'PNG (*.png)',
+                         'JPEG (*.jpg *.jpeg)')))
+        if filename:
+            logger.debug(f'Got export filename {filename}')
+            exporter = SceneToPixmapExporter(self.scene)
+            dialog = widgets.SceneToPixmapExporterDialog(
+                parent=self,
+                default_size=exporter.default_size,
+            )
+            if dialog.exec():
+                size = dialog.value()
+                logger.debug(f'Got export size {size}')
+                try:
+                    exporter.export(filename, size)
+                except fileio.BeeFileIOError as e:
+                    QtWidgets.QMessageBox.warning(
+                        self,
+                        'Problem exporting scene',
+                        str(e))
 
     def on_action_quit(self):
         logger.info('User quit. Exiting...')
