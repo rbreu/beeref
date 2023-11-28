@@ -553,10 +553,10 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
         # reset selection:
         self.setTextCursor(QtGui.QTextCursor(self.document()))
         self.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+        self.scene().edit_item = None
         if commit:
             self.scene().undo_stack.push(
                 commands.ChangeText(self, self.toPlainText(), self.old_text))
-            self.scene().edit_item = None
             if not self.toPlainText().strip():
                 logger.debug('Removing empty text item')
                 self.scene().undo_stack.push(

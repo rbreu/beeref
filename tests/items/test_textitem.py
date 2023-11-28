@@ -244,6 +244,8 @@ def test_exit_edit_mode_when_text_empty(view):
     assert view.scene.edit_item is None
 
 
+@patch('PyQt6.QtGui.QTextCursor')
+@patch('beeref.items.BeeTextItem.setTextCursor')
 def test_exit_edit_mode_when_commit_false(setcursor_mock, cursor_mock, view):
     item = BeeTextItem('foo bar')
     item.edit_mode = True
@@ -258,7 +260,7 @@ def test_exit_edit_mode_when_commit_false(setcursor_mock, cursor_mock, view):
     cursor_mock.assert_called_once_with(item.document())
     setcursor_mock.assert_called_once_with(cursor_mock.return_value)
     assert view.scene.edit_item is None
-    assert item.toPlaintText() == 'old'
+    assert item.toPlainText() == 'old'
 
 
 @patch('PyQt6.QtWidgets.QGraphicsTextItem.keyPressEvent')
