@@ -16,6 +16,7 @@ Added
 * A scene can now be exported to a single image (File -> Export Scene...)
 * Editing of text items will now be undoable after leaving edit mode
 * Empty text items will be deleted after leaving edit mode
+* Text edit mode can now be aborted with Escape
 
 
 Changed

@@ -547,19 +547,22 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
             Qt.TextInteractionFlag.TextEditorInteraction)
         self.scene().edit_item = self
 
-    def exit_edit_mode(self):
+    def exit_edit_mode(self, commit=True):
         logger.debug(f'Exiting edit mode on {self}')
         self.edit_mode = False
         # reset selection:
         self.setTextCursor(QtGui.QTextCursor(self.document()))
         self.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
-        self.scene().undo_stack.push(
-            commands.ChangeText(self, self.toPlainText(), self.old_text))
-        self.scene().edit_item = None
-        if not self.toPlainText().strip():
-            logger.debug(f'Removing empty text item')
+        if commit:
             self.scene().undo_stack.push(
-                commands.DeleteItems(self.scene(), [self]))
+                commands.ChangeText(self, self.toPlainText(), self.old_text))
+            self.scene().edit_item = None
+            if not self.toPlainText().strip():
+                logger.debug('Removing empty text item')
+                self.scene().undo_stack.push(
+                    commands.DeleteItems(self.scene(), [self]))
+        else:
+            self.setPlainText(self.old_text)
 
     def has_selection_handles(self):
         return super().has_selection_handles() and not self.edit_mode
@@ -568,6 +571,11 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
         if (event.key() in (Qt.Key.Key_Enter, Qt.Key.Key_Return)
                 and event.modifiers() == Qt.KeyboardModifier.NoModifier):
             self.exit_edit_mode()
+            event.accept()
+            return
+        if (event.key() == Qt.Key.Key_Escape
+                and event.modifiers() == Qt.KeyboardModifier.NoModifier):
+            self.exit_edit_mode(commit=False)
             event.accept()
             return
         super().keyPressEvent(event)
