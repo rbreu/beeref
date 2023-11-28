@@ -542,6 +542,7 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
     def enter_edit_mode(self):
         logger.debug(f'Entering edit mode on {self}')
         self.edit_mode = True
+        self.old_text = self.toPlainText()
         self.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextEditorInteraction)
         self.scene().edit_item = self
@@ -552,6 +553,8 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
         # reset selection:
         self.setTextCursor(QtGui.QTextCursor(self.document()))
         self.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+        self.scene().undo_stack.push(
+            commands.ChangeText(self, self.toPlainText(), self.old_text))
         self.scene().edit_item = None
 
     def has_selection_handles(self):

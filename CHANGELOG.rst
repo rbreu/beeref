@@ -21,6 +21,7 @@ Changed
 
 * "Save as" will now open pre-select the folder of the currently opened file
 * "Save" and "Save as" are now inactive when the scene is empty
+* Editing of text items will now be undoable after leaving edit mode
 
 
 Fixed

@@ -50,7 +50,6 @@ class InsertItems(QtGui.QUndoCommand):
 
 
 class DeleteItems(QtGui.QUndoCommand):
-
     def __init__(self, scene, items):
         super().__init__('Delete items')
         self.scene = scene
@@ -308,3 +307,18 @@ class CropItem(QtGui.QUndoCommand):
 
     def undo(self):
         self.item.crop = self.old_crop
+
+
+class ChangeText(QtGui.QUndoCommand):
+
+    def __init__(self, item, new_text, old_text):
+        super().__init__('Change text')
+        self.item = item
+        self.new_text = new_text
+        self.old_text = old_text
+
+    def redo(self):
+        self.item.setPlainText(self.new_text)
+
+    def undo(self):
+        self.item.setPlainText(self.old_text)

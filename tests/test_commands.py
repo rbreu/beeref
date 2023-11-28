@@ -474,3 +474,12 @@ def test_crop_item(item):
     command.undo()
     assert item.crop == QtCore.QRectF(0, 0, 100, 80)
     assert item.pos() == QtCore.QPointF(0, 0)
+
+
+def test_change_text():
+    item = BeeTextItem('foo')
+    command = commands.ChangeText(item, 'bar', 'foo')
+    command.redo()
+    assert item.toPlainText() == 'bar'
+    command.undo()
+    assert item.toPlainText() == 'foo'
