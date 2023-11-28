@@ -14,6 +14,8 @@ Added
   large zoom factor are exempt to make sure that icons, pixel sprites
   etc can be viewed correctly.
 * A scene can now be exported to a single image (File -> Export Scene...)
+* Editing of text items will now be undoable after leaving edit mode
+* Empty text items will be deleted after leaving edit mode
 
 
 Changed
@@ -21,7 +23,6 @@ Changed
 
 * "Save as" will now open pre-select the folder of the currently opened file
 * "Save" and "Save as" are now inactive when the scene is empty
-* Editing of text items will now be undoable after leaving edit mode
 
 
 Fixed

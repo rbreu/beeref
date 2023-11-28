@@ -215,6 +215,7 @@ def test_enter_edit_mode(view):
 def test_exit_edit_mode(setcursor_mock, cursor_mock, view):
     item = BeeTextItem('foo bar')
     item.edit_mode = True
+    item.old_text = 'old'
     view.scene.addItem(item)
     view.scene.edit_item = item
     item.exit_edit_mode()
@@ -224,6 +225,23 @@ def test_exit_edit_mode(setcursor_mock, cursor_mock, view):
     assert flags == Qt.TextInteractionFlag.NoTextInteraction
     cursor_mock.assert_called_once_with(item.document())
     setcursor_mock.assert_called_once_with(cursor_mock.return_value)
+    assert view.scene.edit_item is None
+
+
+def test_exit_edit_mode_when_text_empty(view):
+    item = BeeTextItem(' \r\n\t')
+    item.edit_mode = True
+    item.old_text = 'old'
+    view.scene.addItem(item)
+    view.scene.edit_item = item
+    item.exit_edit_mode()
+    assert item.edit_mode is False
+    assert view.scene.edit_item is None
+    flags = item.textInteractionFlags()
+    assert flags == Qt.TextInteractionFlag.NoTextInteraction
+    assert item.scene() is None
+    assert view.scene.items() == []
+    assert view.scene.edit_item is None
 
 
 @patch('PyQt6.QtWidgets.QGraphicsTextItem.keyPressEvent')
@@ -283,7 +301,6 @@ def test_key_press_event_return(exit_mock, key_press_mock, view):
     item.keyPressEvent(event)
     key_press_mock.assert_not_called()
     exit_mock.assert_called_once_with()
-    assert view.scene.edit_item is None
 
 
 @patch('PyQt6.QtWidgets.QGraphicsTextItem.keyPressEvent')
@@ -298,7 +315,6 @@ def test_key_press_event_enter(exit_mock, key_press_mock, view):
     item.keyPressEvent(event)
     key_press_mock.assert_not_called()
     exit_mock.assert_called_once_with()
-    assert view.scene.edit_item is None
 
 
 def test_item_to_clipboard(qapp):

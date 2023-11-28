@@ -556,6 +556,10 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
         self.scene().undo_stack.push(
             commands.ChangeText(self, self.toPlainText(), self.old_text))
         self.scene().edit_item = None
+        if not self.toPlainText().strip():
+            logger.debug(f'Removing empty text item')
+            self.scene().undo_stack.push(
+                commands.DeleteItems(self.scene(), [self]))
 
     def has_selection_handles(self):
         return super().has_selection_handles() and not self.edit_mode
@@ -564,7 +568,6 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
         if (event.key() in (Qt.Key.Key_Enter, Qt.Key.Key_Return)
                 and event.modifiers() == Qt.KeyboardModifier.NoModifier):
             self.exit_edit_mode()
-            self.scene().edit_item = None
             event.accept()
             return
         super().keyPressEvent(event)
