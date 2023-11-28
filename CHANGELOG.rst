@@ -10,9 +10,9 @@ Added
   behaviour can be changed to always use PNG (the former behaviour) or
   always JPG. To apply this behaviour to already saved images in
   existing bee files, you can save them as new files.
-* Antialias/smoothing for displaying images. (For images being
-  displayed at a large zoom factor, smoothing will turn off to make
-  sure that icons, pixel sprites etc can be viewed correctly.)
+* Enable antialiasing/smoothing. Images that are being displayed at a
+  large zoom factor are exempt to make sure that icons, pixel sprites
+  etc can be viewed correctly.
 * A scene can now be exported to a single image (File -> Export Scene...)
 
 
