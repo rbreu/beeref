@@ -23,10 +23,10 @@ BeeRef — A Simple Reference Image Viewer
 .. |codecov| image:: https://codecov.io/gh/rbreu/beeref/branch/main/graph/badge.svg?token=QA8HR1VVAL
    :target: https://codecov.io/gh/rbreu/beeref
 
-.. |downloads-total| image::https://img.shields.io/github/downloads/rbreu/beeref/total.svg
+.. |downloads-total| image:: https://img.shields.io/github/downloads/rbreu/beeref/total.svg
    :target: https://github.com/rbreu/beeref/releases
 
-.. |downloads-latest| image::https://img.shields.io/github/downloads/rbreu/beeref/latest/total.svg
+.. |downloads-latest| image:: https://img.shields.io/github/downloads/rbreu/beeref/latest/total.svg
    :target: https://github.com/rbreu/beeref/releases
 
 
