@@ -105,24 +105,17 @@ class SettingsDialog(QtWidgets.QDialog):
         layout.addWidget(tabs)
 
         # Bottom row of buttons
-        buttons = QtWidgets.QDialogButtonBox()
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(self.reject)
         reset_btn = QtWidgets.QPushButton('&Restore Defaults')
         reset_btn.setAutoDefault(False)
         reset_btn.clicked.connect(self.on_restore_defaults)
         buttons.addButton(reset_btn,
                           QtWidgets.QDialogButtonBox.ButtonRole.ActionRole)
 
-        close_btn = QtWidgets.QPushButton('&Close')
-        close_btn.setAutoDefault(True)
-        close_btn.clicked.connect(self.on_close)
-        buttons.addButton(close_btn,
-                          QtWidgets.QDialogButtonBox.ButtonRole.ActionRole)
-
         layout.addWidget(buttons)
         self.show()
-
-    def on_close(self, *args, **kwargs):
-        self.close()
 
     def on_restore_defaults(self, *args, **kwargs):
         reply = QtWidgets.QMessageBox.question(
