@@ -108,6 +108,8 @@ menu_structure = [
         'items': [
             'change_opacity',
             'grayscale',
+            MENU_SEPARATOR,
+            'show_color_gamut',
         ],
     },
     {

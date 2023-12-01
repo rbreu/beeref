@@ -17,6 +17,8 @@
 text).
 """
 
+from collections import defaultdict
+from functools import cached_property
 import logging
 
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -210,6 +212,41 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
             item.do_flip()
         item.crop = self.crop
         return item
+
+    @cached_property
+    def color_gamut(self):
+        logger.debug(f'Calculating color gamut for {self}')
+        gamut = defaultdict(int)
+        img = self.pixmap().toImage()
+        # Don't evaluate every pixel for larger images:
+        step = max(1, int(max(img.width(), img.height()) / 1000))
+        logger.debug(f'Considering every {step}. row/column')
+
+        # Not actually faster than solution below :(
+        # ptr = img.bits()
+        # size = img.sizeInBytes()
+        # pixelsize = int(img.sizeInBytes() / img.width() / img.height())
+        # ptr.setsize(size)
+        # for pixel in batched(ptr, n=pixelsize):
+        #     r, g, b, alpha = tuple(map(ord, pixel))
+        #     if 5 < alpha and 5 < r < 250 and 5 < g < 250 and 5 < b < 250:
+        #         # Only consider pixels that aren't close to
+        #         # transparent, white or black
+        #         rgb = QtGui.QColor(r, g, b)
+        #         gamut[rgb.hue(), rgb.saturation()] += 1
+
+        for i in range(0, img.width(), step):
+            for j in range(0, img.height(), step):
+                rgb = img.pixelColor(i, j)
+                rgbtuple = (rgb.red(), rgb.blue(), rgb.green())
+                if (5 < rgb.alpha()
+                        and min(rgbtuple) < 250 and max(rgbtuple) > 5):
+                    # Only consider pixels that aren't close to
+                    # transparent, white or black
+                    gamut[rgb.hue(), rgb.saturation()] += 1
+
+        logger.debug(f'Got {len(gamut)} color gamut values')
+        return gamut
 
     def copy_to_clipboard(self, clipboard):
         clipboard.setPixmap(self.pixmap())

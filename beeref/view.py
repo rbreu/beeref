@@ -329,6 +329,9 @@ class BeeGraphicsView(MainControlsMixin,
         self.undo_stack.push(commands.ResetTransforms(
             self.scene.selectedItems(user_only=True)))
 
+    def on_action_show_color_gamut(self):
+        widgets.color_gamut.GamutDialog(self, self.scene.selectedItems()[0])
+
     def on_items_loaded(self, value):
         logger.debug('On items loaded: add queued items')
         self.scene.add_queued_items()

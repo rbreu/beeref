@@ -21,7 +21,7 @@ from PyQt6.QtCore import Qt
 
 from beeref import constants, commands
 from beeref.config import logfile_name
-from beeref.widgets import settings, welcome_overlay  # noqa: F401
+from beeref.widgets import settings, welcome_overlay, color_gamut  # noqa: F401
 
 
 logger = logging.getLogger(__name__)
