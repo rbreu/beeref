@@ -25,6 +25,6 @@ jobs:
           pip install -r requirements/test.txt
       - name: Run Unittests with pytest
         run: |
-          xvfb-run --auto-servernum --server-num=1 --server-args="-screen 1 1920x1200x24 -ac +extension GLX" pytest --cov-report= -v -s
+          xvfb-run --auto-servernum --server-num=1 --server-args="-screen 1 1920x1200x24 -ac +extension GLX" pytest --cov=./ --cov-report=xml
       - name: Upload Coverage report to Codecov
         uses: codecov/codecov-action@v3
