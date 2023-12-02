@@ -65,6 +65,6 @@ class SceneToPixmapExporter:
     def export(self, filename, size):
         logger.debug(f'Exporting scene to {filename}')
         image = self.render_to_image(size)
-        if not image.save(filename):
+        if not image.save(filename, quality=90):
             raise BeeFileIOError(
                 msg=str('Error writing image'), filename=filename)

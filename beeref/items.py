@@ -141,7 +141,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         if formt == 'best':
             # Images with alpha channel and small images are stored as png
             if (img.hasAlphaChannel()
-                    or (img.height() < 300 and img.width() < 300)):
+                    or (img.height() < 500 and img.width() < 500)):
                 formt = 'png'
             else:
                 formt = 'jpg'
@@ -156,7 +156,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         buffer.open(QtCore.QIODevice.OpenModeFlag.WriteOnly)
         img = self.pixmap().toImage()
         imgformat = self.get_imgformat(img)
-        img.save(buffer, imgformat.upper())
+        img.save(buffer, imgformat.upper(), quality=90)
         return (barray.data(), imgformat)
 
     def setPixmap(self, pixmap):
