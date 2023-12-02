@@ -69,6 +69,7 @@ def test_get_supported_image_formats_for_reading(view):
 
 def test_clear_scene(view, item):
     view.scene.addItem(item)
+    view.scene.internal_clipboard.append(item)
     view.scale(2, 2)
     view.translate(123, 456)
     view.filename = 'test.bee'
@@ -76,6 +77,7 @@ def test_clear_scene(view, item):
 
     view.clear_scene()
     assert not view.scene.items()
+    assert view.scene.internal_clipboard == []
     assert view.transform().isIdentity()
     assert view.filename is None
     view.undo_stack.clear.assert_called_once_with()

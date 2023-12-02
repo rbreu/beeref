@@ -49,6 +49,10 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.edit_item = None
         self.crop_item = None
 
+    def clear(self):
+        super().clear()
+        self.internal_clipboard = []
+
     def addItem(self, item):
         logger.debug(f'Adding item {item}')
         super().addItem(item)

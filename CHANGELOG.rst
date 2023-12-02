@@ -33,8 +33,10 @@ Fixed
 
 * Fixed a bug where the binary data of deleted images would still hang
   around in the bee file.
-* Fixed: The shortcut to move the BeeRef window (Ctrl + Alt + Drag)
-  not working on an empty scene
+* The shortcut to move the BeeRef window (Ctrl + Alt + Drag)
+  now works on an empty scene
+* Crash when copying an item from a bee file, opening a new scene and
+  pasting the image into it.
 
 
 0.3.0 - 2023-11-23

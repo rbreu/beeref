@@ -539,7 +539,9 @@ class BeeGraphicsView(MainControlsMixin,
         # See if we need to look up the internal clipboard:
         data = clipboard.mimeData().data('beeref/items')
         logger.debug(f'Custom data in clipboard: {data}')
-        if data:
+        if data and self.scene.internal_clipboard:
+            # Checking that internal clipboard exists since the user
+            # may have opened a new scene since copying.
             self.scene.paste_from_internal_clipboard(pos)
             return
 
