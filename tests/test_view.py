@@ -39,7 +39,7 @@ def test_init_with_filename(open_file_mock, view, qapp, commandline_args):
     del view
 
 
-@patch('beeref.widgets.WelcomeOverlay.hide')
+@patch('beeref.widgets.welcome_overlay.WelcomeOverlay.hide')
 def test_on_scene_changed_when_items(hide_mock, view):
     item = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item)
@@ -51,7 +51,7 @@ def test_on_scene_changed_when_items(hide_mock, view):
         assert view.get_scale() == 2
 
 
-@patch('beeref.widgets.WelcomeOverlay.show')
+@patch('beeref.widgets.welcome_overlay.WelcomeOverlay.show')
 def test_on_scene_changed_when_no_items(show_mock, view):
     view.scale(2, 2)
     with patch('beeref.view.BeeGraphicsView.recalc_scene_rect') as r:
@@ -600,7 +600,7 @@ def test_on_action_show_titlebar_unchecked(
     create_mock.assert_called_once()
 
 
-@patch('beeref.widgets.WelcomeOverlay.cursor')
+@patch('beeref.widgets.welcome_overlay.WelcomeOverlay.cursor')
 def test_on_action_move_window_when_welcome_overlay(cursor_mock, view):
     cursor_mock.return_value = MagicMock(
         pos=MagicMock(return_value=QtCore.QPointF(10.0, 20.0)))

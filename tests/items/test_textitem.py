@@ -336,6 +336,20 @@ def test_key_press_event_enter(exit_mock, key_press_mock, view):
     exit_mock.assert_called_once_with()
 
 
+@patch('PyQt6.QtWidgets.QGraphicsTextItem.keyPressEvent')
+@patch('beeref.items.BeeTextItem.exit_edit_mode')
+def test_key_press_event_escape(exit_mock, key_press_mock, view):
+    item = BeeTextItem('foo bar')
+    view.scene.addItem(item)
+    view.scene.edit_item = item
+    event = MagicMock()
+    event.key.return_value = Qt.Key.Key_Escape
+    event.modifiers.return_value = Qt.KeyboardModifier.NoModifier
+    item.keyPressEvent(event)
+    key_press_mock.assert_not_called()
+    exit_mock.assert_called_once_with(commit=False)
+
+
 def test_item_to_clipboard(qapp):
     clipboard = QtWidgets.QApplication.clipboard()
     item = BeeTextItem('foo bar')
