@@ -544,6 +544,54 @@ def test_on_action_cut(copy_mock, view, item):
     assert view.undo_stack.isClean() is False
 
 
+def test_on_action_reset_scale(view, item):
+    view.scene.addItem(item)
+    item.setScale(2)
+    item.setSelected(True)
+    view.on_action_reset_scale()
+    assert item.scale() == 1
+
+
+def test_on_action_reset_rotation(view, item):
+    view.scene.addItem(item)
+    item.setRotation(90)
+    item.setSelected(True)
+    view.on_action_reset_rotation()
+    assert item.rotation() == 0
+
+
+def test_on_action_reset_flip(view, item):
+    view.scene.addItem(item)
+    item.do_flip()
+    item.setSelected(True)
+    view.on_action_reset_flip()
+    assert item.flip() == 1
+
+
+def test_on_action_reset_crop(view, item):
+    view.scene.addItem(item)
+    item.crop = QtCore.QRectF(2, 2, 10, 10)
+    assert item.crop == QtCore.QRectF(2, 2, 10, 10)
+    item.setSelected(True)
+    view.on_action_reset_crop()
+    assert item.crop == QtCore.QRectF(0, 0, 0, 0)
+
+
+def test_on_action_reset_transforms(view, item):
+    view.scene.addItem(item)
+    item.crop = QtCore.QRectF(2, 2, 10, 10)
+    item.do_flip()
+    item.setRotation(90)
+    item.setScale(2)
+    assert item.crop == QtCore.QRectF(2, 2, 10, 10)
+    item.setSelected(True)
+    view.on_action_reset_transforms()
+    assert item.crop == QtCore.QRectF(0, 0, 0, 0)
+    assert item.flip() == 1
+    assert item.rotation() == 0
+    assert item.scale() == 1
+
+
 @patch('PyQt6.QtWidgets.QWidget.create')
 @patch('PyQt6.QtWidgets.QWidget.destroy')
 @patch('PyQt6.QtWidgets.QWidget.show')
@@ -617,6 +665,20 @@ def test_on_action_move_window_when_scene(cursor_mock, view):
     view.on_action_move_window()
     assert view.movewin_active is True
     assert view.event_start == QtCore.QPointF(10.0, 20.0)
+
+
+def test_on_action_select_all(view, item):
+    view.scene.addItem(item)
+    item.setSelected(False)
+    view.on_action_select_all()
+    assert item.isSelected() is True
+
+
+def test_on_action_deselect_all(view, item):
+    view.scene.addItem(item)
+    item.setSelected(True)
+    view.on_action_deselect_all()
+    assert item.isSelected() is False
 
 
 def test_on_action_delete_items(view, item):
