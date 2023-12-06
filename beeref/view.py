@@ -222,9 +222,9 @@ class BeeGraphicsView(MainControlsMixin,
 
     def on_action_move_window(self):
         if self.welcome_overlay.isHidden():
-            self.enter_movewin_mode()
+            self.on_action_movewin_mode()
         else:
-            self.welcome_overlay.enter_movewin_mode()
+            self.welcome_overlay.on_action_movewin_mode()
 
     def on_action_undo(self):
         logger.debug('Undo: %s' % self.undo_stack.undoText())
@@ -404,9 +404,6 @@ class BeeGraphicsView(MainControlsMixin,
             filter=';;'.join(('Image Files (*.png *.jpg *.jpeg)',
                               'PNG (*.png)',
                               'JPEG (*.jpg *.jpeg)')))
-        print(';;'.join(('Image Files (*.png *.jpg *.jpeg)',
-                         'PNG (*.png)',
-                         'JPEG (*.jpg *.jpeg)')))
         if filename:
             logger.debug(f'Got export filename {filename}')
             exporter = SceneToPixmapExporter(self.scene)

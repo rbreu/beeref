@@ -657,6 +657,14 @@ def test_on_action_move_window_when_welcome_overlay(cursor_mock, view):
     assert view.welcome_overlay.event_start == QtCore.QPointF(10.0, 20.0)
 
 
+def test_on_action_move_window_when_already_active(view):
+    view.welcome_overlay.event_start = QtCore.QPointF(10.0, 20.0)
+    view.welcome_overlay.movewin_active = True
+    view.on_action_move_window()
+    assert view.welcome_overlay.movewin_active is False
+    assert view.welcome_overlay.event_start == QtCore.QPointF(10.0, 20.0)
+
+
 @patch('beeref.view.BeeGraphicsView.cursor')
 def test_on_action_move_window_when_scene(cursor_mock, view):
     cursor_mock.return_value = MagicMock(

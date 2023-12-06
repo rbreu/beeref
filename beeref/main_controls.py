@@ -36,12 +36,18 @@ class MainControlsMixin:
 
     def init_main_controls(self, main_window):
         self.main_window = main_window
-        self.setContextMenuPolicy(
-            Qt.ContextMenuPolicy.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(
             self.control_target.on_context_menu)
         self.setAcceptDrops(True)
         self.movewin_active = False
+
+    def on_action_movewin_mode(self):
+        if self.movewin_active:
+            # Pressing the same shortcut again should end the action
+            self.exit_movewin_mode()
+        else:
+            self.enter_movewin_mode()
 
     def enter_movewin_mode(self):
         logger.debug('Entering movewin mode')
