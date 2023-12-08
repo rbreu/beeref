@@ -37,17 +37,29 @@ def test_welcome_overlay_when_no_recent_files(qapp):
     view = BeeGraphicsView(qapp, parent)
     overlay = WelcomeOverlay(view)
     overlay.show()
-    assert overlay.layout.indexOf(overlay.files_layout) < 0
+    assert overlay.layout.indexOf(overlay.files_widget) < 0
 
 
 def test_recent_files_view_size_hint(qapp):
     parent = QtWidgets.QMainWindow()
-    files_view = RecentFilesView(parent)
+    files_view = RecentFilesView(parent, None)
 
     files_view.sizeHintForRow = lambda i: 10 + i
     files_view.sizeHintForColumn = lambda i: 50 + i
     files_view.update_files(['foo.png', 'bar.png'])
     assert files_view.sizeHint() == QtCore.QSize(53, 25)
+
+
+def test_recent_files_view_on_click(qapp):
+    parent = QtWidgets.QMainWindow()
+    view = BeeGraphicsView(qapp, parent)
+    view.open_from_file = MagicMock()
+    overlay = WelcomeOverlay(view)
+    overlay.files_view.update_files(['foo.bee', 'bar.bee'])
+    overlay.files_view.on_clicked(
+        RecentFilesModel(
+            ['foo.bee', 'bar.bee']).createIndex(1, 0))
+    view.open_from_file.assert_called_once_with('bar.bee')
 
 
 @patch('beeref.widgets.welcome_overlay.BeeSettings.get_recent_files',
@@ -57,7 +69,7 @@ def test_welcome_overlay_when_recent_files(qapp):
     view = BeeGraphicsView(qapp, parent)
     overlay = WelcomeOverlay(view)
     overlay.show()
-    assert overlay.layout.indexOf(overlay.files_layout) == 0
+    assert overlay.layout.indexOf(overlay.files_widget) == 0
 
 
 @patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')

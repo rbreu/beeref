@@ -47,15 +47,16 @@ class RecentFilesModel(QtCore.QAbstractListModel):
 
 class RecentFilesView(QtWidgets.QListView):
 
-    def __init__(self, parent, files=None):
+    def __init__(self, parent, view, files=None):
         super().__init__(parent)
+        self.view = view
         self.files = files or []
         self.clicked.connect(self.on_clicked)
         self.setModel(RecentFilesModel(self.files))
         self.setMouseTracking(True)
 
     def on_clicked(self, index):
-        self.parent().parent().open_from_file(self.files[index.row()])
+        self.view.open_from_file(self.files[index.row()])
 
     def update_files(self, files):
         self.files = files
@@ -96,13 +97,16 @@ class WelcomeOverlay(MainControlsMixin, QtWidgets.QWidget):
         self.init_main_controls(main_window=parent.parent)
 
         # Recent files
-        self.files_layout = QtWidgets.QVBoxLayout()
-        self.files_layout.addStretch(50)
-        self.files_layout.addWidget(
+        self.files_widget = QtWidgets.QWidget(self)
+        files_layout = QtWidgets.QVBoxLayout()
+        files_layout.addStretch(50)
+        files_layout.addWidget(
             QtWidgets.QLabel('<h3>Recent Files</h3>', self))
-        self.files_view = RecentFilesView(self)
-        self.files_layout.addWidget(self.files_view)
-        self.files_layout.addStretch(50)
+        self.files_view = RecentFilesView(self, parent)
+        files_layout.addWidget(self.files_view)
+        files_layout.addStretch(50)
+        self.files_widget.setLayout(files_layout)
+        self.files_widget.hide()
 
         # Help text
         self.label = QtWidgets.QLabel(self.txt, self)
@@ -117,8 +121,9 @@ class WelcomeOverlay(MainControlsMixin, QtWidgets.QWidget):
     def show(self):
         files = BeeSettings().get_recent_files(existing_only=True)
         self.files_view.update_files(files)
-        if files and self.layout.indexOf(self.files_layout) < 0:
-            self.layout.insertLayout(0, self.files_layout)
+        if files and self.layout.indexOf(self.files_widget) < 0:
+            self.layout.insertWidget(0, self.files_widget)
+            self.files_widget.show()
         super().show()
 
     def disable_mouse_events(self):
