@@ -34,11 +34,10 @@ class SceneToPixmapExporter:
         self.scene.cancel_crop_mode()
         self.scene.set_selected_all_items(False)
         # Selection outlines/handles will be rendered to the exported
-        # image, and they also influence the size of the sceneRect.
-        # So deselect first.
-        size = self.scene.sceneRect().size()
-        if isinstance(size, QtCore.QSizeF):
-            size = size.toSize()
+        # image, so deselect first. (Alternatively, pass an attribute
+        # to paint functions to not paint them?)
+        rect = scene.itemsBoundingRect()
+        size = QtCore.QSize(int(rect.width()), int(rect.height()))
         self.margin = max(size.width(), size.height()) * 0.03
         self.default_size = size.grownBy(
             QtCore.QMargins(*([int(self.margin)] * 4)))
