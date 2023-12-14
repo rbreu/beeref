@@ -1,7 +1,13 @@
 0.3.2 - (unreleased)
 ====================
 
-tbd
+Fixed:
+
+* Scene Export: Fix output image size and margins when scene had been
+  scaled or moved
+* Scene Export: Selecting filename without file extension now
+  automatically appends the extension from the selected filter istead
+  of resulting in a confusing error message.
 
 
 0.3.1 - 2023-12-10
