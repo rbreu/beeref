@@ -45,7 +45,6 @@ logger = logging.getLogger(__name__)
 def is_bee_file(path):
     """Check whether the file at the given path is a bee file."""
 
-    print(os.path.splitext(path)[1])
     return os.path.splitext(path)[1] == '.bee'
 
 

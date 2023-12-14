@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
+import re
+
 from PyQt6 import QtCore, QtGui
 
 
@@ -66,3 +68,13 @@ def round_to(number, base):
     """
 
     return base * round(number / base)
+
+
+def get_file_extension_from_format(formatstr):
+    """Extracts the first file extension from a Qt file dialog format,
+    e.g. 'JPEG (*.jpg *.jpeg)' yields 'jpg'.
+    """
+
+    extensions = re.match(r'.* \((.*)\)', formatstr).groups()[0]
+    ext = extensions.split()[0]
+    return ext.removeprefix('*.')

@@ -63,3 +63,11 @@ def test_get_rect_from_points_given_topright_bottomleft():
                           (3.1, 0.5, 3.0)])
 def test_round_to(number, base, expected):
     assert utils.round_to(number, base) == expected
+
+
+@pytest.mark.parametrize('formatstr,expected',
+                         [('Image Files (*.png *.jpg *.jpeg)', 'png'),
+                          ('PNG (*.png)', 'png'),
+                          ('JPEG (*.jpg *.jpeg)', 'jpg')])
+def test_get_file_extension_from_format(formatstr, expected):
+    assert utils.get_file_extension_from_format(formatstr) == expected

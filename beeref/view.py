@@ -31,6 +31,7 @@ from beeref import widgets
 from beeref.items import BeePixmapItem, BeeTextItem
 from beeref.main_controls import MainControlsMixin
 from beeref.scene import BeeGraphicsScene
+from beeref.utils import get_file_extension_from_format
 
 
 commandline_args = CommandlineArgs()
@@ -366,7 +367,7 @@ class BeeGraphicsView(MainControlsMixin,
             self.undo_stack.setClean()
 
     def do_save(self, filename, create_new):
-        if not filename.endswith('.bee'):
+        if not fileio.is_bee_file(filename):
             filename = f'{filename}.bee'
         self.worker = fileio.ThreadedIO(
             fileio.save_bee, filename, self.scene, create_new=create_new)
@@ -397,14 +398,20 @@ class BeeGraphicsView(MainControlsMixin,
 
     def on_action_export_scene(self):
         directory = os.path.dirname(self.filename) if self.filename else None
-        filename, f = QtWidgets.QFileDialog.getSaveFileName(
+        filename, formatstr = QtWidgets.QFileDialog.getSaveFileName(
             parent=self,
             caption='Export Scene to Image',
             directory=directory,
             filter=';;'.join(('Image Files (*.png *.jpg *.jpeg)',
                               'PNG (*.png)',
                               'JPEG (*.jpg *.jpeg)')))
+
         if filename:
+            name, ext = os.path.splitext(filename)
+            if not ext:
+                ext = get_file_extension_from_format(formatstr)
+                filename = f'{filename}.{ext}'
+            print(filename)
             logger.debug(f'Got export filename {filename}')
             exporter = SceneToPixmapExporter(self.scene)
             dialog = widgets.SceneToPixmapExporterDialog(

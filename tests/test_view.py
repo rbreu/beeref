@@ -314,6 +314,23 @@ def test_on_action_export_scene(
 @patch('beeref.widgets.SceneToPixmapExporterDialog.exec')
 @patch('beeref.widgets.SceneToPixmapExporterDialog.value')
 @patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName')
+def test_on_action_export_scene_no_file_extension(
+        file_mock, value_mock, exec_mock, view, tmpdir):
+    item = BeeTextItem('foo')
+    view.scene.addItem(item)
+    filename = os.path.join(tmpdir, 'test')
+    assert os.path.exists(filename) is False
+    file_mock.return_value = (filename, 'PNG (*.png)')
+    exec_mock.return_value = 1
+    value_mock.return_value = QtCore.QSize(100, 100)
+    view.on_action_export_scene()
+    img = QtGui.QImage(f'{filename}.png')
+    assert img.size() == QtCore.QSize(100, 100)
+
+
+@patch('beeref.widgets.SceneToPixmapExporterDialog.exec')
+@patch('beeref.widgets.SceneToPixmapExporterDialog.value')
+@patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName')
 def test_on_action_export_scene_no_filename(
         file_mock, value_mock, exec_mock, view):
     item = BeeTextItem('foo')
