@@ -44,6 +44,21 @@ def test_settings_value_or_default_gets_overriden_value(settings):
     assert settings.valueOrDefault('Items/image_storage_format') == 'png'
 
 
+def test_settings_value_or_default_gets_default_when_invalid(settings):
+    settings.setValue('Items/image_storage_format', 'foo')
+    assert settings.valueOrDefault('Items/image_storage_format') == 'best'
+
+
+def test_settings_value_or_default_casts_value(settings):
+    settings.setValue('Items/arrange_gap', '5')
+    assert settings.valueOrDefault('Items/arrange_gap') == 5
+
+
+def test_settings_value_or_default_gets_default_when_cast_error(settings):
+    settings.setValue('Items/arrange_gap', 'foo')
+    assert settings.valueOrDefault('Items/arrange_gap') == 0
+
+
 def test_restore_defaults_restores(settings):
     settings.setValue('Items/image_storage_format', 'png')
     settings.restore_defaults()

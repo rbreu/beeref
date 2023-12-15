@@ -106,8 +106,16 @@ settings_events = BeeSettingsEvents()
 
 class BeeSettings(QtCore.QSettings):
 
-    DEFAULTS = {
-        'Items/image_storage_format': 'best',
+    FIELDS = {
+        'Items/image_storage_format': {
+            'default': 'best',
+            'validate': lambda x: x in ('png', 'jpg', 'best'),
+        },
+        'Items/arrange_gap': {
+            'default': 0,
+            'cast': int,
+            'validate': lambda x: 0 <= x <= 200,
+        },
     }
 
     def __init__(self):
@@ -123,15 +131,40 @@ class BeeSettings(QtCore.QSettings):
             constants.APPNAME,
             constants.APPNAME)
 
-    def valueOrDefault(self, key, type=None):
-        val = self.value(key, type)
+    def valueOrDefault(self, key):
+        """Get the value for key, or the default value specified in FIELDS.
+
+        This is the method to be used for configurable settings (as
+        opposed to settings that BeeRef stores on its own.)
+
+        This will validate and type cast the given value if 'cast' and
+        'validate' are specified in the FIELDS entry for the given
+        key. The default value will be returned if validation or type
+        casting fails.
+
+        """
+
+        val = self.value(key)
+        conf = self.FIELDS[key]
         if val is None:
-            val = self.DEFAULTS.get(key)
+            val = conf['default']
+        if 'cast' in conf:
+            try:
+                val = conf['cast'](val)
+            except (ValueError, TypeError):
+                val = conf['default']
+        if 'validate' in conf:
+            if not conf['validate'](val):
+                val = conf['default']
         return val
 
     def restore_defaults(self):
+        """Restore all the values specified in FILEDS to their default values
+        by removing them from the settings file.
+        """
+
         logger.debug('Restoring settings to defaults')
-        for key in self.DEFAULTS.keys():
+        for key in self.FIELDS.keys():
             self.remove(key)
         settings_events.restore_defaults.emit()
 

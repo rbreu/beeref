@@ -56,6 +56,7 @@ class RadioGroup(QtWidgets.QGroupBox):
             layout.addWidget(btn)
 
         self.ignore_values_changed = False
+        layout.addStretch(100)
 
     def on_values_changed(self, value, button):
         if self.ignore_values_changed:
@@ -73,6 +74,48 @@ class RadioGroup(QtWidgets.QGroupBox):
         self.ignore_values_changed = False
 
 
+class IntegerGroup(QtWidgets.QGroupBox):
+    TITLE = None
+    HELPTEXT = None
+    KEY = None
+    MIN = None
+    MAX = None
+
+    def __init__(self):
+        super().__init__(self.TITLE)
+        self.settings = BeeSettings()
+        layout = QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
+        settings_events.restore_defaults.connect(self.on_restore_defaults)
+
+        if self.HELPTEXT:
+            helptxt = QtWidgets.QLabel(self.HELPTEXT)
+            helptxt.setWordWrap(True)
+            layout.addWidget(helptxt)
+
+        self.input = QtWidgets.QSpinBox()
+        self.input.setValue(self.settings.valueOrDefault(self.KEY))
+        self.input.setRange(self.MIN, self.MAX)
+        self.input.valueChanged.connect(self.on_value_changed)
+        layout.addWidget(self.input)
+        layout.addStretch(100)
+        self.ignore_values_changed = False
+
+    def on_value_changed(self, value):
+        if self.ignore_values_changed:
+            return
+
+        if value != self.settings.valueOrDefault(self.KEY):
+            logger.debug(f'Setting {self.KEY} changed to: {value}')
+            self.settings.setValue(self.KEY, value)
+
+    def on_restore_defaults(self):
+        new_value = self.settings.valueOrDefault(self.KEY)
+        self.ignore_values_changed = True
+        self.input.setValue(new_value)
+        self.ignore_values_changed = False
+
+
 class ImageStorageFormatWidget(RadioGroup):
     TITLE = 'Image Storage Format:'
     HELPTEXT = ('How images are stored inside bee files.'
@@ -87,6 +130,14 @@ class ImageStorageFormatWidget(RadioGroup):
          'Small bee file, but lossy and no transparency support'))
 
 
+class ArrangeGapWidget(IntegerGroup):
+    TITLE = 'Arrange Gap:'
+    HELPTEXT = ('The gap between images when using arrange actions.')
+    KEY = 'Items/arrange_gap'
+    MIN = 0
+    MAX = 200
+
+
 class SettingsDialog(QtWidgets.QDialog):
     def __init__(self, parent):
         super().__init__(parent)
@@ -98,6 +149,7 @@ class SettingsDialog(QtWidgets.QDialog):
         misc_layout = QtWidgets.QGridLayout()
         misc.setLayout(misc_layout)
         misc_layout.addWidget(ImageStorageFormatWidget(), 0, 0)
+        misc_layout.addWidget(ArrangeGapWidget(), 0, 1)
         tabs.addTab(misc, '&Miscellaneous')
 
         layout = QtWidgets.QVBoxLayout()

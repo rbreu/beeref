@@ -23,6 +23,7 @@ from PyQt6.QtCore import Qt
 import rpack
 
 from beeref import commands
+from beeref.config import BeeSettings
 from beeref.items import item_registry
 from beeref.selection import MultiSelectItem, RubberbandItem
 
@@ -48,6 +49,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.internal_clipboard = []
         self.edit_item = None
         self.crop_item = None
+        self.settings = BeeSettings()
 
     def clear(self):
         super().clear()
@@ -166,6 +168,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         if len(items) < 2:
             return
 
+        gap = self.settings.valueOrDefault('Items/arrange_gap')
         center = self.get_selection_center()
         positions = []
         rects = []
@@ -182,7 +185,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
                 positions.append(
                     QtCore.QPointF(
                         round(center.x() - rect['rect'].width()/2), y))
-                y += rect['rect'].height()
+                y += rect['rect'].height() + gap
 
         else:
             rects.sort(key=lambda r: r['rect'].topLeft().x())
@@ -192,7 +195,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
                 positions.append(
                     QtCore.QPointF(
                         x, round(center.y() - rect['rect'].height()/2)))
-                x += rect['rect'].width()
+                x += rect['rect'].width() + gap
 
         self.undo_stack.push(
             commands.ArrangeItems(self,
@@ -206,12 +209,14 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         if len(items) < 2:
             return
 
+        gap = self.settings.valueOrDefault('Items/arrange_gap')
+        center = self.get_selection_center()
+
         sizes = []
         for item in items:
             rect = self.itemsBoundingRect(items=[item])
-            sizes.append((round(rect.width()), round(rect.height())))
-
-        center = self.get_selection_center()
+            sizes.append((round(rect.width() + gap),
+                          round(rect.height() + gap)))
 
         # The minimal area the items need if they could be packed optimally;
         # we use this as a starting shape for the packing algorithm

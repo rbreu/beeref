@@ -1,7 +1,14 @@
 0.3.2 - (unreleased)
 ====================
 
+Added
+-----
+
+* For arranging, a gap between images can now be configured in the
+  settings.
+
 Fixed:
+------
 
 * Scene Export: Fix output image size and margins when scene had been
   scaled or moved

@@ -271,6 +271,29 @@ def test_arrange_horizontal(view):
     view.scene.cancel_crop_mode.assert_called_once_with()
 
 
+def test_arrange_horizontal_with_gap(view, settings):
+    settings.setValue('Items/arrange_gap', 6)
+    item1 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item1)
+    item1.setSelected(True)
+    item1.setPos(10, -100)
+    item2 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item2)
+    item2.setSelected(True)
+    item2.setPos(-10, 40)
+    view.scene.cancel_crop_mode = MagicMock()
+
+    with patch.object(item1, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        with patch.object(item2, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 100, 80)):
+            view.scene.arrange()
+
+    assert item2.pos() == QtCore.QPointF(-50, -30)
+    assert item1.pos() == QtCore.QPointF(56, -30)
+    view.scene.cancel_crop_mode.assert_called_once_with()
+
+
 def test_arrange_vertical(view):
     item1 = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item1)
@@ -290,6 +313,29 @@ def test_arrange_vertical(view):
 
     assert item1.pos() == QtCore.QPointF(0, -70)
     assert item2.pos() == QtCore.QPointF(0, 10)
+    view.scene.cancel_crop_mode = MagicMock()
+
+
+def test_arrange_vertical_with_gap(view, settings):
+    settings.setValue('Items/arrange_gap', 6)
+    item1 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item1)
+    item1.setSelected(True)
+    item1.setPos(10, -100)
+    item2 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item2)
+    item2.setSelected(True)
+    item2.setPos(-10, 40)
+    view.scene.cancel_crop_mode = MagicMock()
+
+    with patch.object(item1, 'bounding_rect_unselected',
+                      return_value=QtCore.QRectF(0, 0, 100, 80)):
+        with patch.object(item2, 'bounding_rect_unselected',
+                          return_value=QtCore.QRectF(0, 0, 100, 80)):
+            view.scene.arrange(vertical=True)
+
+    assert item1.pos() == QtCore.QPointF(0, -70)
+    assert item2.pos() == QtCore.QPointF(0, 16)
     view.scene.cancel_crop_mode = MagicMock()
 
 
@@ -333,6 +379,24 @@ def test_arrange_optimal(view):
     view.scene.cancel_crop_mode = MagicMock()
     view.scene.arrange_optimal()
     expected_positions = {(-50, -40), (50, -40), (-50, 40), (50, 40)}
+    actual_positions = {
+        (i.pos().x(), i.pos().y())
+        for i in view.scene.selectedItems(user_only=True)}
+    assert expected_positions == actual_positions
+    view.scene.cancel_crop_mode.assert_called_once_with()
+
+
+def test_arrange_optimal_with_gap(view, settings):
+    settings.setValue('Items/arrange_gap', 6)
+    for i in range(4):
+        item = BeePixmapItem(QtGui.QImage())
+        view.scene.addItem(item)
+        item.setSelected(True)
+        item.crop = QtCore.QRectF(0, 0, 100, 80)
+
+    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.arrange_optimal()
+    expected_positions = {(-56, -46), (50, -46), (-56, 40), (50, 40)}
     actual_positions = {
         (i.pos().x(), i.pos().y())
         for i in view.scene.selectedItems(user_only=True)}

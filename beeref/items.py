@@ -135,8 +135,6 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         """Determines the format for storing this image."""
 
         formt = self.settings.valueOrDefault('Items/image_storage_format')
-        if formt not in ('png', 'jpg', 'best'):
-            formt = 'best'
 
         if formt == 'best':
             # Images with alpha channel and small images are stored as png
