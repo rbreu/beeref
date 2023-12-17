@@ -161,6 +161,14 @@ actions = [
         'group': 'active_when_selection',
     },
     {
+        'id': 'grayscale',
+        'text': '&Grayscale',
+        'shortcuts': ['G'],
+        'checkable': True,
+        'callback': 'on_action_grayscale',
+        'group': 'active_when_selection',
+    },
+    {
         'id': 'crop',
         'text': '&Crop',
         'shortcuts': ['Shift+C'],

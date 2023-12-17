@@ -6,7 +6,8 @@ Added
 
 * For arranging, a gap between images can now be configured in the
   settings.
-* The opacity of images can now be changed (Images -> Change Opacity).
+* The opacity of images can be changed (Images -> Change Opacity).
+* Images can be set to display as grayscale (Images -> Grayscale).
 
 
 Fixed:

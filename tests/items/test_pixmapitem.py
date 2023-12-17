@@ -59,6 +59,19 @@ def test_set_crop(qapp, item):
     item.prepareGeometryChange.assert_called_once_with()
 
 
+def test_set_grayscale_true(qapp, item):
+    item.grayscale = True
+    assert item.grayscale is True
+    assert item._grayscale_pixmap is not None
+
+
+def test_set_grayscale_false(qapp, item):
+    item._grayscale_pixmap = QtGui.QPixmap()
+    item.grayscale = False
+    assert item.grayscale is False
+    assert item._grayscale_pixmap is None
+
+
 def test_bounding_rect_unselected(qapp, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     item.crop = QtCore.QRectF(1, 1, 2, 2)
@@ -76,10 +89,12 @@ def test_get_extra_save_data(item):
     item.filename = 'foobar.png'
     item.crop = QtCore.QRectF(10, 20, 30, 40)
     item.setOpacity(0.75)
+    item.grayscale = True
     assert item.get_extra_save_data() == {
         'filename': 'foobar.png',
         'crop': [10, 20, 30, 40],
         'opacity': 0.75,
+        'grayscale': True
     }
 
 
@@ -255,6 +270,7 @@ def test_create_from_minimal_data(qapp, item, imgfilename3x3):
     assert item.filename == 'foobar.png'
     assert item.crop == QtCore.QRectF(0, 0, 3, 3)
     assert item.opacity() == 1
+    assert item.grayscale is False
 
 
 def test_create_from_data_with_crop(item):
@@ -273,6 +289,14 @@ def test_create_from_data_with_opacity(item):
     assert item.opacity() == 0.7
 
 
+def test_create_from_data_with_grayscale(item):
+    new_item = BeePixmapItem.create_from_data(
+        item=item, data={'filename': 'foobar.png', 'grayscale': True})
+    assert new_item is item
+    assert item.filename == 'foobar.png'
+    assert item.grayscale is True
+
+
 def test_create_copy(qapp, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3), 'foo.png')
     item.setPos(20, 30)
@@ -282,6 +306,7 @@ def test_create_copy(qapp, imgfilename3x3):
     item.setScale(2.2)
     item.crop = QtCore.QRectF(10, 20, 30, 40)
     item.setOpacity(0.7)
+    item.grayscale = True
 
     copy = item.create_copy()
     assert copy.pixmap_to_bytes() == item.pixmap_to_bytes()
@@ -293,6 +318,7 @@ def test_create_copy(qapp, imgfilename3x3):
     assert copy.scale() == 2.2
     assert copy.crop == QtCore.QRectF(10, 20, 30, 40)
     assert copy.opacity() == 0.7
+    assert copy.grayscale is True
 
 
 def test_copy_to_clipboard(qapp, imgfilename3x3):

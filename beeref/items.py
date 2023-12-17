@@ -93,6 +93,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         self.crop_mode = False
         self.init_selectable()
         self.settings = BeeSettings()
+        self.grayscale = False
 
     @classmethod
     def create_from_data(self, **kwargs):
@@ -102,6 +103,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         if 'crop' in data:
             item.crop = QtCore.QRectF(*data['crop'])
         item.setOpacity(data.get('opacity', 1))
+        item.grayscale = data.get('grayscale', False)
         return item
 
     def __str__(self):
@@ -119,6 +121,23 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         self._crop = value
         self.update()
 
+    @property
+    def grayscale(self):
+        return self._grayscale
+
+    @grayscale.setter
+    def grayscale(self, value):
+        logger.debug('Setting grayscale for {self} to {value}')
+        self._grayscale = value
+        if value is True:
+            img = self.pixmap().toImage()
+            img = img.convertToFormat(QtGui.QImage.Format.Format_Grayscale8)
+            self._grayscale_pixmap = QtGui.QPixmap.fromImage(img)
+        else:
+            self._grayscale_pixmap = None
+
+        self.update()
+
     def bounding_rect_unselected(self):
         if self.crop_mode:
             return QtWidgets.QGraphicsPixmapItem.boundingRect(self)
@@ -128,6 +147,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
     def get_extra_save_data(self):
         return {'filename': self.filename,
                 'opacity': self.opacity(),
+                'grayscale': self.grayscale,
                 'crop': [self.crop.topLeft().x(),
                          self.crop.topLeft().y(),
                          self.crop.width(),
@@ -177,6 +197,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         item.setScale(self.scale())
         item.setRotation(self.rotation())
         item.setOpacity(self.opacity())
+        item.grayscale = self.grayscale
         if self.flip() == -1:
             item.do_flip()
         item.crop = self.crop
@@ -326,7 +347,8 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
                 self.draw_crop_rect(painter, handle())
             self.draw_crop_rect(painter, self.crop_temp)
         else:
-            painter.drawPixmap(self.crop, self.pixmap(), self.crop)
+            pm = self._grayscale_pixmap if self.grayscale else self.pixmap()
+            painter.drawPixmap(self.crop, pm, self.crop)
             self.paint_selectable(painter, option, widget)
 
     def enter_crop_mode(self):

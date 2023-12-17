@@ -107,6 +107,7 @@ menu_structure = [
         'menu': '&Images',
         'items': [
             'change_opacity',
+            'grayscale',
         ],
     },
     {
