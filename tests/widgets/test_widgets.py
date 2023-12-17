@@ -1,10 +1,12 @@
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtWidgets, QtGui
 from PyQt6.QtCore import Qt
 
 from beeref.config import logfile_name
 from beeref.widgets import (
+    ChangeOpacityDialog,
     DebugLogDialog,
-    SceneToPixmapExporterDialog)
+    SceneToPixmapExporterDialog,
+)
 
 
 def test_debug_log_dialog(qtbot, settings, view):
@@ -46,3 +48,49 @@ def test_scene_to_pixmap_exporter_dialog_updates_width(view):
     dlg.height_input.setValue(160)
     assert dlg.width_input.value() == 120
     assert dlg.value() == QtCore.QSize(120, 160)
+
+
+def test_change_opacity_dialog_init(view, item):
+    item.setOpacity(0.6)
+    stack = QtGui.QUndoStack()
+    dlg = ChangeOpacityDialog(view, [item], stack)
+    assert dlg.input.value() == 60
+    assert dlg.label.text() == 'Opacity: 60%'
+
+
+def test_change_opacity_dialog_live_update(view, item):
+    item.setOpacity(0.6)
+    stack = QtGui.QUndoStack()
+    dlg = ChangeOpacityDialog(view, [item], stack)
+    dlg.input.setValue(30)
+    assert dlg.label.text() == 'Opacity: 30%'
+    assert item.opacity() == 0.3
+
+
+def test_change_opacity_dialog_accept(view, item):
+    item.setOpacity(0.6)
+    stack = QtGui.QUndoStack()
+    dlg = ChangeOpacityDialog(view, [item], stack)
+    dlg.input.setValue(30)
+    dlg.accept()
+    assert item.opacity() == 0.3
+    assert len(stack) == 1
+
+
+def test_change_opacity_dialog_accept_when_no_items(view):
+    stack = QtGui.QUndoStack()
+    dlg = ChangeOpacityDialog(view, [], stack)
+    assert dlg.input.value() == 100
+    dlg.input.setValue(30)
+    dlg.accept()
+    assert len(stack) == 0
+
+
+def test_change_opacity_dialog_reject(view, item):
+    item.setOpacity(0.6)
+    stack = QtGui.QUndoStack()
+    dlg = ChangeOpacityDialog(view, [item], stack)
+    dlg.input.setValue(30)
+    dlg.reject()
+    assert item.opacity() == 0.6
+    assert len(stack) == 0

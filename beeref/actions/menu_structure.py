@@ -104,6 +104,12 @@ menu_structure = [
         ],
     },
     {
+        'menu': '&Images',
+        'items': [
+            'change_opacity',
+        ],
+    },
+    {
         'menu': '&Settings',
         'items': [
             'settings',

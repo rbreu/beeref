@@ -228,6 +228,7 @@ def test_sqliteio_write_inserts_new_text_item(tmpfile, view):
 def test_sqliteio_write_inserts_new_pixmap_item_png(tmpfile, view):
     item = BeePixmapItem(QtGui.QImage(), filename='bee.jpg')
     view.scene.addItem(item)
+    item.setOpacity(0.66)
     item.setScale(1.3)
     item.setPos(44, 55)
     item.setZValue(0.22)
@@ -253,6 +254,7 @@ def test_sqliteio_write_inserts_new_pixmap_item_png(tmpfile, view):
     assert json.loads(result[6]) == {
         'filename': 'bee.jpg',
         'crop': [5, 5, 100, 80],
+        'opacity': 0.66,
     }
     assert result[7] == 'pixmap'
     assert result[8] == b'abc'
@@ -331,6 +333,7 @@ def test_sqliteio_write_updates_existing_pixmap_item(tmpfile, view):
     item.setPos(44, 55)
     item.setZValue(0.22)
     item.setRotation(33)
+    item.setOpacity(0.2)
     item.save_id = 1
     item.crop = QtCore.QRectF(5, 5, 80, 100)
     item.pixmap_to_bytes = MagicMock(return_value=(b'abc', 'png'))
@@ -340,6 +343,7 @@ def test_sqliteio_write_updates_existing_pixmap_item(tmpfile, view):
     item.setPos(20, 30)
     item.setZValue(0.33)
     item.setRotation(100)
+    item.setOpacity(0.75)
     item.do_flip()
     item.crop = QtCore.QRectF(1, 2, 30, 40)
     item.filename = 'new.png'
@@ -361,6 +365,7 @@ def test_sqliteio_write_updates_existing_pixmap_item(tmpfile, view):
     assert json.loads(result[6]) == {
         'filename': 'new.png',
         'crop': [1, 2, 30, 40],
+        'opacity': 0.75,
     }
     assert result[7] == b'abc'
 
@@ -495,6 +500,8 @@ def test_sqliteio_read_reads_readonly_pixmap_item(tmpfile, view, imgdata3x3):
     assert item.filename == 'bee.png'
     assert item.width == 3
     assert item.height == 3
+    assert item.crop == QtCore.QRectF(0, 0, 3, 3)
+    assert item.opacity() == 1
     assert view.scene.items_to_add.empty() is True
 
 

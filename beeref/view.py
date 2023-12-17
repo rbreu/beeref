@@ -281,6 +281,12 @@ class BeeGraphicsView(MainControlsMixin,
     def on_action_arrange_optimal(self):
         self.scene.arrange_optimal()
 
+    def on_action_change_opacity(self):
+        images = list(filter(
+            lambda item: item.is_image,
+            self.scene.selectedItems(user_only=True)))
+        widgets.ChangeOpacityDialog(self, images, self.undo_stack)
+
     def on_action_crop(self):
         self.scene.crop_items()
 
@@ -575,8 +581,8 @@ class BeeGraphicsView(MainControlsMixin,
                      len(self.scene.selectedItems(user_only=True)))
         self.actiongroup_set_enabled('active_when_selection',
                                      self.scene.has_selection())
-        self.actiongroup_set_enabled('active_when_croppable',
-                                     self.scene.has_croppable_selection())
+        self.actiongroup_set_enabled('active_when_single_image',
+                                     self.scene.has_single_image_selection())
         self.viewport().repaint()
 
     def recalc_scene_rect(self):

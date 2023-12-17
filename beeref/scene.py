@@ -252,9 +252,9 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         if self.crop_item:
             return
-        if self.has_croppable_selection():
+        if self.has_single_image_selection():
             item = self.selectedItems(user_only=True)[0]
-            if item.is_croppable:
+            if item.is_image:
                 item.enter_crop_mode()
 
     def set_selected_all_items(self, value):
@@ -278,12 +278,11 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         return len(self.selectedItems(user_only=True)) > 1
 
-    def has_croppable_selection(self):
-        """Checks whether the current selection is croppable, i.e. a
-        single selection whose item is croppable."""
+    def has_single_image_selection(self):
+        """Checks whether the current selection is a single image."""
 
         if self.has_single_selection():
-            return self.selectedItems(user_only=True)[0].is_croppable
+            return self.selectedItems(user_only=True)[0].is_image
         return False
 
     def mousePressEvent(self, event):
@@ -455,7 +454,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.items_to_add.put((itemdata, selected))
 
     def add_queued_items(self):
-        """Adds items added via ``add_items_later``"""
+        """Adds items added via ``add_item_later``"""
 
         while not self.items_to_add.empty():
             data, selected = self.items_to_add.get()
@@ -467,6 +466,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
                 cls = item_registry.get('text')
                 data['data'] = {'text': f'Item of unknown type: {typ}'}
             item = cls.create_from_data(**data)
+            # Set the values common to all item types:
             item.update_from_data(**data)
             self.addItem(item)
             # Force recalculation of min/max z values:

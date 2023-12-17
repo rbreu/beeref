@@ -89,7 +89,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         self.filename = filename
         self.reset_crop()
         logger.debug(f'Initialized {self}')
-        self.is_croppable = True
+        self.is_image = True
         self.crop_mode = False
         self.init_selectable()
         self.settings = BeeSettings()
@@ -101,6 +101,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         item.filename = item.filename or data.get('filename')
         if 'crop' in data:
             item.crop = QtCore.QRectF(*data['crop'])
+        item.setOpacity(data.get('opacity', 1))
         return item
 
     def __str__(self):
@@ -126,6 +127,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
 
     def get_extra_save_data(self):
         return {'filename': self.filename,
+                'opacity': self.opacity(),
                 'crop': [self.crop.topLeft().x(),
                          self.crop.topLeft().y(),
                          self.crop.width(),
@@ -174,6 +176,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         item.setZValue(self.zValue())
         item.setScale(self.scale())
         item.setRotation(self.rotation())
+        item.setOpacity(self.opacity())
         if self.flip() == -1:
             item.do_flip()
         item.crop = self.crop
@@ -494,7 +497,7 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
         super().__init__(text or "Text")
         self.save_id = None
         logger.debug(f'Initialized {self}')
-        self.is_croppable = False
+        self.is_image = False
         self.init_selectable()
         self.is_editable = True
         self.edit_mode = False

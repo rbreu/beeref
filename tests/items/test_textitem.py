@@ -20,6 +20,7 @@ def test_init(selectable_mock, qapp):
     assert item.toPlainText() == 'foo bar'
     assert item.is_editable is True
     assert item.edit_mode is False
+    assert item.is_image is False
     selectable_mock.assert_called_once()
 
 

@@ -378,7 +378,7 @@ def test_reset_crop(qapp):
         assert item2.pos() == QtCore.QPointF(0, 0)
 
 
-def test_reset_crop_ignores_uncroppable(qapp):
+def test_reset_crop_ignores_non_images(qapp):
     item = BeeTextItem('foo')
     brect = item.boundingRect()
     command = commands.ResetCrop([item])
@@ -483,3 +483,34 @@ def test_change_text():
     assert item.toPlainText() == 'bar'
     command.undo()
     assert item.toPlainText() == 'foo'
+
+
+def test_change_opacity(view):
+    item1 = BeePixmapItem(QtGui.QImage())
+    item1.setOpacity(0.5)
+    view.scene.addItem(item1)
+    item2 = BeePixmapItem(QtGui.QImage())
+    item2.setOpacity(1)
+    command = commands.ChangeOpacity([item1, item2], 0.7)
+    command.redo()
+    assert item1.opacity() == 0.7
+    assert item2.opacity() == 0.7
+    command.undo()
+    assert item1.opacity() == 0.5
+    assert item2.opacity() == 1
+
+
+def test_change_opacity_ignore_first_redo(view):
+    item1 = BeePixmapItem(QtGui.QImage())
+    item1.setOpacity(0.5)
+    view.scene.addItem(item1)
+    item2 = BeePixmapItem(QtGui.QImage())
+    item2.setOpacity(1)
+    command = commands.ChangeOpacity(
+        [item1, item2], 0.7, ignore_first_redo=True)
+    command.redo()
+    assert item1.opacity() == 0.5
+    assert item2.opacity() == 1
+    command.redo()
+    assert item1.opacity() == 0.7
+    assert item2.opacity() == 0.7

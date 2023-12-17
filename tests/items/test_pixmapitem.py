@@ -20,7 +20,7 @@ def test_init(selectable_mock, qapp, imgfilename3x3):
     assert item.scale() == 1
     assert item.filename == imgfilename3x3
     assert item.crop == QtCore.QRectF(0, 0, 3, 3)
-    assert item.is_croppable is True
+    assert item.is_image is True
     assert item.crop_mode is False
     selectable_mock.assert_called_once()
 
@@ -75,9 +75,11 @@ def test_bounding_rect_unselected_in_crop_mode(qapp, imgfilename3x3):
 def test_get_extra_save_data(item):
     item.filename = 'foobar.png'
     item.crop = QtCore.QRectF(10, 20, 30, 40)
+    item.setOpacity(0.75)
     assert item.get_extra_save_data() == {
         'filename': 'foobar.png',
         'crop': [10, 20, 30, 40],
+        'opacity': 0.75,
     }
 
 
@@ -242,11 +244,17 @@ def test_update_from_data_keeps_unset_values(item):
     assert item.flip() == 1
 
 
-def test_create_from_data(item):
+def test_create_from_minimal_data(qapp, item, imgfilename3x3):
+    with open(imgfilename3x3, 'rb') as f:
+        imgdata = f.read()
+    item.pixmap_from_bytes(imgdata)
+
     new_item = BeePixmapItem.create_from_data(
         item=item, data={'filename': 'foobar.png'})
     assert new_item is item
     assert item.filename == 'foobar.png'
+    assert item.crop == QtCore.QRectF(0, 0, 3, 3)
+    assert item.opacity() == 1
 
 
 def test_create_from_data_with_crop(item):
@@ -257,6 +265,14 @@ def test_create_from_data_with_crop(item):
     assert item.crop == QtCore.QRectF(10, 20, 30, 40)
 
 
+def test_create_from_data_with_opacity(item):
+    new_item = BeePixmapItem.create_from_data(
+        item=item, data={'filename': 'foobar.png', 'opacity': 0.7})
+    assert new_item is item
+    assert item.filename == 'foobar.png'
+    assert item.opacity() == 0.7
+
+
 def test_create_copy(qapp, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3), 'foo.png')
     item.setPos(20, 30)
@@ -265,6 +281,7 @@ def test_create_copy(qapp, imgfilename3x3):
     item.setZValue(0.5)
     item.setScale(2.2)
     item.crop = QtCore.QRectF(10, 20, 30, 40)
+    item.setOpacity(0.7)
 
     copy = item.create_copy()
     assert copy.pixmap_to_bytes() == item.pixmap_to_bytes()
@@ -275,6 +292,7 @@ def test_create_copy(qapp, imgfilename3x3):
     assert copy.zValue() == 0.5
     assert copy.scale() == 2.2
     assert copy.crop == QtCore.QRectF(10, 20, 30, 40)
+    assert copy.opacity() == 0.7
 
 
 def test_copy_to_clipboard(qapp, imgfilename3x3):

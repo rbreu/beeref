@@ -486,7 +486,7 @@ def test_crop_item_no_selection(view, item):
     item.enter_crop_mode.assert_not_called()
 
 
-def test_crop_item_when_not_croppable(view):
+def test_crop_item_when_not_image(view):
     item = BeeTextItem('foo')
     item.setSelected(True)
     item.enter_crop_mode = MagicMock()
@@ -584,32 +584,32 @@ def test_has_multi_selection_when_multi_selection(view):
     assert view.scene.has_multi_selection() is True
 
 
-def test_has_croppable_selection(view, item):
+def test_has_single_image_selection(view, item):
     view.scene.addItem(item)
     item.setSelected(True)
-    assert view.scene.has_croppable_selection() is True
+    assert view.scene.has_single_image_selection() is True
 
 
-def test_has_croppable_selection_when_item_not_croppable(view):
+def test_has_single_image_selection_when_item_not_image(view):
     item = BeeTextItem('foo')
     view.scene.addItem(item)
     item.setSelected(True)
-    assert view.scene.has_croppable_selection() is False
+    assert view.scene.has_single_image_selection() is False
 
 
-def test_has_croppable_selection_when_no_selection(view, item):
+def test_has_single_image_selection_when_no_selection(view, item):
     view.scene.addItem(item)
     item.setSelected(False)
-    assert view.scene.has_croppable_selection() is False
+    assert view.scene.has_single_image_selection() is False
 
 
-def test_has_croppable_selection_when_multi_selection(view, item):
+def test_has_single_image_selection_when_multi_selection(view, item):
     view.scene.addItem(item)
     item.setSelected(True)
     item2 = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item2)
     item2.setSelected(True)
-    assert view.scene.has_croppable_selection() is False
+    assert view.scene.has_single_image_selection() is False
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')

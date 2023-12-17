@@ -6,12 +6,14 @@ Added
 
 * For arranging, a gap between images can now be configured in the
   settings.
+* The opacity of images can now be changed (Images -> Change Opacity).
+
 
 Fixed:
 ------
 
 * Scene Export: Fix output image size and margins when scene had been
-  scaled or moved
+  scaled or moved.
 * Scene Export: Selecting filename without file extension now
   automatically appends the extension from the selected filter istead
   of resulting in a confusing error message.

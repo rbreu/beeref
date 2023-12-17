@@ -716,6 +716,25 @@ def test_on_action_delete_items(view, item):
     view.scene.cancel_crop_mode.assert_called_once()
 
 
+@patch('beeref.widgets.ChangeOpacityDialog.__init__',
+       return_value=None)
+def test_on_action_change_opacity(dialog_mock, view):
+    pixmapitem1 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(pixmapitem1)
+    pixmapitem1.setSelected(True)
+
+    pixmapitem2 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(pixmapitem2)
+    pixmapitem2.setSelected(False)
+
+    textitem = BeeTextItem('foo')
+    view.scene.addItem(textitem)
+    textitem.setSelected(True)
+
+    view.on_action_change_opacity()
+    dialog_mock.assert_called_once_with(view, [pixmapitem1], view.undo_stack)
+
+
 @patch('PyQt6.QtGui.QUndoStack.isClean', return_value=True)
 def test_update_window_title_no_changes_no_filename(clear_mock, view):
     view.filename = None

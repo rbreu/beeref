@@ -19,7 +19,7 @@ import os.path
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
 
-from beeref import constants
+from beeref import constants, commands
 from beeref.config import logfile_name
 from beeref.widgets import settings, welcome_overlay  # noqa: F401
 
@@ -187,3 +187,55 @@ class SceneToPixmapExporterDialog(QtWidgets.QDialog):
     def value(self):
         return QtCore.QSize(self.width_input.value(),
                             self.height_input.value())
+
+
+class ChangeOpacityDialog(QtWidgets.QDialog):
+
+    def __init__(self, parent, images, undo_stack):
+        super().__init__(parent)
+        self.undo_stack = undo_stack
+        self.images = images
+        self.command = commands.ChangeOpacity(images, opacity=1)
+
+        value = int(images[0].opacity() * 100) if images else 100
+
+        self.setWindowTitle('Change Opacity:')
+        self.setWindowModality(Qt.WindowModality.WindowModal)
+        layout = QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
+
+        self.label = QtWidgets.QLabel('Opacity:')
+        layout.addWidget(self.label)
+
+        self.input = QtWidgets.QSlider(Qt.Orientation.Horizontal)
+        self.input.valueChanged.connect(self.on_value_changed)
+        self.input.setRange(0, 100)
+        self.input.setValue(value)
+        layout.addWidget(self.input)
+
+        # Bottom row of buttons
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok |
+            QtWidgets.QDialogButtonBox.StandardButton.Cancel)
+
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+        self.show()
+
+    def on_value_changed(self, value):
+        self.label.setText(f'Opacity: {value}%')
+        self.command.opacity = value / 100
+        self.command.redo()
+
+    def accept(self):
+        if self.images:
+            logger.debug(f'Setting opacity to {self.command.opacity}')
+            self.command.ignore_first_redo = True
+            self.undo_stack.push(self.command)
+        return super().accept()
+
+    def reject(self):
+        self.command.undo()
+        return super().reject()

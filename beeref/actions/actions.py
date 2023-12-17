@@ -155,11 +155,17 @@ actions = [
         'group': 'active_when_selection',
     },
     {
+        'id': 'change_opacity',
+        'text': 'Change &Opacity...',
+        'callback': 'on_action_change_opacity',
+        'group': 'active_when_selection',
+    },
+    {
         'id': 'crop',
         'text': '&Crop',
         'shortcuts': ['Shift+C'],
         'callback': 'on_action_crop',
-        'group': 'active_when_croppable',
+        'group': 'active_when_single_image',
     },
     {
         'id': 'flip_horizontally',

@@ -23,7 +23,6 @@ class InsertItems(QtGui.QUndoCommand):
         self.scene = scene
         self.items = items
         self.position = position
-        self.old_positions = []
         self.ignore_first_redo = ignore_first_redo
 
     def redo(self):
@@ -31,6 +30,7 @@ class InsertItems(QtGui.QUndoCommand):
             self.ignore_first_redo = False
             return
         if self.position:
+            self.old_positions = []
             rect = self.scene.itemsBoundingRect(items=self.items)
             for item in self.items:
                 self.old_positions.append(item.pos())
@@ -226,7 +226,7 @@ class ResetCrop(QtGui.QUndoCommand):
 
     def __init__(self, items):
         super().__init__('Reset Crop')
-        self.items = [item for item in items if item.is_croppable]
+        self.items = [item for item in items if item.is_image]
 
     def redo(self):
         self.old_crops = []
@@ -253,7 +253,7 @@ class ResetTransforms(QtGui.QUndoCommand):
                 'rotation': item.rotation(),
                 'flip': item.flip(),
             }
-            if item.is_croppable:
+            if item.is_image:
                 values['crop'] = item.crop
                 item.reset_crop()
             self.old_values.append(values)
@@ -269,7 +269,7 @@ class ResetTransforms(QtGui.QUndoCommand):
             item.setRotation(old['rotation'], anchor=item.center)
             if old['flip'] == -1:
                 item.do_flip(anchor=item.center)
-            if item.is_croppable:
+            if item.is_image:
                 item.crop = old['crop']
 
 
@@ -322,3 +322,26 @@ class ChangeText(QtGui.QUndoCommand):
 
     def undo(self):
         self.item.setPlainText(self.old_text)
+
+
+class ChangeOpacity(QtGui.QUndoCommand):
+    """Change Opacity."""
+
+    def __init__(self, items, opacity, ignore_first_redo=False):
+        super().__init__('Change Opacity')
+        self.ignore_first_redo = ignore_first_redo
+        self.items = list(filter(lambda item: item.is_image, items))
+        self.opacity = opacity
+        self.old_opacities = [item.opacity() for item in items]
+
+    def redo(self):
+        if self.ignore_first_redo:
+            self.ignore_first_redo = False
+            return
+
+        for item in self.items:
+            item.setOpacity(self.opacity)
+
+    def undo(self):
+        for item, opacity in zip(self.items, self.old_opacities):
+            item.setOpacity(opacity)
