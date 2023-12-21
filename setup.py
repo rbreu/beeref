@@ -20,6 +20,7 @@ setup(
         'beeref.assets',
         'beeref.documentation',
         'beeref.fileio',
+        'beeref.widgets',
     ],
     entry_points={
         'gui_scripts': [
