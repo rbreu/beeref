@@ -123,6 +123,7 @@ def main():
     del bee
     del app
     logger.debug('BeeRef closed')
+    QtCore.qInstallMessageHandler(None)
 
 
 if __name__ == '__main__':
