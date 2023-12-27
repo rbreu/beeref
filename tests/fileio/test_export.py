@@ -1,6 +1,6 @@
 import os
 import stat
-from unittest.mock import patch
+from unittest.mock import patch, ANY
 import pytest
 
 from PyQt6 import QtGui, QtCore
@@ -46,8 +46,8 @@ def test_scene_to_pixmap_exporter_default_size_and_margin_when_selection(view):
     assert exporter.default_size == QtCore.QSize(318, 118)
 
 
-@patch('PyQt6.QtGui.QPainter.setViewport')
-def test_scene_to_pixmap_exporter_render_sets_margins(set_mock, view):
+@patch('beeref.scene.BeeGraphicsScene.render')
+def test_scene_to_pixmap_exporter_render_sets_margins(render_mock, view):
     item = BeePixmapItem(
         QtGui.QImage(1000, 1200, QtGui.QImage.Format.Format_RGB32))
     view.scene.addItem(item)
@@ -56,8 +56,10 @@ def test_scene_to_pixmap_exporter_render_sets_margins(set_mock, view):
     assert exporter.default_size == QtCore.QSize(1072, 1272)
     exporter.render_to_image(QtCore.QSize(536, 636))
 
-    set_mock.assert_called_once_with(
-        QtCore.QRect(18, 18, 500, 600))
+    render_mock.assert_called_once_with(
+        ANY,
+        source=QtCore.QRectF(0, 0, 1000, 1200),
+        target=QtCore.QRectF(18, 18, 500, 600))
 
 
 def test_scene_to_pixmap_exporter_render_renders_scene(view):

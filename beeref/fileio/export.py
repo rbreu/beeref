@@ -36,13 +36,15 @@ class SceneToPixmapExporter:
         # Selection outlines/handles will be rendered to the exported
         # image, so deselect first. (Alternatively, pass an attribute
         # to paint functions to not paint them?)
-        rect = scene.itemsBoundingRect()
+        rect = self.scene.itemsBoundingRect()
+        logger.trace(f'Items bounding rect: {rect}')
         size = QtCore.QSize(int(rect.width()), int(rect.height()))
+        logger.trace(f'Export size without margins: {size}')
         self.margin = max(size.width(), size.height()) * 0.03
         self.default_size = size.grownBy(
             QtCore.QMargins(*([int(self.margin)] * 4)))
-        logger.debug(f'Default export size: {self.default_size}')
         logger.debug(f'Default export margin: {self.margin}')
+        logger.debug(f'Default export size with margins: {self.default_size}')
 
     def render_to_image(self, size):
         logger.debug(f'Final export size: {size}')
@@ -52,12 +54,15 @@ class SceneToPixmapExporter:
         image = QtGui.QImage(size, QtGui.QImage.Format.Format_RGB32)
         image.fill(QtGui.QColor(*constants.COLORS['Scene:Canvas']))
         painter = QtGui.QPainter(image)
-        painter.setViewport(QtCore.QRect(
-            int(margin),
-            int(margin),
-            int(size.width() - 2 * margin),
-            int(size.height() - 2 * margin)))
-        self.scene.render(painter)
+        target_rect = QtCore.QRectF(
+            margin,
+            margin,
+            size.width() - 2 * margin,
+            size.height() - 2 * margin)
+        logger.trace(f'Final export target_rect: {target_rect}')
+        self.scene.render(painter,
+                          source=self.scene.itemsBoundingRect(),
+                          target=target_rect)
         painter.end()
         return image
 
