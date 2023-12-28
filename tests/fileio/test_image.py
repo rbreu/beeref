@@ -92,6 +92,19 @@ def test_load_image_loads_from_existing_web_url(view, imgdata3x3):
 
 
 @httpretty.activate
+def test_load_image_loads_from_existing_web_url_non_ascii(view, imgdata3x3):
+    url = 'http://example.com/föö.png'
+    httpretty.register_uri(
+        httpretty.GET,
+        url,
+        body=imgdata3x3,
+    )
+    img, filename = load_image(QtCore.QUrl(url))
+    assert img.isNull() is False
+    assert filename == 'http://example.com/f%C3%B6%C3%B6.png'
+
+
+@httpretty.activate
 def test_load_image_loads_from_web_url_errors(view, imgfilename3x3):
     url = 'http://example.com/foo.png'
     httpretty.register_uri(

@@ -84,9 +84,10 @@ def load_image(path):
         path = os.path.normpath(path.toLocalFile())
         return (exif_rotated_image(path), path)
 
+    url = bytes(path.toEncoded()).decode()
     img = exif_rotated_image()
     try:
-        imgdata = request.urlopen(path.url()).read()
+        imgdata = request.urlopen(url).read()
     except URLError as e:
         logger.debug(f'Downloading image failed: {e.reason}')
     else:
@@ -96,4 +97,4 @@ def load_image(path):
                 f.write(imgdata)
                 logger.debug(f'Temporarily saved in: {fname}')
             img = exif_rotated_image(fname)
-    return (img, path.url())
+    return (img, url)
