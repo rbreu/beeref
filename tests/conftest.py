@@ -90,7 +90,7 @@ def tmpfile(tmpdir):
 @pytest.fixture
 def item():
     from beeref.items import BeePixmapItem
-    yield BeePixmapItem(QtGui.QImage())
+    yield BeePixmapItem(QtGui.QImage(10, 10, QtGui.QImage.Format.Format_RGB32))
 
 
 @pytest.fixture(scope="session")

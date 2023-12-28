@@ -26,6 +26,7 @@ class InsertItems(QtGui.QUndoCommand):
         self.ignore_first_redo = ignore_first_redo
 
     def redo(self):
+        self.scene.deselect_all_items()
         if self.ignore_first_redo:
             self.ignore_first_redo = False
             return
@@ -35,13 +36,12 @@ class InsertItems(QtGui.QUndoCommand):
             for item in self.items:
                 self.old_positions.append(item.pos())
                 item.setPos(item.pos() + self.position - rect.center())
-        self.scene.clearSelection()
         for item in self.items:
             self.scene.addItem(item)
             item.setSelected(True)
 
     def undo(self):
-        self.scene.clearSelection()
+        self.scene.deselect_all_items()
         for item in self.items:
             self.scene.removeItem(item)
         if self.position:
@@ -60,7 +60,7 @@ class DeleteItems(QtGui.QUndoCommand):
             self.scene.removeItem(item)
 
     def undo(self):
-        self.scene.clearSelection()
+        self.scene.deselect_all_items()
         for item in self.items:
             item.setSelected(True)
             self.scene.addItem(item)

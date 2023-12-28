@@ -17,7 +17,7 @@ from queue import Queue
 import logging
 import math
 
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtWidgets, QtGui
 from PyQt6.QtCore import Qt
 
 import rpack
@@ -74,7 +74,6 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             self.internal_clipboard.append(item)
 
     def paste_from_internal_clipboard(self, position):
-        self.set_selected_all_items(False)
         copies = []
         for item in self.internal_clipboard:
             copy = item.create_copy()
@@ -257,11 +256,16 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             if item.is_image:
                 item.enter_crop_mode()
 
-    def set_selected_all_items(self, value):
-        """Sets the selection mode of all items to ``value``."""
+    def select_all_items(self):
         self.cancel_crop_mode()
-        for item in self.items():
-            item.setSelected(value)
+        path = QtGui.QPainterPath()
+        path.addRect(self.itemsBoundingRect())
+        # This is faster than looping through all items and calling setSelected
+        self.setSelectionArea(path)
+
+    def deselect_all_items(self):
+        self.cancel_crop_mode()
+        self.clearSelection()
 
     def has_selection(self):
         """Checks whether there are currently items selected."""

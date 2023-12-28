@@ -10,14 +10,21 @@ Added
 * Images can be set to display as grayscale (Images -> Grayscale).
 
 
-Fixed:
-------
+Fixed
+-----
 
 * Scene Export: Fix output image size and margins when scene had been
   scaled or moved.
 * Scene Export: Selecting filename without file extension now
   automatically appends the extension from the selected filter istead
   of resulting in a confusing error message.
+
+
+Changed
+-------
+
+* Improved performance of Select All/Deselect All
+
 
 
 0.3.1 - 2023-12-10

@@ -238,10 +238,10 @@ class BeeGraphicsView(MainControlsMixin,
         self.undo_stack.redo()
 
     def on_action_select_all(self):
-        self.scene.set_selected_all_items(True)
+        self.scene.select_all_items()
 
     def on_action_deselect_all(self):
-        self.scene.set_selected_all_items(False)
+        self.scene.deselect_all_items()
 
     def on_action_delete_items(self):
         logger.debug('Deleting items...')
@@ -425,7 +425,6 @@ class BeeGraphicsView(MainControlsMixin,
             if not ext:
                 ext = get_file_extension_from_format(formatstr)
                 filename = f'{filename}.{ext}'
-            print(filename)
             logger.debug(f'Got export filename {filename}')
             exporter = SceneToPixmapExporter(self.scene)
             dialog = widgets.SceneToPixmapExporterDialog(
@@ -495,7 +494,6 @@ class BeeGraphicsView(MainControlsMixin,
     def do_insert_images(self, filenames, pos=None):
         if not pos:
             pos = self.get_view_center()
-        self.scene.clearSelection()
         self.undo_stack.beginMacro('Insert Images')
         self.worker = fileio.ThreadedIO(
             fileio.load_images,
@@ -513,7 +511,6 @@ class BeeGraphicsView(MainControlsMixin,
         self.worker.start()
 
     def on_action_insert_images(self):
-        self.scene.cancel_crop_mode()
         formats = self.get_supported_image_formats(QtGui.QImageReader)
         logger.debug(f'Supported image types for reading: {formats}')
         filenames, f = QtWidgets.QFileDialog.getOpenFileNames(
@@ -523,7 +520,6 @@ class BeeGraphicsView(MainControlsMixin,
         self.do_insert_images(filenames)
 
     def on_action_insert_text(self):
-        self.scene.cancel_crop_mode()
         item = BeeTextItem()
         pos = self.mapToScene(self.mapFromGlobal(self.cursor().pos()))
         item.setScale(1 / self.get_scale())
@@ -549,7 +545,6 @@ class BeeGraphicsView(MainControlsMixin,
             'beeref/items', QtCore.QByteArray.number(len(items)))
 
     def on_action_paste(self):
-        self.scene.cancel_crop_mode()
         logger.debug('Pasting from clipboard...')
         clipboard = QtWidgets.QApplication.clipboard()
         pos = self.mapToScene(self.mapFromGlobal(self.cursor().pos()))

@@ -495,31 +495,31 @@ def test_crop_item_when_not_image(view):
     item.enter_crop_mode.assert_not_called()
 
 
-def test_set_selected_all_items_when_true(view):
-    item1 = BeePixmapItem(QtGui.QImage())
+def test_select_all_items_when_true(view):
+    item1 = BeeTextItem('foo')
     view.scene.addItem(item1)
     item1.setSelected(True)
-    item2 = BeePixmapItem(QtGui.QImage())
+    item2 = BeeTextItem('bar')
     view.scene.addItem(item2)
     item2.setSelected(True)
     view.scene.cancel_crop_mode = MagicMock()
 
-    view.scene.set_selected_all_items(True)
+    view.scene.select_all_items()
     assert item1.isSelected() is True
     assert item2.isSelected() is True
     view.scene.cancel_crop_mode.assert_called_once_with()
 
 
-def test_set_selected_all_items_when_false(view):
-    item1 = BeePixmapItem(QtGui.QImage())
+def test_deselect_all_items_when_false(view):
+    item1 = BeeTextItem('foo')
     view.scene.addItem(item1)
     item1.setSelected(True)
-    item2 = BeePixmapItem(QtGui.QImage())
+    item2 = BeeTextItem('bar')
     view.scene.addItem(item2)
     item2.setSelected(True)
     view.scene.cancel_crop_mode = MagicMock()
 
-    view.scene.set_selected_all_items(False)
+    view.scene.deselect_all_items()
     assert item1.isSelected() is False
     assert item2.isSelected() is False
     view.scene.cancel_crop_mode.assert_called_once_with()

@@ -548,7 +548,7 @@ def test_on_action_paste_when_empty(img_mock, text_mock, clear_mock, view):
     view.on_action_paste()
     assert len(view.scene.items()) == 0
     clear_mock.assert_not_called()
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.scene.cancel_crop_mode.assert_not_called()
 
 
 @patch('beeref.view.BeeGraphicsView.on_action_copy')
@@ -591,7 +591,7 @@ def test_on_action_reset_crop(view, item):
     assert item.crop == QtCore.QRectF(2, 2, 10, 10)
     item.setSelected(True)
     view.on_action_reset_crop()
-    assert item.crop == QtCore.QRectF(0, 0, 0, 0)
+    assert item.crop == QtCore.QRectF(0, 0, 10, 10)
 
 
 def test_on_action_reset_transforms(view, item):
@@ -603,7 +603,7 @@ def test_on_action_reset_transforms(view, item):
     assert item.crop == QtCore.QRectF(2, 2, 10, 10)
     item.setSelected(True)
     view.on_action_reset_transforms()
-    assert item.crop == QtCore.QRectF(0, 0, 0, 0)
+    assert item.crop == QtCore.QRectF(0, 0, 10, 10)
     assert item.flip() == 1
     assert item.rotation() == 0
     assert item.scale() == 1

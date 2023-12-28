@@ -32,7 +32,7 @@ class SceneToPixmapExporter:
     def __init__(self, scene):
         self.scene = scene
         self.scene.cancel_crop_mode()
-        self.scene.set_selected_all_items(False)
+        self.scene.deselect_all_items()
         # Selection outlines/handles will be rendered to the exported
         # image, so deselect first. (Alternatively, pass an attribute
         # to paint functions to not paint them?)
