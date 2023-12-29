@@ -8,6 +8,7 @@ Added
   settings.
 * The opacity of images can be changed (Images -> Change Opacity).
 * Images can be set to display as grayscale (Images -> Grayscale).
+* The scene can now also be exported as SVG
 
 
 Fixed

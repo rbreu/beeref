@@ -169,12 +169,20 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         logger.debug(f'Found format {formt} for {self}')
         return formt
 
-    def pixmap_to_bytes(self):
+    def pixmap_to_bytes(self, apply_grayscale=False, apply_crop=False):
         """Convert the pixmap data to PNG bytestring."""
         barray = QtCore.QByteArray()
         buffer = QtCore.QBuffer(barray)
         buffer.open(QtCore.QIODevice.OpenModeFlag.WriteOnly)
-        img = self.pixmap().toImage()
+        if apply_grayscale and self.grayscale:
+            pm = self._grayscale_pixmap
+        else:
+            pm = self.pixmap()
+
+        if apply_crop:
+            pm = pm.copy(self.crop.toRect())
+
+        img = pm.toImage()
         imgformat = self.get_imgformat(img)
         img.save(buffer, imgformat.upper(), quality=90)
         return (barray.data(), imgformat)

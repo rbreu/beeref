@@ -298,7 +298,7 @@ def test_on_action_save_when_no_filename(save_as_mock, view, imgfilename3x3):
 @patch('beeref.widgets.SceneToPixmapExporterDialog.value')
 @patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName')
 def test_on_action_export_scene(
-        file_mock, value_mock, exec_mock, view, tmpdir):
+        file_mock, value_mock, exec_mock, view, tmpdir, qtbot):
     item = BeeTextItem('foo')
     view.scene.addItem(item)
     filename = os.path.join(tmpdir, 'test.png')
@@ -306,7 +306,11 @@ def test_on_action_export_scene(
     file_mock.return_value = (filename, None)
     exec_mock.return_value = 1
     value_mock.return_value = QtCore.QSize(100, 100)
+    view.on_export_finished = MagicMock()
+
     view.on_action_export_scene()
+    qtbot.waitUntil(lambda: view.on_export_finished.called is True)
+    view.on_export_finished.assert_called_once_with(filename, [])
     img = QtGui.QImage(filename)
     assert img.size() == QtCore.QSize(100, 100)
 
@@ -315,7 +319,7 @@ def test_on_action_export_scene(
 @patch('beeref.widgets.SceneToPixmapExporterDialog.value')
 @patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName')
 def test_on_action_export_scene_no_file_extension(
-        file_mock, value_mock, exec_mock, view, tmpdir):
+        file_mock, value_mock, exec_mock, view, tmpdir, qtbot):
     item = BeeTextItem('foo')
     view.scene.addItem(item)
     filename = os.path.join(tmpdir, 'test')
@@ -323,7 +327,11 @@ def test_on_action_export_scene_no_file_extension(
     file_mock.return_value = (filename, 'PNG (*.png)')
     exec_mock.return_value = 1
     value_mock.return_value = QtCore.QSize(100, 100)
+    view.on_export_finished = MagicMock()
+
     view.on_action_export_scene()
+    qtbot.waitUntil(lambda: view.on_export_finished.called is True)
+    view.on_export_finished.assert_called_once_with(f'{filename}.png', [])
     img = QtGui.QImage(f'{filename}.png')
     assert img.size() == QtCore.QSize(100, 100)
 
@@ -336,9 +344,12 @@ def test_on_action_export_scene_no_filename(
     item = BeeTextItem('foo')
     view.scene.addItem(item)
     file_mock.return_value = (None, None)
+    view.on_export_finished = MagicMock()
+
     view.on_action_export_scene()
     exec_mock.assert_not_called()
     value_mock.assert_not_called()
+    view.on_export_finished.assert_not_called()
 
 
 @patch('beeref.widgets.SceneToPixmapExporterDialog.exec')

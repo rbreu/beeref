@@ -26,7 +26,7 @@ from beeref import commands
 from beeref.config import CommandlineArgs, BeeSettings
 from beeref import constants
 from beeref import fileio
-from beeref.fileio.export import SceneToPixmapExporter
+from beeref.fileio.export import exporter_registry
 from beeref import widgets
 from beeref.items import BeePixmapItem, BeeTextItem
 from beeref.main_controls import MainControlsMixin
@@ -416,31 +416,40 @@ class BeeGraphicsView(MainControlsMixin,
             parent=self,
             caption='Export Scene to Image',
             directory=directory,
-            filter=';;'.join(('Image Files (*.png *.jpg *.jpeg)',
+            filter=';;'.join(('Image Files (*.png *.jpg *.jpeg *.svg)',
                               'PNG (*.png)',
-                              'JPEG (*.jpg *.jpeg)')))
+                              'JPEG (*.jpg *.jpeg)',
+                              'SVG (*.svg)')))
 
-        if filename:
-            name, ext = os.path.splitext(filename)
-            if not ext:
-                ext = get_file_extension_from_format(formatstr)
-                filename = f'{filename}.{ext}'
-            logger.debug(f'Got export filename {filename}')
-            exporter = SceneToPixmapExporter(self.scene)
-            dialog = widgets.SceneToPixmapExporterDialog(
-                parent=self,
-                default_size=exporter.default_size,
-            )
-            if dialog.exec():
-                size = dialog.value()
-                logger.debug(f'Got export size {size}')
-                try:
-                    exporter.export(filename, size)
-                except fileio.BeeFileIOError as e:
-                    QtWidgets.QMessageBox.warning(
-                        self,
-                        'Problem exporting scene',
-                        str(e))
+        if not filename:
+            return
+
+        name, ext = os.path.splitext(filename)
+        if not ext:
+            ext = get_file_extension_from_format(formatstr)
+            filename = f'{filename}.{ext}'
+        logger.debug(f'Got export filename {filename}')
+
+        exporter_cls = exporter_registry[ext]
+        exporter = exporter_cls(self.scene)
+        if not exporter.get_user_input(self):
+            return
+
+        self.worker = fileio.ThreadedIO(exporter.export, filename)
+        self.worker.finished.connect(self.on_export_finished)
+        self.progress = widgets.BeeProgressDialog(
+            'Exporting %s' % filename,
+            worker=self.worker,
+            parent=self)
+        self.worker.start()
+
+    def on_export_finished(self, filename, errors):
+        if errors:
+            err_msg = '</br>'.join(str(errors))
+            QtWidgets.QMessageBox.warning(
+                self,
+                'Problem writing file',
+                f'<p>Problem writing file {filename}</p><p>{err_msg}</p>')
 
     def on_action_quit(self):
         logger.info('User quit. Exiting...')

@@ -164,17 +164,73 @@ def test_get_imgformat_png_when_setting_png(
 
 def test_pixmap_to_bytes_png(qapp, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
+    item.crop = QtCore.QRectF(0, 0, 2, 2)
+    item.grayscale = True
     data, imgformat = item.pixmap_to_bytes()
     assert imgformat == 'png'
     assert data.startswith(b'\x89PNG')
+    pixmap = QtGui.QPixmap()
+    pixmap.loadFromData(data)
+    img = pixmap.toImage()
+    assert img.allGray() is False
+    assert img.size() == QtCore.QSize(3, 3)
 
 
 def test_pixmap_to_bytes_jpg(qapp, imgfilename3x3, settings):
     settings.setValue('Items/image_storage_format', 'jpg')
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
+    item.crop = QtCore.QRectF(0, 0, 2, 2)
+    item.grayscale = True
     data, imgformat = item.pixmap_to_bytes()
     assert imgformat == 'jpg'
     assert data.startswith(b'\xff\xd8\xff\xe0\x00\x10JFIF')
+    pixmap = QtGui.QPixmap()
+    pixmap.loadFromData(data)
+    img = pixmap.toImage()
+    assert img.allGray() is False
+    assert img.size() == QtCore.QSize(3, 3)
+
+
+def test_pixmap_to_bytes_apply_grayscale(qapp, imgfilename3x3):
+    item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
+    item.crop = QtCore.QRectF(0, 0, 2, 2)
+    item.grayscale = True
+    data, imgformat = item.pixmap_to_bytes(apply_grayscale=True)
+    assert imgformat == 'png'
+    assert data.startswith(b'\x89PNG')
+    pixmap = QtGui.QPixmap()
+    pixmap.loadFromData(data)
+    img = pixmap.toImage()
+    assert img.allGray() is True
+    assert img.size() == QtCore.QSize(3, 3)
+
+
+def test_pixmap_to_bytes_apply_crop(qapp, imgfilename3x3):
+    item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
+    item.crop = QtCore.QRectF(0, 0, 2, 2)
+    item.grayscale = True
+    data, imgformat = item.pixmap_to_bytes(apply_crop=True)
+    assert imgformat == 'png'
+    assert data.startswith(b'\x89PNG')
+    pixmap = QtGui.QPixmap()
+    pixmap.loadFromData(data)
+    img = pixmap.toImage()
+    assert img.allGray() is False
+    assert img.size() == QtCore.QSize(2, 2)
+
+
+def test_pixmap_to_bytes_apply_grayscale_crop_when_not_set(
+        qapp, imgfilename3x3):
+    item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
+    data, imgformat = item.pixmap_to_bytes(apply_grayscale=True,
+                                           apply_crop=False)
+    assert imgformat == 'png'
+    assert data.startswith(b'\x89PNG')
+    pixmap = QtGui.QPixmap()
+    pixmap.loadFromData(data)
+    img = pixmap.toImage()
+    assert img.allGray() is False
+    assert img.size() == QtCore.QSize(3, 3)
 
 
 def test_pixmap_from_bytes(qapp, item, imgfilename3x3):
