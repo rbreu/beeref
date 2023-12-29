@@ -323,7 +323,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         painter.drawRect(rect)
 
     def paint(self, painter, option, widget):
-        if painter.combinedTransform().m11() < 2:
+        if abs(painter.combinedTransform().m11()) < 2:
             # We want image smoothing, but only for images where we
             # are not zoomed in a lot. This is to ensure that for
             # example icons and pixel sprites can be viewed correctly.

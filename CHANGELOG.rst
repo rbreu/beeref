@@ -18,6 +18,8 @@ Fixed
 * Scene Export: Selecting filename without file extension now
   automatically appends the extension from the selected filter istead
   of resulting in a confusing error message.
+* The exemption from antialias/smoothing for images displayed at large
+  zoom now also works on images that are flipped horizontally
 
 
 Changed
