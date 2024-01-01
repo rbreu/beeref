@@ -19,10 +19,8 @@ import os.path
 
 from PyQt6 import QtGui, QtWidgets
 
-from .actions import actions
+from .actions import Action, actions
 from .menu_structure import menu_structure, MENU_SEPARATOR
-
-from beeref.config import KeyboardSettings
 
 
 class ActionsMixin:
@@ -35,11 +33,10 @@ class ActionsMixin:
         """Creates a new menu or rebuilds the given menu."""
         self.context_menu = QtWidgets.QMenu(self)
         self.toplevel_menus = []
-        self.bee_actions = {}
         self.bee_actiongroups = defaultdict(list)
         self._post_create_functions = []
         self._create_actions()
-        self._create_menu(self.bee_actions, self.context_menu, menu_structure)
+        self._create_menu(self.context_menu, menu_structure)
         for func, arg in self._post_create_functions:
             func(arg)
         del self._post_create_functions
@@ -71,10 +68,9 @@ class ActionsMixin:
                 partial(self._store_checkable_setting, settings_key))
 
     def _create_actions(self):
-        for action in actions:
+        for action in actions.values():
             qaction = QtGui.QAction(action['text'], self)
-            shortcuts = KeyboardSettings().get_shortcuts(
-                'Actions', action['id'], action.get('shortcuts'))
+            shortcuts = action.get_shortcuts()
             if shortcuts:
                 qaction.setShortcuts(shortcuts)
             if action.get('checkable', False):
@@ -83,25 +79,25 @@ class ActionsMixin:
                 qaction.triggered.connect(getattr(self, action['callback']))
             self.addAction(qaction)
             qaction.setEnabled(action.get('enabled', True))
-            self.bee_actions[action['id']] = qaction
             if 'group' in action:
                 self.bee_actiongroups[action['group']].append(qaction)
                 qaction.setEnabled(False)
+            action.qaction = qaction
 
-    def _create_menu(self, actions, menu, items):
+    def _create_menu(self, menu, items):
         if isinstance(items, str):
             getattr(self, items)(menu)
             return menu
         for item in items:
             if isinstance(item, str):
-                menu.addAction(actions[item])
+                menu.addAction(actions[item].qaction)
             if item == MENU_SEPARATOR:
                 menu.addSeparator()
             if isinstance(item, dict):
                 submenu = menu.addMenu(item['menu'])
                 if menu == self.context_menu:
                     self.toplevel_menus.append(submenu)
-                self._create_menu(actions, submenu, item['items'])
+                self._create_menu(submenu, item['items'])
 
         return menu
 
@@ -112,31 +108,31 @@ class ActionsMixin:
 
         files = self.settings.get_recent_files(existing_only=True)
         items = []
-        i = -1
-        for i, filename in enumerate(files):
-            qaction = QtGui.QAction(os.path.basename(filename), self)
+
+        for i in range(10):
             action_id = f'recent_files_{i}'
             key = 0 if i == 9 else i + 1
-            if key < 10:
-                shortcuts = KeyboardSettings().get_shortcuts(
-                    'Actions', action_id, [f'Ctrl+{key}'])
-                qaction.setShortcuts(shortcuts)
-            qaction.triggered.connect(partial(self.open_from_file, filename))
-            self.addAction(qaction)
-            self._recent_files_submenu.addAction(qaction)
-            self.bee_actions[action_id] = qaction
-            items.append(action_id)
+            action = Action({'id': action_id,
+                             'menu_id': '_build_recent_files',
+                             'text': f'File {i + 1}',
+                             'shortcuts': [f'Ctrl+{key}']})
+            actions[action_id] = action
 
-        # Set shortcuts in settings file for remaining slots:
-        for j in range(i + 1, 10):
-            key = 0 if j == 9 else j + 1
-            KeyboardSettings().get_shortcuts(
-                'Actions', f'recent_files_{j}', [f'Ctrl+{key}'])
+            if i < len(files):
+                filename = files[i]
+                qaction = QtGui.QAction(os.path.basename(filename), self)
+                qaction.setShortcuts(action.get_shortcuts())
+                qaction.triggered.connect(
+                    partial(self.open_from_file, filename))
+                self.addAction(qaction)
+                action.qaction = qaction
+                self._recent_files_submenu.addAction(qaction)
+                items.append(action_id)
 
     def _clear_recent_files(self):
         for action in self._recent_files_submenu.actions():
             self.removeAction(action)
         self._recent_files_submenu.clear()
-        for key in list(self.bee_actions.keys()):
+        for key in list(actions.keys()):
             if key.startswith('recent_files_'):
-                self.bee_actions.pop(key)
+                actions[key].qaction = None

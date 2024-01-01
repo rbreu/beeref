@@ -11,12 +11,12 @@ from beeref.items import BeePixmapItem, BeeTextItem
 from beeref.view import BeeGraphicsView
 
 
-def test_inits_menu(view, qapp):
+def test_inits_menu(qapp):
     parent = QtWidgets.QMainWindow()
     view = BeeGraphicsView(qapp, parent)
     assert isinstance(view.context_menu, QtWidgets.QMenu)
     assert len(view.actions()) > 0
-    assert view.bee_actions
+    assert view.actions()
     assert view.bee_actiongroups
 
 
@@ -31,7 +31,7 @@ def test_init_without_filename(open_file_mock, qapp, commandline_args):
 
 
 @patch('beeref.view.BeeGraphicsView.open_from_file')
-def test_init_with_filename(open_file_mock, view, qapp, commandline_args):
+def test_init_with_filename(open_file_mock, qapp, commandline_args):
     commandline_args.filename = 'test.bee'
     parent = QtWidgets.QMainWindow()
     view = BeeGraphicsView(qapp, parent)
@@ -371,6 +371,12 @@ def test_on_action_export_scene_settings_input_canceled(
 @patch('beeref.widgets.settings.SettingsDialog.show')
 def test_on_action_settings(show_mock, view):
     view.on_action_settings()
+    show_mock.assert_called_once()
+
+
+@patch('beeref.widgets.settings.KeyboardSettingsDialog.show')
+def test_on_action_keyboard_settings(show_mock, view):
+    view.on_action_keyboard_settings()
     show_mock.assert_called_once()
 
 

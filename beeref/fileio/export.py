@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class ExporterRegistry(dict):
 
-    DEFAULT_TYPE = 'default exporter'
+    DEFAULT_TYPE = 0
 
     def __getitem__(self, key):
         key = key.removeprefix('.')

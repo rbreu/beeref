@@ -458,6 +458,9 @@ class BeeGraphicsView(MainControlsMixin,
     def on_action_settings(self):
         widgets.settings.SettingsDialog(self)
 
+    def on_action_keyboard_settings(self):
+        widgets.settings.KeyboardSettingsDialog(self)
+
     def on_action_help(self):
         widgets.HelpDialog(self)
 

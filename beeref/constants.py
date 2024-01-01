@@ -36,5 +36,7 @@ COLORS = {
     # BeeRef specific:
     'Scene:Selection': (116, 234, 231),
     'Scene:Canvas': (60, 60, 60),
-    'Scene:Text': (200, 200, 200)
+    'Scene:Text': (200, 200, 200),
+    'Table:AlternativeRow': (70, 70, 70),
+
 }

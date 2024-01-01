@@ -95,6 +95,7 @@ class CommandlineArgs:
 
 class BeeSettingsEvents(QtCore.QObject):
     restore_defaults = QtCore.pyqtSignal()
+    restore_keyboard_defaults = QtCore.pyqtSignal()
 
 
 # We want to send and receive settings events globally, not per
@@ -203,8 +204,6 @@ class BeeSettings(QtCore.QSettings):
 
 class KeyboardSettings(QtCore.QSettings):
 
-    save_unknown_shortcuts = True
-
     def __init__(self):
         settings_format = QtCore.QSettings.Format.IniFormat
         filename = os.path.join(
@@ -212,21 +211,29 @@ class KeyboardSettings(QtCore.QSettings):
             'KeyboardSettings.ini')
         super().__init__(filename, settings_format)
 
-    def set_shortcuts(self, group, key, values):
-        self.setValue(f'{group}/{key}', ', '.join(values))
+    def set_shortcuts(self, group, key, values, default=None):
+        if values == default:
+            self.remove(f'{group}/{key}')
+        else:
+            self.setValue(f'{group}/{key}', ', '.join(values))
 
     def get_shortcuts(self, group, key, default=None):
         values = self.value(f'{group}/{key}')
         if values is not None:
             values = list(filter(lambda x: x, values.split(', ')))
-            logger.debug(f'Found custom shortcuts for {group}/{key}: {values}')
             return values
 
-        values = default or []
-        if self.save_unknown_shortcuts:
-            self.set_shortcuts(group, key, values)
+        return list(default or [])  # Always return new instance of default
 
-        return values
+    def restore_defaults(self):
+        """Restore all the values specified in FILEDS to their default values
+        by removing them from the settings file.
+        """
+
+        logger.debug('Restoring keyboard shortcuts to defaults')
+        for key in self.allKeys():
+            self.remove(key)
+        settings_events.restore_keyboard_defaults.emit()
 
 
 def logfile_name():

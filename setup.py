@@ -9,8 +9,8 @@ setup(
     license='LICENSE',
     description='A simple reference image viewer',
     install_requires=[
-        'pyQt6>=6.4.0,<=6.6.1',
-        'pyQt6-Qt6>=6.4.0,<=6.6.1',
+        'pyQt6>=6.5.0,<=6.6.1',
+        'pyQt6-Qt6>=6.5.0,<=6.6.1',
         'rectangle-packer>=2.0.1,<=2.0.2',
         'exif>=1.3.5,<=1.6.0',
     ],

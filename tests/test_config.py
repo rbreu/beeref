@@ -59,13 +59,13 @@ def test_settings_value_or_default_gets_default_when_cast_error(settings):
     assert settings.valueOrDefault('Items/arrange_gap') == 0
 
 
-def test_restore_defaults_restores(settings):
+def test_settings_restore_defaults_restores(settings):
     settings.setValue('Items/image_storage_format', 'png')
     settings.restore_defaults()
     assert settings.contains('Items/image_storage_format') is False
 
 
-def test_restore_defaults_leaves_other_settings(settings):
+def test_settings_restore_defaults_leaves_other_settings(settings):
     settings.setValue('foo/bar', 'baz')
     settings.restore_defaults()
     assert settings.contains('foo/bar') is True
@@ -122,34 +122,34 @@ def test_keyboardsettings_set_shortcuts_multiple(kbsettings):
 
 def test_keyboardsettings_get_shortcuts_existing(kbsettings):
     kbsettings.set_shortcuts('Actions', 'bar', ['Ctrl+R'])
-    with patch.object(kbsettings, 'set_shortcuts') as set_mock:
-        with patch.object(kbsettings, 'save_unknown_shortcuts', True):
-            shortcuts = kbsettings.get_shortcuts('Actions', 'bar', ['Ctrl+B'])
-            assert shortcuts == ['Ctrl+R']
-            set_mock.assert_not_called()
+    shortcuts = kbsettings.get_shortcuts('Actions', 'bar', ['Ctrl+B'])
+    assert shortcuts == ['Ctrl+R']
 
 
 def test_keyboardsettings_get_shortcuts_default(kbsettings):
-    with patch.object(kbsettings, 'set_shortcuts') as set_mock:
-        with patch.object(kbsettings, 'save_unknown_shortcuts', True):
-            shortcuts = kbsettings.get_shortcuts('Actions', 'bar', ['Ctrl+B'])
-            assert shortcuts == ['Ctrl+B']
-            set_mock.assert_called_once_with('Actions', 'bar', ['Ctrl+B'])
+    shortcuts = kbsettings.get_shortcuts('Actions', 'bar', ['Ctrl+B'])
+    assert shortcuts == ['Ctrl+B']
 
 
-def test_keyboardsettings_get_shortcuts_default_doesnt_override_empty(
-        kbsettings):
-    kbsettings.set_shortcuts('Actions', 'bar', [])
-    with patch.object(kbsettings, 'set_shortcuts') as set_mock:
-        with patch.object(kbsettings, 'save_unknown_shortcuts', True):
-            shortcuts = kbsettings.get_shortcuts('Actions', 'bar', ['Ctrl+B'])
-            assert shortcuts == []
-            set_mock.assert_not_called()
+@patch('beeref.config.KeyboardSettings.setValue')
+@patch('beeref.config.KeyboardSettings.remove')
+def test_keyboardsettings_set_shortcuts_other_than_default_saves(
+        remove_mock, set_mock, kbsettings):
+    kbsettings.set_shortcuts('Actions', 'bar', ['Ctrl+R'], ['Ctrl+Z'])
+    set_mock.assert_called_once_with('Actions/bar', 'Ctrl+R')
+    remove_mock.assert_not_called()
 
 
-def test_keyboardsettings_get_shortcuts_not_set_no_defaults(kbsettings):
-    with patch('beeref.config.KeyboardSettings.set_shortcuts') as set_mock:
-        with patch.object(kbsettings, 'save_unknown_shortcuts', True):
-            shortcuts = kbsettings.get_shortcuts('Actions', 'baz')
-            assert shortcuts == []
-            set_mock.assert_called_once_with('Actions', 'baz', [])
+@patch('beeref.config.KeyboardSettings.setValue')
+@patch('beeref.config.KeyboardSettings.remove')
+def test_keyboardsettings_set_shortcuts_with_than_default_doesnt_save(
+        remove_mock, set_mock, kbsettings):
+    kbsettings.set_shortcuts('Actions', 'bar', ['Ctrl+R'], ['Ctrl+R'])
+    set_mock.assert_not_called()
+    remove_mock.assert_called_once_with('Actions/bar')
+
+
+def test_keyboardsettings_restore_defaults_restores(kbsettings):
+    kbsettings.setValue('Actions/bar', 'Ctrl+R')
+    kbsettings.restore_defaults()
+    assert kbsettings.contains('Actions/bar') is False

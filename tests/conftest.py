@@ -17,9 +17,13 @@ def pytest_configure(config):
     import logging.config
     logging.config.dictConfig = MagicMock
 
-    # Disable creation of KeyboardSettings.ini to speed tests up
-    from beeref.config import KeyboardSettings
-    KeyboardSettings.save_unknown_shortcuts = False
+
+@pytest.fixture(autouse=True)
+def reset_beeref_actions():
+    from beeref.actions.actions import actions
+    for key in list(actions.keys()):
+        if key.startswith('recent_files_'):
+            actions.pop(key)
 
 
 @pytest.fixture(autouse=True)

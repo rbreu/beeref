@@ -9,6 +9,10 @@ Added
 * The opacity of images can be changed (Images -> Change Opacity).
 * Images can be set to display as grayscale (Images -> Grayscale).
 * The scene can now also be exported as SVG
+* Keyboard shortcuts can now be edited from within BeeRef (Settings ->
+  Keyboard Shortcuts). The KeyboardSettings.ini file will now only
+  store values which are changed from the default, since it's no longer
+  needed as a reference.
 
 
 Fixed

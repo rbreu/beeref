@@ -114,6 +114,7 @@ menu_structure = [
         'menu': '&Settings',
         'items': [
             'settings',
+            'keyboard_settings',
             'open_settings_dir',
         ],
     },
