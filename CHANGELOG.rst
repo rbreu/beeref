@@ -13,6 +13,8 @@ Added
   Keyboard Shortcuts). The KeyboardSettings.ini file will now only
   store values which are changed from the default, since it's no longer
   needed as a reference.
+* Settings dialog now displays icons to indicate changes from default
+  values
 
 
 Fixed

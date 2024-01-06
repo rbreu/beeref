@@ -59,6 +59,15 @@ def test_settings_value_or_default_gets_default_when_cast_error(settings):
     assert settings.valueOrDefault('Items/arrange_gap') == 0
 
 
+def test_settings_value_changed_when_default(settings):
+    assert settings.value_changed('Items/image_storage_format') is False
+
+
+def test_settings_value_changed_when_chagned(settings):
+    settings.setValue('Items/image_storage_format', 'jpg')
+    assert settings.value_changed('Items/image_storage_format') is True
+
+
 def test_settings_restore_defaults_restores(settings):
     settings.setValue('Items/image_storage_format', 'png')
     settings.restore_defaults()

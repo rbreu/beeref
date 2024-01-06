@@ -87,6 +87,7 @@ class Action(dict):
             return QtGui.QKeySequence()
 
     def shortcuts_changed(self):
+        """Whether shortcuts have changed from their defaults."""
         return self.get_shortcuts() != self.get('shortcuts', [])
 
     def get_default_shortcut(self, index):

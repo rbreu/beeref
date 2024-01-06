@@ -26,57 +26,73 @@ from beeref.config import BeeSettings, KeyboardSettings, settings_events
 logger = logging.getLogger(__name__)
 
 
-class RadioGroup(QtWidgets.QGroupBox):
+CHANGED_SYMBOL = '✎'
+
+
+class GroupBase(QtWidgets.QGroupBox):
+
+    def __init__(self):
+        super().__init__()
+        self.settings = BeeSettings()
+        self.update_title()
+        self.layout = QtWidgets.QVBoxLayout()
+        self.setLayout(self.layout)
+        settings_events.restore_defaults.connect(self.on_restore_defaults)
+
+        if self.HELPTEXT:
+            helptxt = QtWidgets.QLabel(self.HELPTEXT)
+            helptxt.setWordWrap(True)
+            self.layout.addWidget(helptxt)
+
+    def update_title(self):
+        title = [self.TITLE]
+        if self.settings.value_changed(self.KEY):
+            title.append(CHANGED_SYMBOL)
+        self.setTitle(' '.join(title))
+
+    def on_value_changed(self, value):
+        if self.ignore_value_changed:
+            return
+
+        if value != self.settings.valueOrDefault(self.KEY):
+            logger.debug(f'Setting {self.KEY} changed to: {value}')
+            self.settings.setValue(self.KEY, value)
+            self.update_title()
+
+
+class RadioGroup(GroupBase):
     TITLE = None
     HELPTEXT = None
     KEY = None
     OPTIONS = None
 
     def __init__(self):
-        super().__init__(self.TITLE)
-        self.settings = BeeSettings()
-        layout = QtWidgets.QVBoxLayout()
-        self.setLayout(layout)
-        settings_events.restore_keyboard_defaults.connect(
-            self.on_restore_defaults)
+        super().__init__()
 
-        if self.HELPTEXT:
-            helptxt = QtWidgets.QLabel(self.HELPTEXT)
-            helptxt.setWordWrap(True)
-            layout.addWidget(helptxt)
-
-        self.ignore_values_changed = True
+        self.ignore_value_changed = True
         self.buttons = {}
         for (value, label, helptext) in self.OPTIONS:
             btn = QtWidgets.QRadioButton(label)
             self.buttons[value] = btn
             btn.setToolTip(helptext)
-            btn.toggled.connect(
-                partial(self.on_values_changed, value=value, button=btn))
+            btn.toggled.connect(partial(self.on_value_changed, value=value))
             if value == self.settings.valueOrDefault(self.KEY):
                 btn.setChecked(True)
-            layout.addWidget(btn)
+            self.layout.addWidget(btn)
 
-        self.ignore_values_changed = False
-        layout.addStretch(100)
-
-    def on_values_changed(self, value, button):
-        if self.ignore_values_changed:
-            return
-
-        if value != self.settings.valueOrDefault(self.KEY):
-            logger.debug(f'Setting {self.KEY} changed to: {value}')
-            self.settings.setValue(self.KEY, value)
+        self.ignore_value_changed = False
+        self.layout.addStretch(100)
 
     def on_restore_defaults(self):
         new_value = self.settings.valueOrDefault(self.KEY)
-        self.ignore_values_changed = True
+        self.ignore_value_changed = True
         for value, btn in self.buttons.items():
             btn.setChecked(value == new_value)
-        self.ignore_values_changed = False
+        self.ignore_value_changed = False
+        self.update_title()
 
 
-class IntegerGroup(QtWidgets.QGroupBox):
+class IntegerGroup(GroupBase):
     TITLE = None
     HELPTEXT = None
     KEY = None
@@ -84,38 +100,21 @@ class IntegerGroup(QtWidgets.QGroupBox):
     MAX = None
 
     def __init__(self):
-        super().__init__(self.TITLE)
-        self.settings = BeeSettings()
-        layout = QtWidgets.QVBoxLayout()
-        self.setLayout(layout)
-        settings_events.restore_defaults.connect(self.on_restore_defaults)
-
-        if self.HELPTEXT:
-            helptxt = QtWidgets.QLabel(self.HELPTEXT)
-            helptxt.setWordWrap(True)
-            layout.addWidget(helptxt)
-
+        super().__init__()
         self.input = QtWidgets.QSpinBox()
         self.input.setValue(self.settings.valueOrDefault(self.KEY))
         self.input.setRange(self.MIN, self.MAX)
         self.input.valueChanged.connect(self.on_value_changed)
-        layout.addWidget(self.input)
-        layout.addStretch(100)
-        self.ignore_values_changed = False
-
-    def on_value_changed(self, value):
-        if self.ignore_values_changed:
-            return
-
-        if value != self.settings.valueOrDefault(self.KEY):
-            logger.debug(f'Setting {self.KEY} changed to: {value}')
-            self.settings.setValue(self.KEY, value)
+        self.layout.addWidget(self.input)
+        self.layout.addStretch(100)
+        self.ignore_value_changed = False
 
     def on_restore_defaults(self):
         new_value = self.settings.valueOrDefault(self.KEY)
-        self.ignore_values_changed = True
+        self.ignore_value_changed = True
         self.input.setValue(new_value)
-        self.ignore_values_changed = False
+        self.ignore_value_changed = False
+        self.update_title()
 
 
 class ImageStorageFormatWidget(RadioGroup):
@@ -262,7 +261,7 @@ class KeyboardShortcutsModel(QtCore.QAbstractTableModel):
             if index.column() == 0:
                 return txt.replace('&', '').removesuffix('...')
             if index.column() == 1 and action.shortcuts_changed():
-                return '✎'
+                return CHANGED_SYMBOL
             if index.column() > 1:
                 return action.get_qkeysequence(index.column() - 2)
 
@@ -353,7 +352,8 @@ class KeyboardShortcutsView(QtWidgets.QTableView):
             1, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
         self.setSelectionMode(
             QtWidgets.QHeaderView.SelectionMode.SingleSelection)
-        settings_events.restore_defaults.connect(self.on_restore_defaults)
+        settings_events.restore_keyboard_defaults.connect(
+            self.on_restore_defaults)
 
     def on_restore_defaults(self):
         self.viewport().update()

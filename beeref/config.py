@@ -159,6 +159,11 @@ class BeeSettings(QtCore.QSettings):
                 val = conf['default']
         return val
 
+    def value_changed(self, key):
+        """Whether the value for given key has changed from its default."""
+
+        return self.valueOrDefault(key) != self.FIELDS[key]['default']
+
     def restore_defaults(self):
         """Restore all the values specified in FILEDS to their default values
         by removing them from the settings file.
