@@ -18,7 +18,7 @@
     </screenshots>
 
     <releases>
-        <release version="0.3.2-dev" date="(unreleased)"></release>
+        <release version="0.3.2" date="2024-01-21"></release>
         <release version="0.3.1" date="2023-12-10"></release>
         <release version="0.3.0" date="2023-11-23"></release>
         <release version="0.2.0" date="2021-09-06"></release>
