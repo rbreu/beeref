@@ -1,3 +1,8 @@
+0.3.3 - (unreleased)
+====================
+
+
+
 0.3.2 - 2024-01-21
 ==================
 
@@ -23,7 +28,7 @@ Fixed
 * Scene Export: Fix output image size and margins when scene had been
   scaled or moved.
 * Scene Export: Selecting filename without file extension now
-  automatically appends the extension from the selected filter istead
+  automatically appends the extension from the selected filter instead
   of resulting in a confusing error message.
 * The exemption from antialias/smoothing for images displayed at large
   zoom now also works on images that are flipped horizontally
