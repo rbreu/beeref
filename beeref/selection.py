@@ -639,7 +639,7 @@ class MultiSelectItem(SelectableMixin,
     def fit_selection_area(self, rect):
         """Updates itself to fit the given selection area."""
 
-        logger.debug(f'Fit selection area to {rect}')
+        logger.trace(f'Fit selection area to {rect}')
 
         # Only update when values have changed, otherwise we end up in an
         # infinite event loop sceneChange -> itemChange -> sceneChange ...
@@ -688,4 +688,4 @@ class RubberbandItem(BaseItemMixin, QtWidgets.QGraphicsRectItem):
         """Updates itself to fit the two given points."""
 
         self.setRect(utils.get_rect_from_points(point1, point2))
-        logger.debug(f'Updated rubberband {self}')
+        logger.trace(f'Updated rubberband {self}')

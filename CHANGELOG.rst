@@ -1,6 +1,11 @@
 0.3.3 - (unreleased)
 ====================
 
+Fixed
+-----
+
+* Fixed a crash when pressing the keyboard shortcut for New Scene
+  while in the process of doing a rubberband selection
 
 
 0.3.2 - 2024-01-21

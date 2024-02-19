@@ -54,6 +54,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
     def clear(self):
         super().clear()
         self.internal_clipboard = []
+        self.rubberband_item = RubberbandItem()
 
     def addItem(self, item):
         logger.debug(f'Adding item {item}')
