@@ -68,6 +68,8 @@ class BeeGraphicsView(MainControlsMixin,
         self.scene = BeeGraphicsScene(self.undo_stack)
         self.scene.changed.connect(self.on_scene_changed)
         self.scene.selectionChanged.connect(self.on_selection_changed)
+        self.scene.cursor_changed.connect(self.on_cursor_changed)
+        self.scene.cursor_cleared.connect(self.on_cursor_cleared)
         self.setScene(self.scene)
 
         # Context menu and actions
@@ -603,6 +605,16 @@ class BeeGraphicsView(MainControlsMixin,
                                      self.scene.has_single_image_selection())
         self.viewport().repaint()
 
+    def on_cursor_changed(self, cursor):
+        print('set', cursor.shape())
+        if not self.pan_active:
+            self.viewport().setCursor(cursor)
+
+    def on_cursor_cleared(self):
+        print('unset')
+        if not self.pan_active:
+            self.viewport().unsetCursor()
+
     def recalc_scene_rect(self):
         """Resize the scene rectangle so that it is always one view width
         wider than all items' bounding box at each side and one view
@@ -716,8 +728,10 @@ class BeeGraphicsView(MainControlsMixin,
         if (event.button() == Qt.MouseButton.MiddleButton
             or (event.button() == Qt.MouseButton.LeftButton
                 and event.modifiers() == Qt.KeyboardModifier.AltModifier)):
+            logger.debug('Begin pan')
             self.pan_active = True
             self.event_start = event.position()
+            self.viewport().setCursor(Qt.CursorShape.ClosedHandCursor)
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
             event.accept()
             return
@@ -748,7 +762,8 @@ class BeeGraphicsView(MainControlsMixin,
 
     def mouseReleaseEvent(self, event):
         if self.pan_active:
-            self.setCursor(Qt.CursorShape.ArrowCursor)
+            logger.debug('End pan')
+            self.viewport().unsetCursor()
             self.pan_active = False
             event.accept()
             return

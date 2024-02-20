@@ -49,10 +49,17 @@ class MainControlsMixin:
         else:
             self.enter_movewin_mode()
 
+    @property
+    def viewport_or_self(self):
+        if hasattr(self, 'viewport'):
+            return self.viewport()
+        return self
+
     def enter_movewin_mode(self):
         logger.debug('Entering movewin mode')
         self.setMouseTracking(True)
         self.movewin_active = True
+        self.viewport_or_self.setCursor(Qt.CursorShape.SizeAllCursor)
         self.event_start = QtCore.QPointF(self.cursor().pos())
         if hasattr(self, 'disable_mouse_events'):
             self.disable_mouse_events()
@@ -61,6 +68,7 @@ class MainControlsMixin:
         logger.debug('Exiting movewin mode')
         self.setMouseTracking(False)
         self.movewin_active = False
+        self.viewport_or_self.unsetCursor()
         if hasattr(self, 'enable_mouse_events'):
             self.enable_mouse_events()
 

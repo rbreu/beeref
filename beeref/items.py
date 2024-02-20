@@ -435,13 +435,13 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
 
         for handle in self.crop_handles():
             if handle().contains(event.pos()):
-                self.setCursor(self.get_crop_handle_cursor(handle))
+                self.set_cursor(self.get_crop_handle_cursor(handle))
                 return
         for edge in self.crop_edges():
             if edge().contains(event.pos()):
-                self.setCursor(self.get_crop_edge_cursor(edge))
+                self.set_cursor(self.get_crop_edge_cursor(edge))
                 return
-        self.setCursor(Qt.CursorShape.ArrowCursor)
+        self.unset_cursor()
 
     def mousePressEvent(self, event):
         if not self.crop_mode:

@@ -118,6 +118,15 @@ class BaseItemMixin:
         """The item's center in scene coordinates."""
         return self.mapToScene(self.center)
 
+    def set_cursor(self, cursor):
+        self.scene().cursor_changed.emit(cursor)
+
+    def unset_cursor(self):
+        self.scene().cursor_cleared.emit()
+
+    def hoverLeaveEvent(self, event):
+        self.unset_cursor()
+
 
 class SelectableMixin(BaseItemMixin):
     """Common code for selectable items: Selection outline, handles etc."""
@@ -363,31 +372,32 @@ class SelectableMixin(BaseItemMixin):
             # This area should always trigger regular move operations,
             # even if it is covered by selection scale/flip/... handles.
             # This ensures that small items can always still be moved/edited.
-            self.setCursor(Qt.CursorShape.ArrowCursor)
+            self.unset_cursor()
             return
 
         for corner in self.corners:
             # See if we need to change the cursor for interactable areas
             if self.get_scale_bounds(corner).contains(event.pos()):
-                self.setCursor(self.get_corner_scale_cursor(corner))
+                self.scene().cursor_changed.emit(self.get_corner_scale_cursor(corner))
+                self.set_cursor(self.get_corner_scale_cursor(corner))
                 return
             elif self.get_rotate_bounds(corner).contains(event.pos()):
-                self.setCursor(BeeAssets().cursor_rotate)
+                self.set_cursor(BeeAssets().cursor_rotate)
                 return
         for edge in self.get_flip_bounds():
             if edge['rect'].contains(event.pos()):
                 if self.get_edge_flips_v(edge):
-                    self.setCursor(BeeAssets().cursor_flip_v)
+                    self.set_cursor(BeeAssets().cursor_flip_v)
                 else:
-                    self.setCursor(BeeAssets().cursor_flip_h)
+                    self.set_cursor(BeeAssets().cursor_flip_h)
                 return
 
-        self.setCursor(Qt.CursorShape.ArrowCursor)
+        self.unset_cursor()
 
     def hoverEnterEvent(self, event):
-        # Always return regular cursor when there aren't any selection handles
+        # Always set regular cursor when there aren't any selection handles
         if not self.has_selection_handles():
-            self.setCursor(Qt.CursorShape.ArrowCursor)
+            self.unset_cursor()
 
     def mousePressEvent(self, event):
         self.event_start = event.scenePos()

@@ -32,6 +32,8 @@ logger = logging.getLogger(__name__)
 
 
 class BeeGraphicsScene(QtWidgets.QGraphicsScene):
+    cursor_changed = QtCore.pyqtSignal(QtGui.QCursor)
+    cursor_cleared = QtCore.pyqtSignal()
 
     def __init__(self, undo_stack):
         super().__init__()
