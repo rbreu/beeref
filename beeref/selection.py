@@ -119,13 +119,16 @@ class BaseItemMixin:
         return self.mapToScene(self.center)
 
     def set_cursor(self, cursor):
-        self.scene().cursor_changed.emit(cursor)
+        # Can't use setCursor on the item itself because of bug
+        # https://bugreports.qt.io/browse/QTBUG-4190
+        if self.scene():
+            self.scene().cursor_changed.emit(cursor)
 
     def unset_cursor(self):
-        self.scene().cursor_cleared.emit()
-
-    def hoverLeaveEvent(self, event):
-        self.unset_cursor()
+        # Can't use unsetCursor on the item itself because of bug
+        # https://bugreports.qt.io/browse/QTBUG-4190
+        if self.scene():
+            self.scene().cursor_cleared.emit()
 
 
 class SelectableMixin(BaseItemMixin):
@@ -378,7 +381,8 @@ class SelectableMixin(BaseItemMixin):
         for corner in self.corners:
             # See if we need to change the cursor for interactable areas
             if self.get_scale_bounds(corner).contains(event.pos()):
-                self.scene().cursor_changed.emit(self.get_corner_scale_cursor(corner))
+                self.scene().cursor_changed.emit(
+                    self.get_corner_scale_cursor(corner))
                 self.set_cursor(self.get_corner_scale_cursor(corner))
                 return
             elif self.get_rotate_bounds(corner).contains(event.pos()):
@@ -394,10 +398,8 @@ class SelectableMixin(BaseItemMixin):
 
         self.unset_cursor()
 
-    def hoverEnterEvent(self, event):
-        # Always set regular cursor when there aren't any selection handles
-        if not self.has_selection_handles():
-            self.unset_cursor()
+    def hoverLeaveEvent(self, event):
+        self.unset_cursor()
 
     def mousePressEvent(self, event):
         self.event_start = event.scenePos()

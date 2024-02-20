@@ -1,6 +1,13 @@
 0.3.3 - (unreleased)
 ====================
 
+Added
+-----
+
+* Moving the window from within BeeRef now changes to a diffent cursor from
+  the default arrow cursor.
+
+
 Fixed
 -----
 

@@ -634,11 +634,11 @@ def test_hover_move_event_no_selection(view, item):
     view.scene.addItem(item)
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(0, 0)
-    item.setCursor = MagicMock()
+    item.set_cursor = MagicMock()
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 100, 80)):
         item.hoverMoveEvent(event)
-        item.setCursor.assert_not_called()
+        item.set_cursor.assert_not_called()
 
 
 def test_hover_move_event_small_item_inside_handle_free_center(view, item):
@@ -646,11 +646,11 @@ def test_hover_move_event_small_item_inside_handle_free_center(view, item):
     item.setSelected(True)
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(10, 10)
-    item.setCursor = MagicMock()
+    item.unset_cursor = MagicMock()
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 20, 20)):
         item.hoverMoveEvent(event)
-        item.setCursor.assert_called_once_with(Qt.CursorShape.ArrowCursor)
+        item.unset_cursor.assert_called_once_with()
 
 
 @mark.parametrize('pos,flipped,rotation, expected',
@@ -684,7 +684,7 @@ def test_hover_move_event_scale(
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 100, 80)):
         item.hoverMoveEvent(event)
-        assert item.cursor() == getattr(Qt.CursorShape, expected)
+        assert view.viewport().cursor() == getattr(Qt.CursorShape, expected)
 
 
 def test_hover_move_event_scale_bottomright_very_wide_item(view, item):
@@ -695,7 +695,7 @@ def test_hover_move_event_scale_bottomright_very_wide_item(view, item):
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 1000, 100)):
         item.hoverMoveEvent(event)
-        assert item.cursor() == Qt.CursorShape.SizeFDiagCursor
+        assert view.viewport().cursor() == Qt.CursorShape.SizeFDiagCursor
 
 
 def test_hover_move_event_rotate(view, item):
@@ -706,7 +706,7 @@ def test_hover_move_event_rotate(view, item):
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 100, 80)):
         item.hoverMoveEvent(event)
-        assert item.cursor() == BeeAssets().cursor_rotate
+        assert view.viewport().cursor() == BeeAssets().cursor_rotate
 
 
 def test_hover_flip_event_top_edge(view, item):
@@ -717,7 +717,7 @@ def test_hover_flip_event_top_edge(view, item):
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 100, 80)):
         item.hoverMoveEvent(event)
-        assert item.cursor() == BeeAssets().cursor_flip_v
+        assert view.viewport().cursor() == BeeAssets().cursor_flip_v
 
 
 def test_hover_flip_event_bottom_edge(view, item):
@@ -728,7 +728,7 @@ def test_hover_flip_event_bottom_edge(view, item):
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 100, 80)):
         item.hoverMoveEvent(event)
-        assert item.cursor() == BeeAssets().cursor_flip_v
+        assert view.viewport().cursor() == BeeAssets().cursor_flip_v
 
 
 def test_hover_flip_event_left_edge(view, item):
@@ -739,7 +739,7 @@ def test_hover_flip_event_left_edge(view, item):
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 100, 80)):
         item.hoverMoveEvent(event)
-        assert item.cursor() == BeeAssets().cursor_flip_h
+        assert view.viewport().cursor() == BeeAssets().cursor_flip_h
 
 
 def test_hover_flip_event_right_edge(view, item):
@@ -750,7 +750,7 @@ def test_hover_flip_event_right_edge(view, item):
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 100, 80)):
         item.hoverMoveEvent(event)
-        assert item.cursor() == BeeAssets().cursor_flip_h
+        assert view.viewport().cursor() == BeeAssets().cursor_flip_h
 
 
 def test_hover_flip_event_top_edge_rotated_90(view, item):
@@ -762,7 +762,7 @@ def test_hover_flip_event_top_edge_rotated_90(view, item):
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 100, 80)):
         item.hoverMoveEvent(event)
-        assert item.cursor() == BeeAssets().cursor_flip_h
+        assert view.viewport().cursor() == BeeAssets().cursor_flip_h
 
 
 def test_hover_flip_event_left_edge_when_rotated_90(view, item):
@@ -774,7 +774,7 @@ def test_hover_flip_event_left_edge_when_rotated_90(view, item):
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 100, 80)):
         item.hoverMoveEvent(event)
-        assert item.cursor() == BeeAssets().cursor_flip_v
+        assert view.viewport().cursor() == BeeAssets().cursor_flip_v
 
 
 def test_hover_move_event_not_in_handles(view, item):
@@ -785,24 +785,16 @@ def test_hover_move_event_not_in_handles(view, item):
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 1000, 800)):
         item.hoverMoveEvent(event)
-        assert item.cursor() == Qt.CursorShape.ArrowCursor
+        assert view.viewport().cursor() == Qt.CursorShape.ArrowCursor
 
 
-def test_hover_enter_event_when_selected(view, item):
+def test_hover_leave_event(view, item):
     view.scene.addItem(item)
     event = MagicMock()
     item.setSelected(True)
-    item.setCursor = MagicMock()
-    item.hoverEnterEvent(event)
-    item.setCursor.assert_not_called()
-
-
-def test_hover_enter_event_when_not_selected(view, item):
-    view.scene.addItem(item)
-    event = MagicMock()
-    item.setSelected(False)
-    item.hoverEnterEvent(event)
-    assert item.cursor() == Qt.CursorShape.ArrowCursor
+    item.unset_cursor = MagicMock()
+    item.hoverLeaveEvent(event)
+    item.unset_cursor.assert_called_once_with()
 
 
 def test_mouse_press_event_just_selected(view, item):
