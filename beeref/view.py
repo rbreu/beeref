@@ -31,7 +31,7 @@ from beeref import widgets
 from beeref.items import BeePixmapItem, BeeTextItem
 from beeref.main_controls import MainControlsMixin
 from beeref.scene import BeeGraphicsScene
-from beeref.utils import get_file_extension_from_format
+from beeref.utils import get_file_extension_from_format, qcolor_to_hex
 
 
 commandline_args = CommandlineArgs()
@@ -41,6 +41,10 @@ logger = logging.getLogger(__name__)
 class BeeGraphicsView(MainControlsMixin,
                       QtWidgets.QGraphicsView,
                       ActionsMixin):
+
+    PAN_MODE = 1
+    ZOOM_MODE = 2
+    SAMPLE_COLOR_MODE = 3
 
     def __init__(self, app, parent=None):
         super().__init__(parent)
@@ -62,8 +66,7 @@ class BeeGraphicsView(MainControlsMixin,
 
         self.filename = None
         self.previous_transform = None
-        self.pan_active = False
-        self.zoom_active = False
+        self.active_mode = None
 
         self.scene = BeeGraphicsScene(self.undo_stack)
         self.scene.changed.connect(self.on_scene_changed)
@@ -93,6 +96,19 @@ class BeeGraphicsView(MainControlsMixin,
         if value:
             self.settings.update_recent_files(value)
             self.update_menu_and_actions()
+
+    def cancel_active_modes(self):
+        self.scene.cancel_active_modes()
+        self.cancel_sample_color_mode()
+        self.active_mode = None
+
+    def cancel_sample_color_mode(self):
+        logger.debug('Cancel sample color mode')
+        self.active_mode = None
+        self.viewport().unsetCursor()
+        if hasattr(self, 'sample_color_widget'):
+            self.sample_color_widget.hide()
+            del self.sample_color_widget
 
     def update_window_title(self):
         clean = self.undo_stack.isClean()
@@ -145,6 +161,7 @@ class BeeGraphicsView(MainControlsMixin,
 
     def clear_scene(self):
         logging.debug('Clearing scene...')
+        self.cancel_active_modes()
         self.scene.clear()
         self.undo_stack.clear()
         self.filename = None
@@ -231,12 +248,12 @@ class BeeGraphicsView(MainControlsMixin,
 
     def on_action_undo(self):
         logger.debug('Undo: %s' % self.undo_stack.undoText())
-        self.scene.cancel_crop_mode()
+        self.cancel_active_modes()
         self.undo_stack.undo()
 
     def on_action_redo(self):
         logger.debug('Redo: %s' % self.undo_stack.redoText())
-        self.scene.cancel_crop_mode()
+        self.cancel_active_modes()
         self.undo_stack.redo()
 
     def on_action_select_all(self):
@@ -247,7 +264,7 @@ class BeeGraphicsView(MainControlsMixin,
 
     def on_action_delete_items(self):
         logger.debug('Deleting items...')
-        self.scene.cancel_crop_mode()
+        self.cancel_active_modes()
         self.undo_stack.push(
             commands.DeleteItems(
                 self.scene, self.scene.selectedItems(user_only=True)))
@@ -307,32 +324,44 @@ class BeeGraphicsView(MainControlsMixin,
         self.scene.flip_items(vertical=True)
 
     def on_action_reset_scale(self):
-        self.scene.cancel_crop_mode()
+        self.cancel_active_modes()
         self.undo_stack.push(commands.ResetScale(
             self.scene.selectedItems(user_only=True)))
 
     def on_action_reset_rotation(self):
-        self.scene.cancel_crop_mode()
+        self.cancel_active_modes()
         self.undo_stack.push(commands.ResetRotation(
             self.scene.selectedItems(user_only=True)))
 
     def on_action_reset_flip(self):
-        self.scene.cancel_crop_mode()
+        self.cancel_active_modes()
         self.undo_stack.push(commands.ResetFlip(
             self.scene.selectedItems(user_only=True)))
 
     def on_action_reset_crop(self):
-        self.scene.cancel_crop_mode()
+        self.cancel_active_modes()
         self.undo_stack.push(commands.ResetCrop(
             self.scene.selectedItems(user_only=True)))
 
     def on_action_reset_transforms(self):
-        self.scene.cancel_crop_mode()
+        self.cancel_active_modes()
         self.undo_stack.push(commands.ResetTransforms(
             self.scene.selectedItems(user_only=True)))
 
     def on_action_show_color_gamut(self):
         widgets.color_gamut.GamutDialog(self, self.scene.selectedItems()[0])
+
+    def on_action_sample_color(self):
+        self.cancel_active_modes()
+        logger.debug('Entering sample color mode')
+        self.viewport().setCursor(Qt.CursorShape.CrossCursor)
+        self.active_mode = self.SAMPLE_COLOR_MODE
+
+        pos = self.mapFromGlobal(self.cursor().pos())
+        self.sample_color_widget = widgets.SampleColorWidget(
+            self,
+            pos,
+            self.scene.sample_color_at(self.mapToScene(pos)))
 
     def on_items_loaded(self, value):
         logger.debug('On items loaded: add queued items')
@@ -364,7 +393,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.worker.start()
 
     def on_action_open(self):
-        self.scene.cancel_crop_mode()
+        self.cancel_active_modes()
         filename, f = QtWidgets.QFileDialog.getOpenFileName(
             parent=self,
             caption='Open file',
@@ -398,7 +427,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.worker.start()
 
     def on_action_save_as(self):
-        self.scene.cancel_crop_mode()
+        self.cancel_active_modes()
         directory = os.path.dirname(self.filename) if self.filename else None
         filename, f = QtWidgets.QFileDialog.getSaveFileName(
             parent=self,
@@ -409,7 +438,7 @@ class BeeGraphicsView(MainControlsMixin,
             self.do_save(filename, create_new=True)
 
     def on_action_save(self):
-        self.scene.cancel_crop_mode()
+        self.cancel_active_modes()
         if not self.filename:
             self.on_action_save_as()
         else:
@@ -528,6 +557,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.worker.start()
 
     def on_action_insert_images(self):
+        self.cancel_active_modes()
         formats = self.get_supported_image_formats(QtGui.QImageReader)
         logger.debug(f'Supported image types for reading: {formats}')
         filenames, f = QtWidgets.QFileDialog.getOpenFileNames(
@@ -537,6 +567,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.do_insert_images(filenames)
 
     def on_action_insert_text(self):
+        self.cancel_active_modes()
         item = BeeTextItem()
         pos = self.mapToScene(self.mapFromGlobal(self.cursor().pos()))
         item.setScale(1 / self.get_scale())
@@ -544,7 +575,7 @@ class BeeGraphicsView(MainControlsMixin,
 
     def on_action_copy(self):
         logger.debug('Copying to clipboard...')
-        self.scene.cancel_crop_mode()
+        self.cancel_active_modes()
         clipboard = QtWidgets.QApplication.clipboard()
         items = self.scene.selectedItems(user_only=True)
 
@@ -562,6 +593,7 @@ class BeeGraphicsView(MainControlsMixin,
             'beeref/items', QtCore.QByteArray.number(len(items)))
 
     def on_action_paste(self):
+        self.cancel_active_modes()
         logger.debug('Pasting from clipboard...')
         clipboard = QtWidgets.QApplication.clipboard()
         pos = self.mapToScene(self.mapFromGlobal(self.cursor().pos()))
@@ -611,11 +643,11 @@ class BeeGraphicsView(MainControlsMixin,
         self.viewport().repaint()
 
     def on_cursor_changed(self, cursor):
-        if not self.pan_active:
+        if self.active_mode is None:
             self.viewport().setCursor(cursor)
 
     def on_cursor_cleared(self):
-        if not self.pan_active:
+        if self.active_mode is None:
             self.viewport().unsetCursor()
 
     def recalc_scene_rect(self):
@@ -720,9 +752,27 @@ class BeeGraphicsView(MainControlsMixin,
         if self.mousePressEventMainControls(event):
             return
 
+        if self.active_mode == self.SAMPLE_COLOR_MODE:
+            if (event.button() == Qt.MouseButton.LeftButton):
+                color = self.scene.sample_color_at(
+                    self.mapToScene(event.pos()))
+                if color:
+                    name = qcolor_to_hex(color)
+                    clipboard = QtWidgets.QApplication.clipboard()
+                    clipboard.setText(name)
+                    self.scene.internal_clipboard = []
+                    msg = f'Copied color to clipboard: {name}'
+                    logger.debug(msg)
+                    widgets.BeeNotification(self, msg)
+                else:
+                    logger.debug('No color found')
+            self.cancel_sample_color_mode()
+            event.accept()
+            return
+
         if (event.button() == Qt.MouseButton.MiddleButton
                 and event.modifiers() == Qt.KeyboardModifier.ControlModifier):
-            self.zoom_active = True
+            self.active_mode = self.ZOOM_MODE
             self.event_start = event.position()
             self.event_anchor = event.position()
             event.accept()
@@ -732,7 +782,7 @@ class BeeGraphicsView(MainControlsMixin,
             or (event.button() == Qt.MouseButton.LeftButton
                 and event.modifiers() == Qt.KeyboardModifier.AltModifier)):
             logger.trace('Begin pan')
-            self.pan_active = True
+            self.active_mode = self.PAN_MODE
             self.event_start = event.position()
             self.viewport().setCursor(Qt.CursorShape.ClosedHandCursor)
             # ClosedHandCursor and OpenHandCursor don't work, but I
@@ -744,7 +794,7 @@ class BeeGraphicsView(MainControlsMixin,
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self.pan_active:
+        if self.active_mode == self.PAN_MODE:
             self.reset_previous_transform()
             pos = event.position()
             self.pan(self.event_start - pos)
@@ -752,7 +802,7 @@ class BeeGraphicsView(MainControlsMixin,
             event.accept()
             return
 
-        if self.zoom_active:
+        if self.active_mode == self.ZOOM_MODE:
             self.reset_previous_transform()
             pos = event.position()
             delta = (self.event_start - pos).y()
@@ -761,19 +811,26 @@ class BeeGraphicsView(MainControlsMixin,
             event.accept()
             return
 
+        if self.active_mode == self.SAMPLE_COLOR_MODE:
+            self.sample_color_widget.update(
+                event.position(),
+                self.scene.sample_color_at(self.mapToScene(event.pos())))
+            event.accept()
+            return
+
         if self.mouseMoveEventMainControls(event):
             return
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        if self.pan_active:
+        if self.active_mode == self.PAN_MODE:
             logger.trace('End pan')
             self.viewport().unsetCursor()
-            self.pan_active = False
+            self.active_mode = None
             event.accept()
             return
-        if self.zoom_active:
-            self.zoom_active = False
+        if self.active_mode == self.ZOOM_MODE:
+            self.active_mode = None
             event.accept()
             return
         if self.mouseReleaseEventMainControls(event):
@@ -787,5 +844,9 @@ class BeeGraphicsView(MainControlsMixin,
 
     def keyPressEvent(self, event):
         if self.keyPressEventMainControls(event):
+            return
+        if self.active_mode == self.SAMPLE_COLOR_MODE:
+            self.cancel_sample_color_mode()
+            event.accept()
             return
         super().keyPressEvent(event)

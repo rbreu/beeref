@@ -495,6 +495,25 @@ def test_crop_item_when_not_image(view):
     item.enter_crop_mode.assert_not_called()
 
 
+def test_sample_color_at_when_pixmap_item(view):
+    color = QtGui.QColor(255, 0, 0, 3)
+    img = QtGui.QImage(10, 10, QtGui.QImage.Format.Format_ARGB32)
+    img.fill(color)
+    item = BeePixmapItem(img, 'foo.png')
+    view.scene.addItem(item)
+    assert view.scene.sample_color_at(QtCore.QPointF(2, 2)) == color
+
+
+def test_sample_color_at_when_text_item(view):
+    item = BeeTextItem('foo bar baz')
+    view.scene.addItem(item)
+    assert view.scene.sample_color_at(QtCore.QPointF(2, 2)) is None
+
+
+def test_sample_color_at_when_no_item(view):
+    assert view.scene.sample_color_at(QtCore.QPointF(2, 2)) is None
+
+
 def test_select_all_items_when_true(view):
     item1 = BeeTextItem('foo')
     view.scene.addItem(item1)
@@ -631,8 +650,7 @@ def test_mouse_press_event_when_left_click_over_item(mouse_mock, view, item):
     view.scene.mousePressEvent(event)
     event.accept.assert_not_called()
     mouse_mock.assert_called_once_with(event)
-    assert view.scene.move_active is True
-    assert view.scene.rubberband_active is False
+    assert view.scene.active_mode == view.scene.MOVE_MODE
     assert view.scene.event_start == QtCore.QPointF(10, 20)
 
 
@@ -651,8 +669,7 @@ def test_mouse_press_event_when_left_click_over_item_in_edit_mode(
     event.accept.assert_not_called()
     mouse_mock.assert_called_once_with(event)
     item.exit_edit_mode.assert_not_called()
-    assert view.scene.move_active is False
-    assert view.scene.rubberband_active is False
+    assert view.scene.active_mode is None
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
@@ -670,8 +687,7 @@ def test_mouse_press_event_when_left_click_over_diff_item_in_edit_mode(
     event.accept.assert_not_called()
     mouse_mock.assert_called_once_with(event)
     txtitem.exit_edit_mode.assert_called_once_with()
-    assert view.scene.move_active is True
-    assert view.scene.rubberband_active is False
+    assert view.scene.active_mode == view.scene.MOVE_MODE
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
@@ -689,8 +705,7 @@ def test_mouse_press_event_when_left_click_over_no_item_in_edit_mode(
     event.accept.assert_not_called()
     mouse_mock.assert_called_once_with(event)
     item.exit_edit_mode.assert_called_once_with()
-    assert view.scene.move_active is False
-    assert view.scene.rubberband_active is True
+    assert view.scene.active_mode == view.scene.RUBBERBAND_MODE
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
@@ -707,8 +722,7 @@ def test_mouse_press_event_when_left_click_over_item_in_crop_mode(
     event.accept.assert_not_called()
     mouse_mock.assert_called_once_with(event)
     view.scene.cancel_crop_mode.assert_not_called()
-    assert view.scene.move_active is False
-    assert view.scene.rubberband_active is False
+    assert view.scene.active_mode is None
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
@@ -726,8 +740,7 @@ def test_mouse_press_event_when_left_click_over_diff_item_in_crop_mode(
     event.accept.assert_not_called()
     mouse_mock.assert_called_once_with(event)
     view.scene.cancel_crop_mode.assert_called_once_with()
-    assert view.scene.move_active is True
-    assert view.scene.rubberband_active is False
+    assert view.scene.active_mode is view.scene.MOVE_MODE
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
@@ -744,8 +757,7 @@ def test_mouse_press_event_when_left_click_over_no_item_in_crop_mode(
     event.accept.assert_not_called()
     mouse_mock.assert_called_once_with(event)
     view.scene.cancel_crop_mode.assert_called_once_with()
-    assert view.scene.move_active is False
-    assert view.scene.rubberband_active is True
+    assert view.scene.active_mode == view.scene.RUBBERBAND_MODE
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mousePressEvent')
@@ -760,8 +772,7 @@ def test_mouse_press_event_when_left_click_not_over_item(
     view.scene.mousePressEvent(event)
     event.accept.assert_not_called()
     mouse_mock.assert_called_once_with(event)
-    assert view.scene.move_active is False
-    assert view.scene.rubberband_active is True
+    assert view.scene.active_mode == view.scene.RUBBERBAND_MODE
     assert view.scene.event_start == QtCore.QPointF(10, 20)
 
 
@@ -775,15 +786,14 @@ def test_mouse_press_event_when_no_items(mouse_mock, view):
     view.scene.mousePressEvent(event)
     event.accept.assert_not_called()
     mouse_mock.assert_called_once_with(event)
-    assert view.scene.move_active is False
-    assert view.scene.rubberband_active is False
+    assert view.scene.active_mode is None
     mouse_mock.assert_called_once_with(event)
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mouseDoubleClickEvent')
 def test_mouse_doubleclick_event_when_over_item(mouse_mock, view, item):
     event = MagicMock()
-    view.scene.move_active = True
+    view.scene.active_mode = view.scene.MOVE_MODE
     view.scene.addItem(item)
     item.setPos(30, 40)
     item.setSelected(True)
@@ -794,7 +804,7 @@ def test_mouse_doubleclick_event_when_over_item(mouse_mock, view, item):
                       return_value=QtCore.QRectF(0, 0, 100, 100)):
         view.scene.mouseDoubleClickEvent(event)
 
-    assert view.scene.move_active is False
+    assert view.scene.active_mode is None
     view.fit_rect.assert_called_once_with(
         QtCore.QRectF(30, 40, 100, 100), toggle_item=item)
     mouse_mock.assert_not_called()
@@ -807,7 +817,7 @@ def test_mouse_doubleclick_event_when_over_editable_item(
     item = BeeTextItem('foo bar')
     item.enter_edit_mode = MagicMock()
     event = MagicMock()
-    view.scene.move_active = True
+    view.scene.active_mode = view.scene.MOVE_MODE
     view.scene.addItem(item)
     item.setPos(30, 40)
     item.setSelected(True)
@@ -818,7 +828,7 @@ def test_mouse_doubleclick_event_when_over_editable_item(
                       return_value=QtCore.QRectF(0, 0, 100, 100)):
         view.scene.mouseDoubleClickEvent(event)
 
-    assert view.scene.move_active is False
+    assert view.scene.active_mode is None
     item.enter_edit_mode.assert_called_once_with()
     double_mock.assert_not_called()
     press_mock.assert_called_once_with(event)
@@ -828,7 +838,7 @@ def test_mouse_doubleclick_event_when_over_editable_item(
 def test_mouse_doubleclick_event_when_item_not_selected(
         mouse_mock, view, item):
     event = MagicMock()
-    view.scene.move_active = True
+    view.scene.active_mode = view.scene.MOVE_MODE
     view.scene.addItem(item)
     item.setPos(30, 40)
     item.setSelected(False)
@@ -839,7 +849,7 @@ def test_mouse_doubleclick_event_when_item_not_selected(
                       return_value=QtCore.QRectF(0, 0, 100, 100)):
         view.scene.mouseDoubleClickEvent(event)
 
-    assert view.scene.move_active is False
+    assert view.scene.active_mode is None
     view.fit_rect.assert_called_once_with(
         QtCore.QRectF(30, 40, 100, 100), toggle_item=item)
     mouse_mock.assert_not_called()
@@ -861,7 +871,7 @@ def test_mouse_move_event_when_rubberband_new(
         mouse_mock, view, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scene.addItem(item)
-    view.scene.rubberband_active = True
+    view.scene.active_mode = view.scene.RUBBERBAND_MODE
     view.scene.addItem = MagicMock()
     view.scene.event_start = QtCore.QPointF(0, 0)
     view.scene.rubberband_item.bring_to_front = MagicMock()
@@ -885,7 +895,7 @@ def test_mouse_move_event_when_rubberband_not_new(
         mouse_mock, view, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scene.addItem(item)
-    view.scene.rubberband_active = True
+    view.scene.active_mode = view.scene.RUBBERBAND_MODE
     view.scene.event_start = QtCore.QPointF(0, 0)
     view.scene.rubberband_item.bring_to_front = MagicMock()
     view.scene.addItem(view.scene.rubberband_item)
@@ -908,7 +918,7 @@ def test_mouse_move_event_when_rubberband_not_new(
 def test_mouse_move_event_when_no_rubberband(mouse_mock, view, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scene.addItem(item)
-    view.scene.rubberband_active = False
+    view.scene.active_mode = None
     view.scene.event_start = QtCore.QPointF(0, 0)
     view.scene.rubberband_item.bring_to_front = MagicMock()
     view.scene.addItem = MagicMock()
@@ -929,13 +939,13 @@ def test_mouse_move_event_when_no_rubberband(mouse_mock, view, imgfilename3x3):
 @patch('PyQt6.QtWidgets.QGraphicsScene.mouseReleaseEvent')
 def test_mouse_release_event_when_rubberband_active(mouse_mock, view):
     event = MagicMock()
-    view.scene.rubberband_active = True
+    view.scene.active_mode = view.scene.RUBBERBAND_MODE
     view.scene.addItem(view.scene.rubberband_item)
     view.scene.removeItem = MagicMock()
 
     view.scene.mouseReleaseEvent(event)
     view.scene.removeItem.assert_called_once_with(view.scene.rubberband_item)
-    view.scene.rubberband_active is False
+    view.scene.active_mode is None
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mouseReleaseEvent')
@@ -943,7 +953,7 @@ def test_mouse_release_event_when_move_active(mouse_mock, view, item):
     view.scene.addItem(item)
     item.setSelected(True)
     event = MagicMock(scenePos=MagicMock(return_value=QtCore.QPoint(10, 20)))
-    view.scene.move_active = True
+    view.scene.active_mode = view.scene.MOVE_MODE
     view.scene.event_start = QtCore.QPoint(0, 0)
     view.scene.undo_stack = MagicMock(push=MagicMock())
 
@@ -957,7 +967,7 @@ def test_mouse_release_event_when_move_active(mouse_mock, view, item):
     assert cmd.delta.x() == 10
     assert cmd.delta.y() == 20
     mouse_mock.assert_called_once_with(event)
-    assert view.scene.move_active is False
+    assert view.scene.active_mode is None
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mouseReleaseEvent')
@@ -965,13 +975,13 @@ def test_mouse_release_event_when_move_not_active(mouse_mock, view, item):
     view.scene.addItem(item)
     item.setSelected(True)
     event = MagicMock(scenePos=MagicMock(return_value=QtCore.QPoint(10, 20)))
-    view.scene.move_active = False
+    view.scene.active_mode = None
     view.scene.undo_stack = MagicMock(push=MagicMock())
 
     view.scene.mouseReleaseEvent(event)
     view.scene.undo_stack.push.assert_not_called()
     mouse_mock.assert_called_once_with(event)
-    assert view.scene.move_active is False
+    assert view.scene.active_mode is None
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mouseReleaseEvent')
@@ -979,13 +989,13 @@ def test_mouse_release_event_when_no_selection(mouse_mock, view, item):
     view.scene.addItem(item)
     item.setSelected(False)
     event = MagicMock(scenePos=MagicMock(return_value=QtCore.QPoint(10, 20)))
-    view.scene.move_active = True
+    view.scene.active_mode = view.scene.MOVE_MODE
     view.scene.undo_stack = MagicMock(push=MagicMock())
 
     view.scene.mouseReleaseEvent(event)
     view.scene.undo_stack.push.assert_not_called()
     mouse_mock.assert_called_once_with(event)
-    assert view.scene.move_active is False
+    assert view.scene.active_mode is None
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mouseReleaseEvent')
@@ -993,14 +1003,14 @@ def test_mouse_release_event_when_item_action_active(mouse_mock, view, item):
     view.scene.addItem(item)
     item.setSelected(True)
     event = MagicMock(scenePos=MagicMock(return_value=QtCore.QPoint(10, 20)))
-    view.scene.move_active = True
-    item.scale_active = True
+    item.active_mode = item.SCALE_MODE
+    view.scene.active_mode = view.scene.MOVE_MODE
     view.scene.undo_stack = MagicMock(push=MagicMock())
 
     view.scene.mouseReleaseEvent(event)
     view.scene.undo_stack.push.assert_not_called()
     mouse_mock.assert_called_once_with(event)
-    assert view.scene.move_active is False
+    assert view.scene.active_mode is None
 
 
 @patch('PyQt6.QtWidgets.QGraphicsScene.mouseReleaseEvent')
@@ -1012,14 +1022,14 @@ def test_mouse_release_event_when_multiselect_action_active(mouse_mock, view):
     view.scene.addItem(item2)
     item2.setSelected(True)
     event = MagicMock(scenePos=MagicMock(return_value=QtCore.QPoint(10, 20)))
-    view.scene.move_active = True
-    view.scene.multi_select_item.scale_active = True
+    view.scene.active_mode = view.scene.MOVE_MODE
+    view.scene.multi_select_item.active_mode = BeePixmapItem.SCALE_MODE
     view.scene.undo_stack = MagicMock(push=MagicMock())
 
     view.scene.mouseReleaseEvent(event)
     view.scene.undo_stack.push.assert_not_called()
     mouse_mock.assert_called_once_with(event)
-    assert view.scene.move_active is False
+    assert view.scene.active_mode is None
 
 
 def test_selected_items(view):
@@ -1229,8 +1239,7 @@ def test_on_selection_change_when_multi_selection_ended(view):
 def test_on_change_when_multi_select_when_no_scale_no_rotate(view):
     view.scene.addItem(view.scene.multi_select_item)
     view.scene.multi_select_item.fit_selection_area = MagicMock()
-    view.scene.multi_select_item.scale_active = False
-    view.scene.multi_select_item.rotate_active = False
+    view.scene.multi_select_item.active_mode = None
     view.scene.on_change(None)
     view.scene.multi_select_item.fit_selection_area.assert_called_once()
 
@@ -1238,8 +1247,7 @@ def test_on_change_when_multi_select_when_no_scale_no_rotate(view):
 def test_on_change_when_multi_select_when_scale_active(view):
     view.scene.addItem(view.scene.multi_select_item)
     view.scene.multi_select_item.fit_selection_area = MagicMock()
-    view.scene.multi_select_item.scale_active = True
-    view.scene.multi_select_item.rotate_active = False
+    view.scene.multi_select_item.active_mode = BeePixmapItem.SCALE_MODE
     view.scene.on_change(None)
     view.scene.multi_select_item.fit_selection_area.assert_not_called()
 
@@ -1247,16 +1255,14 @@ def test_on_change_when_multi_select_when_scale_active(view):
 def test_on_change_when_multi_select_when_rotate_active(view):
     view.scene.addItem(view.scene.multi_select_item)
     view.scene.multi_select_item.fit_selection_area = MagicMock()
-    view.scene.multi_select_item.scale_active = False
-    view.scene.multi_select_item.rotate_active = True
+    view.scene.multi_select_item.active_mode = BeePixmapItem.ROTATE_MODE
     view.scene.on_change(None)
     view.scene.multi_select_item.fit_selection_area.assert_not_called()
 
 
 def test_on_change_when_no_multi_select(view):
     view.scene.multi_select_item.fit_selection_area = MagicMock()
-    view.scene.multi_select_item.scale_active = True
-    view.scene.multi_select_item.rotate_active = True
+    view.scene.multi_select_item.active_mode = BeePixmapItem.SCALE_MODE
     view.scene.on_change(None)
     view.scene.multi_select_item.fit_selection_area.assert_not_called()
 

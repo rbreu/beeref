@@ -16,7 +16,7 @@
 import logging
 import os.path
 
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtWidgets, QtGui
 from PyQt6.QtCore import Qt
 
 from beeref import constants, commands
@@ -239,3 +239,57 @@ class ChangeOpacityDialog(QtWidgets.QDialog):
     def reject(self):
         self.command.undo()
         return super().reject()
+
+
+class BeeNotification(QtWidgets.QWidget):
+    def __init__(self, parent, text):
+        super().__init__(parent)
+        self.label = QtWidgets.QLabel(text)
+        self.setObjectName('BeeNotification')
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.setAutoFillBackground(True)
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.label)
+        self.setLayout(layout)
+        color = constants.COLORS['Active:Window']
+        self.setStyleSheet(
+            f'background-color: rgba({color[0]}, {color[1]}, {color[2]}, 0.9);'
+            'padding: 0.7em;'
+            'border-radius: 5px;')
+        self.show()
+        # We only get own width after showing it;
+        # updateGeometry doesn't work on hidden widgets
+        x = (parent.width() - self.width()) / 2
+        self.move(int(x), 10)
+
+        QtCore.QTimer.singleShot(1000 * 3, self.deleteLater)
+
+
+class SampleColorWidget(QtWidgets.QWidget):
+
+    OFFSET = 10  # Offset from mouse pointer
+    SIZE = 50
+    NONE_COLOR = QtGui.QColor(0, 0, 0, 0)
+
+    def __init__(self, parent, pos, color):
+        super().__init__(parent)
+        self.color = color
+        self.set_pos(pos)
+        self.show()
+
+    def set_pos(self, pos):
+        self.setGeometry(int(pos.x() + self.OFFSET),
+                         int(pos.y() + self.OFFSET),
+                         self.SIZE, self.SIZE)
+
+    def paintEvent(self, event):
+        color = self.color if self.color else self.NONE_COLOR
+        painter = QtGui.QPainter(self)
+        painter.setBrush(QtGui.QBrush(color))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRect(0, 0, self.SIZE, self.SIZE)
+
+    def update(self, pos, color):
+        self.set_pos(pos)
+        self.color = color
+        self.repaint()

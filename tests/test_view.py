@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch, mock_open
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
+from beeref import widgets
 from beeref.actions import actions
 from beeref.config import logfile_name
 from beeref.items import BeePixmapItem, BeeTextItem
@@ -185,7 +186,7 @@ def test_on_action_open(dialog_mock, view, qtbot):
     filename = os.path.join(root, 'assets', 'test1item.bee')
     dialog_mock.return_value = (filename, None)
     view.on_loading_finished = MagicMock()
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
 
     view.on_action_open()
     qtbot.waitUntil(lambda: view.on_loading_finished.called is True)
@@ -194,31 +195,31 @@ def test_on_action_open(dialog_mock, view, qtbot):
     assert item.isSelected() is False
     assert item.pixmap()
     view.on_loading_finished.assert_called_once_with(filename, [])
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_with()
 
 
 @patch('PyQt6.QtWidgets.QFileDialog.getOpenFileName')
 @patch('beeref.view.BeeGraphicsView.open_from_file')
 def test_on_action_open_when_no_filename(open_mock, dialog_mock, view):
     dialog_mock.return_value = (None, None)
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     view.on_action_open()
     open_mock.assert_not_called()
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName')
 def test_on_action_save_as(dialog_mock, view, imgfilename3x3, tmpdir):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scene.addItem(item)
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     filename = os.path.join(tmpdir, 'test.bee')
     assert os.path.exists(filename) is False
     dialog_mock.return_value = (filename, None)
     view.on_action_save_as()
     view.worker.wait()
     assert os.path.exists(filename) is True
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName')
@@ -227,11 +228,11 @@ def test_on_action_save_as_when_no_filename(
         save_mock, dialog_mock, view, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scene.addItem(item)
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     dialog_mock.return_value = (None, None)
     view.on_action_save_as()
     save_mock.assert_not_called()
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName')
@@ -239,7 +240,7 @@ def test_on_action_save_as_filename_doesnt_end_with_bee(
         dialog_mock, view, qtbot, imgfilename3x3, tmpdir):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scene.addItem(item)
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     view.on_saving_finished = MagicMock()
     filename = os.path.join(tmpdir, 'test')
     assert os.path.exists(filename) is False
@@ -248,7 +249,7 @@ def test_on_action_save_as_filename_doesnt_end_with_bee(
     qtbot.waitUntil(lambda: view.on_saving_finished.called is True)
     assert os.path.exists(f'{filename}.bee') is True
     view.on_saving_finished.assert_called_once_with(f'{filename}.bee', [])
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName')
@@ -258,20 +259,20 @@ def test_on_action_save_as_when_error(
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scene.addItem(item)
     view.on_saving_finished = MagicMock()
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     filename = os.path.join(tmpdir, 'test.bee')
     dialog_mock.return_value = (filename, None)
     save_mock.side_effect = sqlite3.Error('foo')
     view.on_action_save_as()
     qtbot.waitUntil(lambda: view.on_saving_finished.called is True)
     view.on_saving_finished.assert_called_once_with(filename, ['foo'])
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 def test_on_action_save(view, qtbot, imgfilename3x3, tmpdir):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scene.addItem(item)
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     view.filename = os.path.join(tmpdir, 'test.bee')
     root = os.path.dirname(__file__)
     shutil.copyfile(os.path.join(root, 'assets', 'test1item.bee'),
@@ -281,18 +282,18 @@ def test_on_action_save(view, qtbot, imgfilename3x3, tmpdir):
     qtbot.waitUntil(lambda: view.on_saving_finished.called is True)
     assert os.path.exists(view.filename) is True
     view.on_saving_finished.assert_called_once_with(view.filename, [])
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('beeref.view.BeeGraphicsView.on_action_save_as')
 def test_on_action_save_when_no_filename(save_as_mock, view, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scene.addItem(item)
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     view.filename = None
     view.on_action_save()
     save_as_mock.assert_called_once_with()
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('beeref.widgets.SceneToPixmapExporterDialog.exec')
@@ -401,7 +402,7 @@ def test_on_action_insert_images_new_scene(
         dialog_mock, clear_mock, view, imgfilename3x3, qtbot):
     dialog_mock.return_value = ([imgfilename3x3], None)
     view.on_insert_images_finished = MagicMock()
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     view.on_action_insert_images()
     qtbot.waitUntil(lambda: view.on_insert_images_finished.called is True)
     assert len(view.scene.items()) == 1
@@ -410,7 +411,7 @@ def test_on_action_insert_images_new_scene(
     assert item.pixmap()
     clear_mock.assert_called_once_with()
     view.on_insert_images_finished.assert_called_once_with(True, '', [])
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('beeref.scene.BeeGraphicsScene.clearSelection')
@@ -420,7 +421,7 @@ def test_on_action_insert_images_existing_scene(
     view.scene.addItem(item)
     dialog_mock.return_value = ([imgfilename3x3], None)
     view.on_insert_images_finished = MagicMock()
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     view.on_action_insert_images()
     qtbot.waitUntil(lambda: view.on_insert_images_finished.called is True)
     assert len(view.scene.items()) == 2
@@ -429,7 +430,7 @@ def test_on_action_insert_images_existing_scene(
     assert item.pixmap()
     clear_mock.assert_called_once_with()
     view.on_insert_images_finished.assert_called_once_with(False, '', [])
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('beeref.scene.BeeGraphicsScene.clearSelection')
@@ -438,7 +439,7 @@ def test_on_action_insert_images_when_error(
         dialog_mock, clear_mock, view, imgfilename3x3, qtbot):
     dialog_mock.return_value = ([imgfilename3x3, 'iaeiae', 'trntrn'], None)
     view.on_insert_images_finished = MagicMock()
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     view.on_action_insert_images()
     qtbot.waitUntil(lambda: view.on_insert_images_finished.called is True)
     assert len(view.scene.items()) == 1
@@ -448,26 +449,26 @@ def test_on_action_insert_images_when_error(
     clear_mock.assert_called_once_with()
     view.on_insert_images_finished.assert_called_once_with(
         True, '', ['iaeiae', 'trntrn'])
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('beeref.scene.BeeGraphicsScene.clearSelection')
 def test_on_action_insert_text(clear_mock, view):
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     view.on_action_insert_text()
     clear_mock.assert_called_once_with()
     assert len(view.scene.items()) == 1
     item = view.scene.items()[0]
     assert item.toPlainText() == 'Text'
     assert item.isSelected() is True
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('PyQt6.QtWidgets.QApplication.clipboard')
 def test_on_action_copy_image(clipboard_mock, view, imgfilename3x3):
     item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
     view.scene.addItem(item)
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     item.setSelected(True)
     mimedata = QtCore.QMimeData()
     clipboard_mock.return_value.mimeData.return_value = mimedata
@@ -476,14 +477,14 @@ def test_on_action_copy_image(clipboard_mock, view, imgfilename3x3):
     clipboard_mock.return_value.setPixmap.assert_called_once()
     view.scene.internal_clipboard == [item]
     assert mimedata.data('beeref/items') == b'1'
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('PyQt6.QtWidgets.QApplication.clipboard')
 def test_on_action_copy_text(clipboard_mock, view, imgfilename3x3):
     item = BeeTextItem('foo bar')
     view.scene.addItem(item)
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     item.setSelected(True)
     mimedata = QtCore.QMimeData()
     clipboard_mock.return_value.mimeData.return_value = mimedata
@@ -492,7 +493,7 @@ def test_on_action_copy_text(clipboard_mock, view, imgfilename3x3):
     clipboard_mock.return_value.setText.assert_called_once_with('foo bar')
     view.scene.internal_clipboard == [item]
     assert mimedata.data('beeref/items') == b'1'
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('beeref.view.BeeGraphicsView.on_action_fit_scene')
@@ -501,12 +502,12 @@ def test_on_action_copy_text(clipboard_mock, view, imgfilename3x3):
 def test_on_action_paste_external_new_scene(
         clipboard_mock, clear_mock, fit_mock, view, imgfilename3x3):
     clipboard_mock.return_value = QtGui.QImage(imgfilename3x3)
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     view.on_action_paste()
     assert len(view.scene.items()) == 1
     assert view.scene.items()[0].isSelected() is True
     fit_mock.assert_called_once_with()
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('beeref.view.BeeGraphicsView.on_action_fit_scene')
@@ -515,14 +516,14 @@ def test_on_action_paste_external_new_scene(
 def test_on_action_paste_external_existing_scene(
         clipboard_mock, clear_mock, fit_mock, view, item, imgfilename3x3):
     view.scene.addItem(item)
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     clipboard_mock.return_value = QtGui.QImage(imgfilename3x3)
     view.on_action_paste()
     assert len(view.scene.items()) == 2
     assert view.scene.items()[0].isSelected() is True
     assert view.scene.items()[1].isSelected() is False
     fit_mock.assert_not_called()
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('beeref.scene.BeeGraphicsScene.clearSelection')
@@ -533,12 +534,12 @@ def test_on_action_paste_internal(mimedata_mock, clear_mock, view):
     mimedata_mock.return_value = mimedata
     item = BeePixmapItem(QtGui.QImage())
     view.scene.internal_clipboard = [item]
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     view.on_action_paste()
     assert len(view.scene.items()) == 1
     assert view.scene.items()[0].isSelected() is True
     clear_mock.assert_called_once_with()
-    view.scene.cancel_crop_mode.assert_called()
+    view.cancel_active_modes.assert_called()
 
 
 @patch('beeref.scene.BeeGraphicsScene.clearSelection')
@@ -547,26 +548,26 @@ def test_on_action_paste_internal(mimedata_mock, clear_mock, view):
 def test_on_action_paste_when_text(img_mock, text_mock, clear_mock, view):
     img_mock.return_value = QtGui.QImage()
     text_mock.return_value = 'foo bar'
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     view.on_action_paste()
     assert len(view.scene.items()) == 1
     assert view.scene.items()[0].isSelected() is True
     assert view.scene.items()[0].toPlainText() == 'foo bar'
     clear_mock.assert_called_once_with()
-    view.scene.cancel_crop_mode.assert_called_once_with()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('beeref.scene.BeeGraphicsScene.clearSelection')
 @patch('PyQt6.QtGui.QClipboard.text')
 @patch('PyQt6.QtGui.QClipboard.image')
 def test_on_action_paste_when_empty(img_mock, text_mock, clear_mock, view):
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     img_mock.return_value = QtGui.QImage()
     text_mock.return_value = ''
     view.on_action_paste()
     assert len(view.scene.items()) == 0
     clear_mock.assert_not_called()
-    view.scene.cancel_crop_mode.assert_not_called()
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('beeref.view.BeeGraphicsView.on_action_copy')
@@ -642,6 +643,15 @@ def test_on_action_reset_transforms(view, item):
     assert item.flip() == 1
     assert item.rotation() == 0
     assert item.scale() == 1
+
+
+def test_on_action_sample_color(view):
+    view.cancel_active_modes = MagicMock()
+    view.on_action_sample_color()
+    assert view.active_mode == view.SAMPLE_COLOR_MODE
+    assert isinstance(view.sample_color_widget, widgets.SampleColorWidget)
+    assert view.viewport().cursor() == Qt.CursorShape.CrossCursor
+    view.cancel_active_modes.assert_called_once_with()
 
 
 @patch('PyQt6.QtWidgets.QWidget.create')
@@ -742,13 +752,13 @@ def test_on_action_deselect_all(view, item):
 
 
 def test_on_action_delete_items(view, item):
-    view.scene.cancel_crop_mode = MagicMock()
+    view.cancel_active_modes = MagicMock()
     view.scene.addItem(item)
     item.setSelected(True)
     view.on_action_delete_items()
     assert view.scene.items() == []
     assert view.undo_stack.isClean() is False
-    view.scene.cancel_crop_mode.assert_called_once()
+    view.cancel_active_modes.assert_called_once()
 
 
 @patch('beeref.widgets.ChangeOpacityDialog.__init__',
@@ -787,6 +797,18 @@ def test_on_action_grayscale(view):
     assert len(view.undo_stack) == 1
     assert pixmapitem1.grayscale is True
     assert pixmapitem2.grayscale is False
+
+
+def test_cancel_active_modes_when_sample_color_mode(view):
+    view.active_mode = view.SAMPLE_COLOR_MODE
+    view.sample_color_widget = widgets.SampleColorWidget(
+        view, MagicMock(), MagicMock())
+    view.viewport().setCursor(Qt.CursorShape.CrossCursor)
+    view.cancel_active_modes()
+
+    assert view.active_mode is None
+    assert hasattr(view, 'sample_color_widget') is False
+    assert view.viewport().cursor() == Qt.CursorShape.ArrowCursor
 
 
 @patch('PyQt6.QtGui.QUndoStack.isClean', return_value=True)
@@ -920,9 +942,7 @@ def test_mouse_press_zoom(mouse_event_mock, view):
     event.button.return_value = Qt.MouseButton.MiddleButton
     event.modifiers.return_value = Qt.KeyboardModifier.ControlModifier
     view.mousePressEvent(event)
-    assert view.zoom_active is True
-    assert view.pan_active is False
-    assert view.movewin_active is False
+    assert view.active_mode == view.ZOOM_MODE
     assert view.event_start == QtCore.QPointF(10.0, 20.0)
     assert view.event_anchor == QtCore.QPointF(10.0, 20.0)
     mouse_event_mock.assert_not_called()
@@ -936,9 +956,7 @@ def test_mouse_press_pan_middle_drag(mouse_event_mock, view):
     event.button.return_value = Qt.MouseButton.MiddleButton
     event.modifiers.return_value = None
     view.mousePressEvent(event)
-    assert view.pan_active is True
-    assert view.zoom_active is False
-    assert view.movewin_active is False
+    assert view.active_mode == view.PAN_MODE
     assert view.event_start == QtCore.QPointF(10.0, 20.0)
     mouse_event_mock.assert_not_called()
     view.cursor() == Qt.CursorShape.ClosedHandCursor
@@ -952,12 +970,68 @@ def test_mouse_press_pan_alt_left_drag(mouse_event_mock, view):
     event.button.return_value = Qt.MouseButton.LeftButton
     event.modifiers.return_value = Qt.KeyboardModifier.AltModifier
     view.mousePressEvent(event)
-    assert view.pan_active is True
-    assert view.zoom_active is False
-    assert view.movewin_active is False
+    assert view.active_mode == view.PAN_MODE
     assert view.event_start == QtCore.QPointF(10.0, 20.0)
     mouse_event_mock.assert_not_called()
     view.cursor() == Qt.CursorShape.ClosedHandCursor
+    event.accept.assert_called_once_with()
+
+
+@patch('beeref.widgets.BeeNotification')
+@patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
+def test_mouse_press_sample_color_when_color(
+        mouse_event_mock, notification_mock, view):
+    view.scene.sample_color_at = MagicMock(
+        return_value=QtGui.QColor(255, 0, 0, 255))
+    view.active_mode = view.SAMPLE_COLOR_MODE
+    event = MagicMock()
+    event.pos.return_value = QtCore.QPoint(2, 2)
+    event.button.return_value = Qt.MouseButton.LeftButton
+
+    view.mousePressEvent(event)
+    assert QtWidgets.QApplication.clipboard().text() == '#ff0000'
+    notification_mock.assert_called_once_with(
+        view, 'Copied color to clipboard: #ff0000')
+    assert view.active_mode is None
+    view.scene.sample_color_at.assert_called_once()
+    mouse_event_mock.assert_not_called()
+
+
+@patch('beeref.widgets.BeeNotification')
+@patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
+def test_mouse_press_sample_color_when_color_with_alpha(
+        mouse_event_mock, notification_mock, view):
+    view.scene.sample_color_at = MagicMock(
+        return_value=QtGui.QColor(255, 0, 0, 100))
+    view.active_mode = view.SAMPLE_COLOR_MODE
+    event = MagicMock()
+    event.pos.return_value = QtCore.QPoint(2, 2)
+    event.button.return_value = Qt.MouseButton.LeftButton
+
+    view.mousePressEvent(event)
+    assert QtWidgets.QApplication.clipboard().text() == '#ff000064'
+    notification_mock.assert_called_once_with(
+        view, 'Copied color to clipboard: #ff000064')
+    assert view.active_mode is None
+    view.scene.sample_color_at.assert_called_once()
+    mouse_event_mock.assert_not_called()
+
+
+@patch('beeref.widgets.BeeNotification')
+@patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
+def test_mouse_press_sample_color_when_no_color(
+        mouse_event_mock, notification_mock, view):
+    view.scene.sample_color_at = MagicMock(return_value=None)
+    view.active_mode = view.SAMPLE_COLOR_MODE
+    event = MagicMock()
+    event.pos.return_value = QtCore.QPoint(2, 2)
+    event.button.return_value = Qt.MouseButton.LeftButton
+
+    view.mousePressEvent(event)
+    notification_mock.assert_not_called()
+    assert view.active_mode is None
+    view.scene.sample_color_at.assert_called_once()
+    mouse_event_mock.assert_not_called()
     event.accept.assert_called_once_with()
 
 
@@ -971,8 +1045,7 @@ def test_mouse_press_move_window(cursor_mock, mouse_event_mock, view):
     event.modifiers.return_value = (
         Qt.KeyboardModifier.AltModifier | Qt.KeyboardModifier.ControlModifier)
     view.mousePressEvent(event)
-    assert view.pan_active is False
-    assert view.zoom_active is False
+    assert view.active_mode is None
     assert view.movewin_active is True
     assert view.event_start == view.mapToGlobal(QtCore.QPointF(10.0, 20.0))
     mouse_event_mock.assert_not_called()
@@ -985,6 +1058,16 @@ def test_mouse_press_when_move_window_active(mouse_event_mock, view):
     view.mousePressEvent(MagicMock())
     assert view.movewin_active is False
     mouse_event_mock.assert_not_called()
+
+
+@patch('PyQt6.QtWidgets.QGraphicsView.keyPressEvent')
+def test_key_press_when_sample_color_mode(key_event_mock, view):
+    view.active_mode = view.SAMPLE_COLOR_MODE
+    event = MagicMock()
+    view.keyPressEvent(event)
+    assert view.active_mode is None
+    event.accept.assert_called_once_with()
+    key_event_mock.assert_not_called()
 
 
 @patch('PyQt6.QtWidgets.QGraphicsView.keyPressEvent')
@@ -1001,9 +1084,7 @@ def test_mouse_press_unhandled(mouse_event_mock, view):
     event.button.return_value = Qt.MouseButton.LeftButton
     event.modifiers.return_value = None
     view.mousePressEvent(event)
-    assert view.pan_active is False
-    assert view.zoom_active is False
-    assert view.movewin_active is False
+    assert view.active_mode is None
     mouse_event_mock.assert_called_once_with(event)
     event.accept.assert_not_called()
 
@@ -1011,7 +1092,7 @@ def test_mouse_press_unhandled(mouse_event_mock, view):
 @patch('PyQt6.QtWidgets.QGraphicsView.mouseMoveEvent')
 @patch('beeref.view.BeeGraphicsView.pan')
 def test_mouse_move_pan(pan_mock, mouse_event_mock, view):
-    view.pan_active = True
+    view.active_mode = view.PAN_MODE
     view.event_start = QtCore.QPointF(55.0, 66.0)
     event = MagicMock()
     event.position.return_value = QtCore.QPointF(10.0, 20.0)
@@ -1024,13 +1105,31 @@ def test_mouse_move_pan(pan_mock, mouse_event_mock, view):
 @patch('PyQt6.QtWidgets.QGraphicsView.mouseMoveEvent')
 @patch('beeref.view.BeeGraphicsView.zoom')
 def test_mouse_move_zoom(zoom_mock, mouse_event_mock, view):
-    view.zoom_active = True
+    view.active_mode = view.ZOOM_MODE
     view.event_anchor = QtCore.QPointF(55.0, 66.0)
     view.event_start = QtCore.QPointF(10.0, 20.0)
     event = MagicMock()
     event.position.return_value = QtCore.QPointF(10.0, 18.0)
     view.mouseMoveEvent(event)
     zoom_mock.assert_called_once_with(40, QtCore.QPointF(55.0, 66.0))
+    mouse_event_mock.assert_not_called()
+    event.accept.assert_called_once_with()
+
+
+@patch('PyQt6.QtWidgets.QGraphicsView.mouseMoveEvent')
+def test_mouse_move_sample_color(mouse_event_mock, view):
+    view.active_mode = view.SAMPLE_COLOR_MODE
+    view.scene.sample_color_at = MagicMock(
+        return_value=QtGui.QColor(255, 0, 0, 255))
+    view.sample_color_widget = MagicMock()
+    event = MagicMock()
+    event.pos.return_value = QtCore.QPoint(2, 2)
+    event.position.return_value = QtCore.QPointF(10.0, 18.0)
+    view.mouseMoveEvent(event)
+    view.scene.sample_color_at.assert_called_once()
+    view.sample_color_widget.update.assert_called_once_with(
+        QtCore.QPointF(10.0, 18.0),
+        QtGui.QColor(255, 0, 0, 255))
     mouse_event_mock.assert_not_called()
     event.accept.assert_called_once_with()
 
@@ -1060,11 +1159,11 @@ def test_mouse_move_unhandled(mouse_event_mock, view):
 @patch('PyQt6.QtWidgets.QGraphicsView.mouseReleaseEvent')
 def test_mouse_release_pan(mouse_event_mock, view):
     event = MagicMock()
-    view.pan_active = True
+    view.active_mode = view.PAN_MODE
     view.setCursor(Qt.CursorShape.ClosedHandCursor)
     view.mouseReleaseEvent(event)
     mouse_event_mock.assert_not_called()
-    assert view.pan_active is False
+    assert view.active_mode is None
     event.accept.assert_called_once_with()
     view.cursor() == Qt.CursorShape.ArrowCursor
 
@@ -1072,10 +1171,10 @@ def test_mouse_release_pan(mouse_event_mock, view):
 @patch('PyQt6.QtWidgets.QGraphicsView.mouseReleaseEvent')
 def test_mouse_release_zoom(mouse_event_mock, view):
     event = MagicMock()
-    view.zoom_active = True
+    view.active_mode = view.ZOOM_MODE
     view.mouseReleaseEvent(event)
     mouse_event_mock.assert_not_called()
-    assert view.zoom_active is False
+    assert view.active_mode is None
     event.accept.assert_called_once_with()
 
 

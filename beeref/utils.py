@@ -78,3 +78,18 @@ def get_file_extension_from_format(formatstr):
     extensions = re.match(r'.* \((.*)\)', formatstr).groups()[0]
     ext = extensions.split()[0]
     return ext.removeprefix('*.')
+
+
+def qcolor_to_hex(color):
+    """Returns the QColor as a hex represenation string:
+    #RRGGBBAA if the color has transparencey, otherwise #RRGGBB.
+    """
+
+    if color.alpha() == 255:
+        return color.name()
+
+    # The name method can only do HexRgb and HexArgb, not HexRgba, so
+    # we have to do this ourselves:
+    rgb = color.name()
+    alpha = hex(color.alpha()).removeprefix('0x')
+    return f'{rgb}{alpha}'

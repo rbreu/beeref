@@ -140,6 +140,10 @@ class SelectableMixin(BaseItemMixin):
     SELECT_ROTATE_SIZE = 10  # size of hover area for rotating
     SELECT_FREE_CENTER = 20  # size of handle-free area in the center
 
+    SCALE_MODE = 1
+    ROTATE_MODE = 2
+    FLIP_MODE = 3
+
     def init_selectable(self):
         self.setAcceptHoverEvents(True)
         self.setFlags(
@@ -147,18 +151,8 @@ class SelectableMixin(BaseItemMixin):
             | QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
 
         self.viewport_scale = 1
-        self.reset_actions()
+        self.active_mode = None
         self.is_editable = False
-
-    def reset_actions(self):
-        self.scale_active = False
-        self.rotate_active = False
-        self.flip_active = False
-
-    def is_action_active(self):
-        return any((self.scale_active,
-                    self.rotate_active,
-                    self.flip_active))
 
     def fixed_length_for_viewport(self, value):
         """The interactable areas need to stay the same size on the
@@ -423,7 +417,7 @@ class SelectableMixin(BaseItemMixin):
                 # Check if we are in one of the corner's scale areas
                 if self.get_scale_bounds(corner).contains(event.pos()):
                     # Start scale action for this corner
-                    self.scale_active = True
+                    self.active_mode = self.SCALE_MODE
                     self.event_direction = self.get_direction_from_center(
                         event.scenePos())
                     self.event_anchor = self.mapToScene(
@@ -435,7 +429,7 @@ class SelectableMixin(BaseItemMixin):
                 # Check if we are in one of the corner's rotate areas
                 if self.get_rotate_bounds(corner).contains(event.pos()):
                     # Start rotate action
-                    self.rotate_active = True
+                    self.active_mode = self.ROTATE_MODE
                     self.event_anchor = self.center_scene_coords
                     self.rotate_start_angle = self.get_rotate_angle(
                         event.scenePos())
@@ -446,7 +440,7 @@ class SelectableMixin(BaseItemMixin):
                 # Check if we are in one of the flip edges:
                 for edge in self.get_flip_bounds():
                     if edge['rect'].contains(event.pos()):
-                        self.flip_active = True
+                        self.active_mode = self.FLIP_MODE
                         event.accept()
                         self.scene().undo_stack.push(
                             commands.FlipItems(
@@ -549,14 +543,14 @@ class SelectableMixin(BaseItemMixin):
         if (event.scenePos() - self.event_start).manhattanLength() > 5:
             self.scene().views()[0].reset_previous_transform()
 
-        if self.scale_active:
+        if self.active_mode == self.SCALE_MODE:
             factor = self.get_scale_factor(event)
             for item in self.selection_action_items():
                 item.setScale(item.scale_orig_factor * factor,
                               item.mapFromScene(self.event_anchor))
             event.accept()
             return
-        if self.rotate_active:
+        if self.active_mode == self.ROTATE_MODE:
             snap = (event.modifiers() == Qt.KeyboardModifier.ControlModifier
                     or event.modifiers() == Qt.KeyboardModifier.ShiftModifier)
             delta = self.get_rotate_delta(event.scenePos(), snap)
@@ -566,7 +560,7 @@ class SelectableMixin(BaseItemMixin):
                     item.mapFromScene(self.event_anchor))
             event.accept()
             return
-        if self.flip_active:
+        if self.active_mode == self.FLIP_MODE:
             # We have already flipped on MousePress, but we
             # still need to accept the event here as to not
             # initiate an item move
@@ -576,7 +570,7 @@ class SelectableMixin(BaseItemMixin):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        if self.scale_active:
+        if self.active_mode == self.SCALE_MODE:
             if self.get_scale_factor(event) != 1:
                 self.scene().undo_stack.push(
                     commands.ScaleItemsBy(
@@ -585,9 +579,9 @@ class SelectableMixin(BaseItemMixin):
                         self.event_anchor,
                         ignore_first_redo=True))
             event.accept()
-            self.reset_actions()
+            self.active_mode = None
             return
-        elif self.rotate_active:
+        elif self.active_mode == self.ROTATE_MODE:
             self.scene().on_selection_change()
             if self.get_rotate_delta(event.scenePos()) != 0:
                 self.scene().undo_stack.push(
@@ -597,18 +591,18 @@ class SelectableMixin(BaseItemMixin):
                         self.event_anchor,
                         ignore_first_redo=True))
             event.accept()
-            self.reset_actions()
+            self.active_mode = None
             return
-        elif self.flip_active:
+        elif self.active_mode == self.FLIP_MODE:
             for edge in self.get_flip_bounds():
                 if edge['rect'].contains(event.pos()):
                     # We have already flipped on MousePress, but we
                     # still need to accept the event here as to not
                     # initiate an item move
                     event.accept()
-                    self.reset_actions()
+                    self.active_mode = None
                     return
-        self.reset_actions()
+        self.active_mode = None
         super().mouseReleaseEvent(event)
 
     def on_view_scale_change(self):

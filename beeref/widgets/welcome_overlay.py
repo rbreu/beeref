@@ -93,7 +93,7 @@ class WelcomeOverlay(MainControlsMixin, QtWidgets.QWidget):
     def __init__(self, parent):
         super().__init__(parent)
         self.control_target = parent
-        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
+        self.setAutoFillBackground(True)
         self.init_main_controls(main_window=parent.parent)
 
         # Recent files

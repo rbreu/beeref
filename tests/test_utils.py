@@ -71,3 +71,10 @@ def test_round_to(number, base, expected):
                           ('JPEG (*.jpg *.jpeg)', 'jpg')])
 def test_get_file_extension_from_format(formatstr, expected):
     assert utils.get_file_extension_from_format(formatstr) == expected
+
+
+@pytest.mark.parametrize('rgba,expected',
+                         [((255, 0, 0, 255), '#ff0000'),
+                          ((255, 0, 0, 100), '#ff000064')])
+def test_qcolor_to_hex(rgba, expected):
+    assert utils.qcolor_to_hex(QtGui.QColor(*rgba)) == expected

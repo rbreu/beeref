@@ -13,18 +13,7 @@ from beeref.items import BeePixmapItem
 def test_init_selectable(view):
     item = BeePixmapItem(QtGui.QImage())
     assert item.viewport_scale == 1
-    assert item.scale_active is False
-    assert item.rotate_active is False
-    assert item.flip_active is False
-
-
-def test_is_action_active_when_no_action(view, item):
-    assert item.is_action_active() is False
-
-
-def test_is_action_active_when_action(view, item):
-    item.scale_active = True
-    assert item.is_action_active() is True
+    assert item.active_mode is None
 
 
 def test_on_view_scale_change(view, item):
@@ -835,7 +824,7 @@ def test_mouse_press_event_topleft_scale(view, item):
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 100, 80)):
         item.mousePressEvent(event)
-        assert item.scale_active is True
+        assert item.active_mode == item.SCALE_MODE
         assert item.event_start == QtCore.QPointF(-1, -1)
         assert item.event_direction.x() < 0
         assert item.event_direction.y() < 0
@@ -853,7 +842,7 @@ def test_mouse_press_event_bottomright_scale(view, item):
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 100, 80)):
         item.mousePressEvent(event)
-        assert item.scale_active is True
+        assert item.active_mode == item.SCALE_MODE
         assert item.event_start == QtCore.QPointF(101, 81)
         assert item.event_direction.x() > 0
         assert item.event_direction.y() > 0
@@ -872,7 +861,7 @@ def test_mouse_press_event_rotate(view, item):
                       return_value=QtCore.QRectF(0, 0, 100, 80)):
         with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent'):
             item.mousePressEvent(event)
-            assert item.rotate_active is True
+            assert item.active_mode == item.ROTATE_MODE
             assert item.event_anchor == QtCore.QPointF(50, 40)
             assert item.rotate_orig_degrees == 0
             event.accept.assert_called_once_with()
@@ -895,7 +884,7 @@ def test_mouse_press_event_flip(view, item):
     assert cmd.items == [item]
     assert cmd.anchor == QtCore.QPointF(50, 40)
     assert cmd.vertical is False
-    assert item.flip_active is True
+    assert item.active_mode == item.FLIP_MODE
     event.accept.assert_called_once_with()
 
 
@@ -909,9 +898,7 @@ def test_mouse_press_event_not_in_handles(view, item):
     with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mousePressEvent') as m:
         item.mousePressEvent(event)
         m.assert_called_once_with(event)
-        assert item.scale_active is False
-        assert item.rotate_active is False
-        assert item.flip_active is False
+        assert item.active_mode is None
         event.accept.assert_not_called()
 
 
@@ -945,7 +932,7 @@ def test_mouse_move_event_when_scale_action(view, item):
     view.scene.addItem(item)
     event = MagicMock()
     event.scenePos.return_value = QtCore.QPointF(20, 90)
-    item.scale_active = True
+    item.active_mode = item.SCALE_MODE
     item.event_direction = QtCore.QPointF(1, 1) / math.sqrt(2)
     item.event_anchor = QtCore.QPointF(100, 80)
     item.event_start = QtCore.QPointF(10, 10)
@@ -965,7 +952,7 @@ def test_mouse_move_event_when_rotate_action(view, item):
     event = MagicMock()
     event.scenePos.return_value = QtCore.QPointF(15, 25)
     item.event_start = QtCore.QPointF(10, 10)
-    item.rotate_active = True
+    item.active_mode = item.ROTATE_MODE
     item.rotate_orig_degrees = 0
     item.rotate_start_angle = -3
     item.event_anchor = QtCore.QPointF(10, 20)
@@ -981,7 +968,7 @@ def test_mouse_move_event_when_flip_action(view, item):
     event = MagicMock()
     event.scenePos.return_value = QtCore.QPointF(15, 25)
     item.event_start = QtCore.QPointF(10, 10)
-    item.flip_active = True
+    item.active_mode = item.FLIP_MODE
     with patch('PyQt6.QtWidgets.QGraphicsPixmapItem.mouseMoveEvent') as m:
         item.mouseMoveEvent(event)
         m.assert_not_called()
@@ -991,13 +978,13 @@ def test_mouse_move_event_when_flip_action(view, item):
 def test_mouse_release_event_when_no_action(view, item):
     view.scene.addItem(item)
     event = MagicMock()
-    item.flip_active = True
+    item.active_mode = item.FLIP_MODE
     event.pos.return_value = QtCore.QPointF(-100, -100)
     with patch('PyQt6.QtWidgets.QGraphicsPixmapItem'
                '.mouseReleaseEvent') as m:
         item.mouseReleaseEvent(event)
         m.assert_called_once_with(event)
-        item.flip_active is False
+        item.active_mode is None
         event.accept.assert_not_called()
 
 
@@ -1005,7 +992,7 @@ def test_mouse_release_event_when_scale_action(view, item):
     view.scene.addItem(item)
     event = MagicMock()
     event.scenePos.return_value = QtCore.QPointF(20, 90)
-    item.scale_active = True
+    item.active_mode = item.SCALE_MODE
     item.event_direction = QtCore.QPointF(1, 1) / math.sqrt(2)
     item.event_anchor = QtCore.QPointF(100, 80)
     item.event_start = QtCore.QPointF(10, 10)
@@ -1023,7 +1010,7 @@ def test_mouse_release_event_when_scale_action(view, item):
         assert cmd.factor == approx(1.5, 0.01)
         assert cmd.anchor == QtCore.QPointF(100, 80)
         assert cmd.ignore_first_redo is True
-        assert item.scale_active is False
+        assert item.active_mode is None
         event.accept.assert_called_once_with()
 
 
@@ -1031,7 +1018,7 @@ def test_mouse_release_event_when_scale_action_zero(view, item):
     view.scene.addItem(item)
     event = MagicMock()
     event.scenePos.return_value = QtCore.QPointF(20, 90)
-    item.scale_active = True
+    item.active_mode = item.SCALE_MODE
     item.event_direction = QtCore.QPointF(1, 1) / math.sqrt(2)
     item.event_anchor = QtCore.QPointF(100, 80)
     item.event_start = QtCore.QPointF(20, 90)
@@ -1042,7 +1029,7 @@ def test_mouse_release_event_when_scale_action_zero(view, item):
                       return_value=QtCore.QRectF(0, 0, 100, 80)):
         item.mouseReleaseEvent(event)
         view.scene.undo_stack.push.assert_not_called()
-        assert item.scale_active is False
+        assert item.active_mode is None
         event.accept.assert_called_once_with()
 
 
@@ -1050,7 +1037,7 @@ def test_mouse_release_event_when_rotate_action(view, item):
     view.scene.addItem(item)
     event = MagicMock()
     event.scenePos.return_value = QtCore.QPointF(15, 25)
-    item.rotate_active = True
+    item.active_mode = item.ROTATE_MODE
     item.rotate_orig_degrees = 0
     item.rotate_start_angle = -3
     item.event_anchor = QtCore.QPointF(10, 20)
@@ -1065,7 +1052,7 @@ def test_mouse_release_event_when_rotate_action(view, item):
     assert cmd.delta == -42
     assert cmd.anchor == QtCore.QPointF(10, 20)
     assert cmd.ignore_first_redo is True
-    assert item.rotate_active is False
+    assert item.active_mode is None
     event.accept.assert_called_once_with()
 
 
@@ -1073,7 +1060,7 @@ def test_mouse_release_event_when_rotate_action_zero(view, item):
     view.scene.addItem(item)
     event = MagicMock()
     event.scenePos.return_value = QtCore.QPointF(15, 25)
-    item.rotate_active = True
+    item.active_mode = item.ROTATE_MODE
     item.rotate_orig_degrees = 0
     item.rotate_start_angle = -45
     item.event_anchor = QtCore.QPointF(10, 20)
@@ -1081,7 +1068,7 @@ def test_mouse_release_event_when_rotate_action_zero(view, item):
 
     item.mouseReleaseEvent(event)
     view.scene.undo_stack.push.assert_not_called()
-    assert item.rotate_active is False
+    assert item.active_mode is None
     event.accept.assert_called_once_with()
 
 
@@ -1089,12 +1076,12 @@ def test_mouse_release_event_when_flip_action(view, item):
     view.scene.addItem(item)
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(0, 40)
-    item.flip_active = True
+    item.active_mode = item.FLIP_MODE
     view.scene.undo_stack = MagicMock(push=MagicMock())
 
     with patch.object(item, 'bounding_rect_unselected',
                       return_value=QtCore.QRectF(0, 0, 100, 80)):
         item.mouseReleaseEvent(event)
     view.scene.undo_stack.push.assert_not_called()
-    assert item.flip_active is False
+    assert item.active_mode is None
     event.accept.assert_called_once_with()

@@ -6,6 +6,8 @@ Added
 
 * Moving the window from within BeeRef now changes to a diffent cursor from
   the default arrow cursor.
+* Added a color sampler which can copy colors from images to the
+  clipboard in hex format (Images -> Sample Color)
 
 
 Fixed

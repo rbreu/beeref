@@ -272,6 +272,13 @@ actions = ActionList([
         'group': 'active_when_single_image',
     }),
     Action({
+        'id': 'sample_color',
+        'text': 'Sample Color',
+        'shortcuts': ['S'],
+        'callback': 'on_action_sample_color',
+        'group': 'active_when_items_in_scene',
+    }),
+    Action({
         'id': 'crop',
         'text': '&Crop',
         'shortcuts': ['Shift+C'],

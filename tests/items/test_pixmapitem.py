@@ -846,3 +846,42 @@ def test_mouse_release_event_when_not_crop_mode(mouse_mock, qapp, item):
     assert item.crop_mode is False
     event.accept.assert_not_called()
     mouse_mock.assert_called_once_with(event)
+
+
+def test_sample_color_at_returns_color(qapp, view):
+    color = QtGui.QColor(255, 0, 0, 3)
+    img = QtGui.QImage(10, 10, QtGui.QImage.Format.Format_ARGB32)
+    img.fill(color)
+    item = BeePixmapItem(img, 'foo.png')
+    view.scene.addItem(item)
+    assert item.sample_color_at(QtCore.QPointF(2, 2)) == color
+
+
+def test_sample_color_at_returns_none_when_fully_transparent(qapp, view):
+    color = QtGui.QColor(255, 0, 0, 0)
+    img = QtGui.QImage(10, 10, QtGui.QImage.Format.Format_ARGB32)
+    img.fill(color)
+    item = BeePixmapItem(img, 'foo.png')
+    view.scene.addItem(item)
+    assert item.sample_color_at(QtCore.QPointF(2, 2)) is None
+
+
+def test_sample_color_in_greyscale_mode(qapp, view):
+    color = QtGui.QColor(255, 0, 0)
+    img = QtGui.QImage(10, 10, QtGui.QImage.Format.Format_ARGB32)
+    img.fill(color)
+    item = BeePixmapItem(img, 'foo.png')
+    item.grayscale = True
+    view.scene.addItem(item)
+    gray = item.sample_color_at(QtCore.QPointF(2, 2))
+    print(gray.red(), gray.green(), gray.blue(), gray.alpha())
+    assert gray == QtGui.QColor(130, 130, 130)
+
+
+def test_sample_color_at_returns_none_when_transparent(qapp, view):
+    color = QtGui.QColor(255, 0, 0, 0)
+    img = QtGui.QImage(10, 10, QtGui.QImage.Format.Format_ARGB32)
+    img.fill(color)
+    item = BeePixmapItem(img, 'foo.png')
+    view.scene.addItem(item)
+    assert item.sample_color_at(QtCore.QPointF(2, 2)) is None

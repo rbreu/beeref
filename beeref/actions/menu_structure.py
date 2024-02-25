@@ -110,6 +110,7 @@ menu_structure = [
             'grayscale',
             MENU_SEPARATOR,
             'show_color_gamut',
+            'sample_color',
         ],
     },
     {

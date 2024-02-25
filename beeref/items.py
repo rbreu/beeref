@@ -43,6 +43,9 @@ def register_item(cls):
 class BeeItemMixin(SelectableMixin):
     """Base for all items added by the user."""
 
+    def sample_color_at(self, pos):
+        return None
+
     def set_pos_center(self, pos):
         """Sets the position using the item's center as the origin point."""
 
@@ -64,7 +67,7 @@ class BeeItemMixin(SelectableMixin):
     def on_selected_change(self, value):
         if (value and self.scene()
                 and not self.scene().has_selection()
-                and not self.scene().rubberband_active):
+                and not self.scene().active_mode is None):
             self.bring_to_front()
 
     def update_from_data(self, **kwargs):
@@ -169,6 +172,18 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
             self._grayscale_pixmap = None
 
         self.update()
+
+    def sample_color_at(self, pos):
+        ipos = self.mapFromScene(pos)
+        if self.grayscale:
+            pm = self._grayscale_pixmap
+        else:
+            pm = self.pixmap()
+        img = pm.toImage()
+
+        color = img.pixelColor(int(ipos.x()), int(ipos.y()))
+        if color.alpha():
+            return color
 
     def bounding_rect_unselected(self):
         if self.crop_mode:
@@ -414,9 +429,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
             color = QtGui.QColor(0, 0, 0)
             color.setAlpha(100)
             painter.setBrush(QtGui.QBrush(color))
-            pen = QtGui.QPen()
-            pen.setWidth(0)
-            painter.setPen(pen)
+            painter.setPen(Qt.PenStyle.NoPen)
             painter.drawPath(path)
             painter.setBrush(QtGui.QBrush())
 

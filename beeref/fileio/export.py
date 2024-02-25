@@ -50,7 +50,7 @@ class ExporterBase:
 
     def __init__(self, scene):
         self.scene = scene
-        self.scene.cancel_crop_mode()
+        self.scene.cancel_active_modes()
         self.scene.deselect_all_items()
         # Selection outlines/handles will be rendered to the exported
         # image, so deselect first. (Alternatively, pass an attribute

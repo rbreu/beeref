@@ -1,10 +1,14 @@
+from unittest.mock import patch, MagicMock
+
 from PyQt6 import QtCore, QtWidgets, QtGui
 from PyQt6.QtCore import Qt
 
 from beeref.config import logfile_name
 from beeref.widgets import (
+    BeeNotification,
     ChangeOpacityDialog,
     DebugLogDialog,
+    SampleColorWidget,
     SceneToPixmapExporterDialog,
 )
 
@@ -94,3 +98,44 @@ def test_change_opacity_dialog_reject(view, item):
     dlg.reject()
     assert item.opacity() == 0.6
     assert len(stack) == 0
+
+
+@patch('PyQt6.QtCore.QTimer.singleShot')
+def test_bee_notification(single_shot_mock, view):
+    widget = BeeNotification(view, 'Hello World')
+    assert widget.label.text() == 'Hello World'
+    single_shot_mock.assert_called_once_with(1000 * 3, widget.deleteLater)
+
+
+def test_sample_color_widget(view):
+    widget = SampleColorWidget(
+        view, QtCore.QPoint(2, 5), QtGui.QColor(255, 0, 0))
+    assert widget.color == QtGui.QColor(255, 0, 0)
+    assert widget.geometry() == QtCore.QRect(12, 15, 50, 50)
+
+    widget.update(QtCore.QPoint(13, 15), QtGui.QColor(0, 255, 0))
+    assert widget.color == QtGui.QColor(0, 255, 0)
+    assert widget.geometry() == QtCore.QRect(23, 25, 50, 50)
+
+
+def test_sample_color_widget_paint_event_when_color(view):
+    widget = SampleColorWidget(
+        view, QtCore.QPoint(2, 5), QtGui.QColor(255, 0, 0))
+    with patch('PyQt6.QtGui.QPainter') as painter_cls_mock:
+        painter_mock = MagicMock()
+        painter_cls_mock.return_value = painter_mock
+        widget.paintEvent(MagicMock())
+        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
+        painter_mock.setBrush.assert_called_once_with(brush)
+        painter_mock.drawRect.assert_called_once_with(0, 0, 50, 50)
+
+
+def test_sample_color_widget_paint_event_when_no_color(view):
+    widget = SampleColorWidget(view, QtCore.QPoint(2, 5), None)
+    with patch('PyQt6.QtGui.QPainter') as painter_cls_mock:
+        painter_mock = MagicMock()
+        painter_cls_mock.return_value = painter_mock
+        widget.paintEvent(MagicMock())
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0, 0))
+        painter_mock.setBrush.assert_called_once_with(brush)
+        painter_mock.drawRect.assert_called_once_with(0, 0, 50, 50)

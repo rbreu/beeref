@@ -24,6 +24,12 @@ def test_init(selectable_mock, qapp):
     selectable_mock.assert_called_once()
 
 
+def test_sample_color_at(qapp, view):
+    item = BeeTextItem('foo bar')
+    view.scene.addItem(item)
+    assert item.sample_color_at(QtCore.QPointF(2.0, 2.0)) is None
+
+
 def test_set_pos_center(qapp):
     item = BeeTextItem('foo bar')
     with patch.object(item, 'bounding_rect_unselected',
