@@ -16,7 +16,7 @@
 from functools import partial
 import logging
 
-from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6 import QtWidgets, QtCore
 
 from beeref import constants
 from beeref.actions.actions import actions

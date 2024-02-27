@@ -437,16 +437,6 @@ def test_flags_shortcut_column():
                    Action({'id': 'baz', 'text': 'Baz'})]))
 def test_keyboard_shortcuts_proxy_data_unfiltered():
     proxy = KeyboardShortcutsProxy()
-    color1 = proxy.data(
-        proxy.index(0, 0), QtCore.Qt.ItemDataRole.BackgroundRole)
-    color2 = proxy.data(
-        proxy.index(1, 0), QtCore.Qt.ItemDataRole.BackgroundRole)
-    color3 = proxy.data(
-        proxy.index(2, 0), QtCore.Qt.ItemDataRole.BackgroundRole)
-
-    assert color1 == color3
-    assert color1 != color2
-
     assert proxy.data(
         proxy.index(0, 0), QtCore.Qt.ItemDataRole.DisplayRole) == 'Bar'
     assert proxy.data(
@@ -462,13 +452,6 @@ def test_keyboard_shortcuts_proxy_data_unfiltered():
 def test_keyboard_shortcuts_proxy_data_filtered():
     proxy = KeyboardShortcutsProxy()
     proxy.setFilterFixedString('b')
-    color1 = proxy.data(
-        proxy.index(0, 0), QtCore.Qt.ItemDataRole.BackgroundRole)
-    color2 = proxy.data(
-        proxy.index(1, 0), QtCore.Qt.ItemDataRole.BackgroundRole)
-
-    assert color1 != color2
-
     assert proxy.data(
         proxy.index(0, 0), QtCore.Qt.ItemDataRole.DisplayRole) == 'Bar'
     assert proxy.data(
