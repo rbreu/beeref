@@ -16,16 +16,11 @@
 """Handling of command line args and Qt settings."""
 
 import argparse
-from functools import lru_cache, cached_property
 import logging
 import logging.config
 import os.path
-import shutil
 
-import tinycss2
-import tinycss2.color3
-
-from PyQt6 import QtCore, QtGui
+from PyQt6 import QtCore
 
 from beeref import constants
 from beeref.logging import qt_message_handler
@@ -244,70 +239,6 @@ class KeyboardSettings(QtCore.QSettings):
         for key in self.allKeys():
             self.remove(key)
         settings_events.restore_keyboard_defaults.emit()
-
-
-class BeeStyleSheet:
-    _instance = None
-    DEFAULT_PATH = os.path.join(os.path.dirname(__file__),
-                                'default_stylesheet.qss')
-
-    def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super().__new__(cls, *args, **kwargs)
-            cls._instance.on_new()
-        return cls._instance
-
-    def on_new(self):
-        dest =  os.path.join(
-            os.path.dirname(BeeSettings().fileName()),
-            'stylesheet.qss.example')
-        shutil.copy(self.DEFAULT_PATH, dest)
-
-        path = os.path.join(
-            os.path.dirname(BeeSettings().fileName()), 'stylesheet.qss')
-
-        if os.path.exists(path):
-            logger.info(f'Found custom stylesheet: {path}')
-        else:
-            logger.info(f'Using default stylesheet')
-            path = self.DEFAULT_PATH
-
-        with open(path) as f:
-            self.qss = f.read()
-
-    @cached_property
-    def parsed(self):
-        return tinycss2.parse_stylesheet(
-            self.qss, skip_comments=True, skip_whitespace=True)
-
-    def _get_color_from_rule(self, rule, attribute):
-        found = False
-        for dec in rule.content:
-            if found:
-                color = tinycss2.color3.parse_color(dec.serialize())
-                if color:
-                    return QtGui.QColor(
-                        int(color.red * 255),
-                        int(color.green * 255),
-                        int(color.blue * 255),
-                        int(color.alpha * 255))
-            else:
-                if getattr(dec, 'value', None) == attribute:
-                    found = True
-
-    @lru_cache
-    def get_color(self, element, attribute):
-        for rule in self.parsed:
-            for pre in rule.prelude:
-                if getattr(pre, 'value', None) == element:
-                    return self._get_color_from_rule(rule, attribute)
-
-
-def get_stylesheet(create_example=False):
-    """Read custom stylesheet from settings dir if it exists, else read
-    default style sheet from source code.
-    """
-
 
 
 def logfile_name():

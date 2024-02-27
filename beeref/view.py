@@ -48,6 +48,9 @@ class BeeGraphicsView(MainControlsMixin,
         self.parent = parent
         self.settings = BeeSettings()
         self.welcome_overlay = widgets.welcome_overlay.WelcomeOverlay(self)
+
+        self.setBackgroundBrush(
+            QtGui.QBrush(QtGui.QColor(*constants.COLORS['Scene:Canvas'])))
         self.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
         self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
 

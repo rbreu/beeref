@@ -19,4 +19,24 @@ VERSION = '0.3.3-dev'
 WEBSITE = 'https://github.com/rbreu/beeref'
 COPYRIGHT = 'Copyright © 2021-2023 Rebecca Breu'
 
-DEFAULT_SELECTION_COLOR = (116, 234, 231)
+COLORS = {
+    # Qt:
+    'Active:Base': (60, 60, 60),
+    'Active:Window': (40, 40, 40),
+    'Active:Button': (40, 40, 40),
+    'Active:Text': (200, 200, 200),
+    'Active:HighlightedText': (255, 255, 255),
+    'Active:WindowText': (200, 200, 200),
+    'Active:ButtonText': (200, 200, 200),
+    'Active:Highlight': (83, 167, 165),
+    'Active:Link': (90, 181, 179),
+    'Disabled:Light': (0, 0, 0, 0),
+    'Disabled:Text': (140, 140, 140),
+
+    # BeeRef specific:
+    'Scene:Selection': (116, 234, 231),
+    'Scene:Canvas': (60, 60, 60),
+    'Scene:Text': (200, 200, 200),
+    'Table:AlternativeRow': (70, 70, 70),
+
+}
