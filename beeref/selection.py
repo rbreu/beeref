@@ -15,6 +15,7 @@
 
 """Classes that draw and handle selection stuff for items."""
 
+from functools import cached_property
 import logging
 import math
 
@@ -23,15 +24,13 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QGraphicsItem
 
 from beeref.assets import BeeAssets
-from beeref import commands
-from beeref.config import CommandlineArgs
-from beeref.constants import COLORS
+from beeref import commands, constants
+from beeref.config import CommandlineArgs, BeeStyleSheet
 from beeref import utils
 
 
 commandline_args = CommandlineArgs()
 logger = logging.getLogger(__name__)
-SELECT_COLOR = QtGui.QColor(*COLORS['Scene:Selection'])
 
 
 def with_anchor(func):
@@ -217,13 +216,20 @@ class SelectableMixin(BaseItemMixin):
             self.draw_debug_shape(
                 painter, self.select_handle_free_center(), 255, 0, 255)
 
+    @cached_property
+    def _select_color(self):
+        color = BeeStyleSheet().get_color('BeeSelectionItem', 'color')
+        if not color:
+            color = QtGui.QColor(*constants.DEFAULT_SELECTION_COLOR)
+        return color
+
     def paint_selectable(self, painter, option, widget):
         self.paint_debug(painter, option, widget)
 
         if not self.has_selection_outline():
             return
 
-        pen = QtGui.QPen(SELECT_COLOR)
+        pen = QtGui.QPen(self._select_color)
         pen.setWidth(self.SELECT_LINE_WIDTH)
         pen.setCosmetic(True)
         painter.setPen(pen)
@@ -685,8 +691,10 @@ class RubberbandItem(BaseItemMixin, QtWidgets.QGraphicsRectItem):
 
     def __init__(self):
         super().__init__()
-        color = QtGui.QColor(SELECT_COLOR)
-        color.setAlpha(40)
+        color = BeeStyleSheet().get_color('BeeRubberbandItem', 'color')
+        if not color:
+            color = QtGui.QColor(*constants.DEFAULT_SELECTION_COLOR)
+            color.setAlpha(40)
         self.setBrush(QtGui.QBrush(color))
         pen = QtGui.QPen(QtGui.QColor(0, 0, 0))
         pen.setWidth(1)

@@ -21,6 +21,7 @@ from PyQt6 import QtCore, QtGui
 
 from .errors import BeeFileIOError
 from beeref import constants, widgets
+from beeref.config import BeeStyleSheet
 
 
 logger = logging.getLogger(__name__)
@@ -92,7 +93,9 @@ class SceneToPixmapExporter(ExporterBase):
         logger.debug(f'Final export margin: {margin}')
 
         image = QtGui.QImage(self.size, QtGui.QImage.Format.Format_RGB32)
-        image.fill(QtGui.QColor(*constants.COLORS['Scene:Canvas']))
+        color = BeeStyleSheet().get_color('QGraphicsView', 'background')
+        if color:
+            image.fill(color)
         painter = QtGui.QPainter(image)
         target_rect = QtCore.QRectF(
             margin,

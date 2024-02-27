@@ -1,0 +1,115 @@
+/* This is BeeRef's default stylesheet provided as an example.
+
+Save your own stylesheet as stylesheet.qss
+*/
+
+* {
+    color: rgb(200, 200, 200);
+    background: rgb(50, 50, 50);
+}
+
+QSpinBox::focus,
+QKeySequenceEdit::focus {
+    border: 1px solid rgb(83, 167, 165);
+    border-radius: 3px;
+}
+
+*::item:selected,
+*::item:pressed
+{
+    color: rgb(255, 255, 255);
+    background: rgb(83, 167, 165);
+}
+
+*::item:disabled {
+    color: rgb(140, 140, 140);
+}
+
+QMenu {
+    border: 1px solid rgb(40, 40, 40);
+}
+
+QPushButton {
+    border: 1px solid rgb(140, 140, 140);
+    border-radius: 3px;
+    padding: 3px;
+    background-color: rgb(50, 50, 50);
+}
+
+QPushButton {
+    border: 1px solid rgb(140, 140, 140);
+    border-radius: 3px;
+    padding: 3px;
+    background-color: rgb(60, 60, 60);
+}
+
+QPushButton::hover {
+    background-color: rgb(70, 70, 70);
+}
+
+QPushButton::default {
+    border: 1px solid rgb(83, 167, 165);
+}
+
+QPushButton::pressed {
+    background-color: rgb(50, 50, 50);
+}
+
+QProgressBar {
+    border: 1px solid rgb(40, 40, 40);
+    border-radius: 3px;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: rgb(83, 167, 165);
+    border-radius: 3px;
+}
+
+QTableView {
+    alternate-background-color: rgb(60, 60, 60);
+    selection-background-color: rgb(83, 167, 165);
+}
+
+QScrollBar::handle:horizontal,
+QScrollBar::handle:vertical {
+    background: rgb(60, 60, 60);
+    border: 1px solid rgb(40, 40, 40);
+    border-radius: 3px;
+}
+
+QScrollBar::handle:horizontal:hover,
+QScrollBar::handle:vertical:hover {
+    background: rgb(70, 70, 70);
+    border: 1px solid rgb(40, 40, 40);
+    border-radius: 3px;
+}
+
+QScrollBar::handle:horizontal:pressed,
+QScrollBar::handle:vertical:pressed {
+    background: rgb(83, 167, 165);
+    border: 1px solid rgb(40, 40, 40);
+    border-radius: 3px;
+}
+
+/* QScrollBar::add-line:horizontal { */
+/*     border: 1px solid rgb(40, 40, 40); */
+/*     border-radius: 3px; */
+/* } */
+
+
+QGraphicsView {
+    background: rgb(60, 60, 60);
+}
+
+BeeTextItem {
+    color: rgb(200, 200, 200);
+}
+
+BeeSelectionItem {
+    color: rgb(116, 234, 231);
+}
+
+BeeRubberbandItem {
+    color: rgba(116, 234, 231, 0.16);
+}

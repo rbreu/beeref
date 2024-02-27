@@ -184,6 +184,8 @@ class KeyboardShortcutsEditor(QtWidgets.QKeySequenceEdit):
 
     def __init__(self, parent, index):
         super().__init__(parent)
+        #self.setObjectName('QKeySequenceEdit')
+        print('***', self.objectName())
         self.action = actions[index.row()]
         try:
             self.old_value = self.action.get_shortcuts()[index.column() - 2]
@@ -322,13 +324,6 @@ class KeyboardShortcutsProxy(QtCore.QSortFilterProxyModel):
         self.setFilterCaseSensitivity(
             QtCore.Qt.CaseSensitivity.CaseInsensitive)
 
-    def data(self, index, role):
-        if (role == QtCore.Qt.ItemDataRole.BackgroundRole
-                and index.row() % 2):
-            return QtGui.QColor(*constants.COLORS['Table:AlternativeRow'])
-        else:
-            return super().data(index, role)
-
     def setData(self, index, value, role, remove_from_other=None):
         result = self.sourceModel().setData(
             self.mapToSource(index),
@@ -352,6 +347,7 @@ class KeyboardShortcutsView(QtWidgets.QTableView):
             1, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
         self.setSelectionMode(
             QtWidgets.QHeaderView.SelectionMode.SingleSelection)
+        self.setAlternatingRowColors(True)
         settings_events.restore_keyboard_defaults.connect(
             self.on_restore_defaults)
 

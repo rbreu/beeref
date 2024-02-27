@@ -25,8 +25,12 @@ from PyQt6 import QtCore, QtWidgets
 
 from beeref import constants
 from beeref.assets import BeeAssets
-from beeref.config import CommandlineArgs, BeeSettings, logfile_name
-from beeref.utils import create_palette_from_dict
+from beeref.config import (
+    BeeSettings,
+    CommandlineArgs,
+    BeeStyleSheet,
+    logfile_name,
+)
 from beeref.view import BeeGraphicsView
 
 logger = logging.getLogger(__name__)
@@ -110,8 +114,7 @@ def main():
 
     os.environ["QT_DEBUG_PLUGINS"] = "1"
     app = BeeRefApplication(sys.argv)
-    palette = create_palette_from_dict(constants.COLORS)
-    app.setPalette(palette)
+    app.setStyleSheet(BeeStyleSheet().qss)
     bee = BeeRefMainWindow(app)  # NOQA:F841
 
     signal.signal(signal.SIGINT, handle_sigint)

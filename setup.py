@@ -13,6 +13,7 @@ setup(
         'pyQt6-Qt6>=6.5.0,<=6.6.1',
         'rectangle-packer>=2.0.1,<=2.0.2',
         'exif>=1.3.5,<=1.6.0',
+        'tinycss2==1.2.1',
     ],
     packages=[
         'beeref',
