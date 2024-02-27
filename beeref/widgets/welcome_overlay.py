@@ -106,12 +106,14 @@ class WelcomeOverlay(MainControlsMixin, QtWidgets.QWidget):
         files_layout.addWidget(self.files_view)
         files_layout.addStretch(50)
         self.files_widget.setLayout(files_layout)
+        self.files_widget.setStyleSheet('background: transparent;')
         self.files_widget.hide()
 
         # Help text
         self.label = QtWidgets.QLabel(self.txt, self)
         self.label.setAlignment(Qt.AlignmentFlag.AlignVCenter
                                 | Qt.AlignmentFlag.AlignCenter)
+        self.label.setStyleSheet('background: transparent;')
         self.layout = QtWidgets.QHBoxLayout()
         self.layout.addStretch(50)
         self.layout.addWidget(self.label)

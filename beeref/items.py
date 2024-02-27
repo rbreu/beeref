@@ -25,8 +25,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
 from beeref import commands
-from beeref.config import BeeSettings
-from beeref.constants import COLORS
+from beeref.config import BeeSettings, BeeStyleSheet
 from beeref.selection import SelectableMixin
 
 
@@ -568,7 +567,9 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
         self.init_selectable()
         self.is_editable = True
         self.edit_mode = False
-        self.setDefaultTextColor(QtGui.QColor(*COLORS['Scene:Text']))
+        color = BeeStyleSheet().get_color('BeeTextItem', 'color')
+        if color:
+            self.setDefaultTextColor(color)
 
     @classmethod
     def create_from_data(cls, **kwargs):
