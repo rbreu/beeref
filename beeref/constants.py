@@ -22,6 +22,7 @@ COPYRIGHT = 'Copyright © 2021-2023 Rebecca Breu'
 COLORS = {
     # Qt:
     'Active:Base': (60, 60, 60),
+    'Active:AlternateBase': (70, 70, 70),
     'Active:Window': (40, 40, 40),
     'Active:Button': (40, 40, 40),
     'Active:Text': (200, 200, 200),
@@ -37,6 +38,4 @@ COLORS = {
     'Scene:Selection': (116, 234, 231),
     'Scene:Canvas': (60, 60, 60),
     'Scene:Text': (200, 200, 200),
-    'Table:AlternativeRow': (70, 70, 70),
-
 }
