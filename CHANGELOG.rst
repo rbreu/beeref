@@ -12,9 +12,11 @@ Fixed
 -----
 
 * Fixed a crash when pressing the keyboard shortcut for New Scene
-  while in the process of doing a rubberband selection
+  while in the process of doing a rubberband selection.
 * The checkmark of the menu entry Images -> Grayscale is now updating
-  correctly depending on the selected images
+  correctly depending on the selected images.
+* Removed black line under marching ants outline of crop mode, which
+  would scale with the image and get potentially very thick.
 
 
 0.3.2 - 2024-01-21

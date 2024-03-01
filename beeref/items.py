@@ -384,7 +384,9 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
             color = QtGui.QColor(0, 0, 0)
             color.setAlpha(100)
             painter.setBrush(QtGui.QBrush(color))
-            painter.setPen(QtGui.QPen())
+            pen = QtGui.QPen()
+            pen.setWidth(0)
+            painter.setPen(pen)
             painter.drawPath(path)
             painter.setBrush(QtGui.QBrush())
 
