@@ -21,7 +21,7 @@ import os.path
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
-from beeref.actions import ActionsMixin
+from beeref.actions import ActionsMixin, actions
 from beeref import commands
 from beeref.config import CommandlineArgs, BeeSettings
 from beeref import constants
@@ -603,6 +603,11 @@ class BeeGraphicsView(MainControlsMixin,
                                      self.scene.has_selection())
         self.actiongroup_set_enabled('active_when_single_image',
                                      self.scene.has_single_image_selection())
+
+        if self.scene.has_selection():
+            item = self.scene.selectedItems(user_only=True)[0]
+            grayscale = getattr(item, 'grayscale', False)
+            actions.actions['grayscale'].qaction.setChecked(grayscale)
         self.viewport().repaint()
 
     def on_cursor_changed(self, cursor):

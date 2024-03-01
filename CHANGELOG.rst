@@ -13,6 +13,8 @@ Fixed
 
 * Fixed a crash when pressing the keyboard shortcut for New Scene
   while in the process of doing a rubberband selection
+* The checkmark of the menu entry Images -> Grayscale is now updating
+  correctly depending on the selected images
 
 
 0.3.2 - 2024-01-21

@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch, mock_open
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
+from beeref.actions import actions
 from beeref.config import logfile_name
 from beeref.items import BeePixmapItem, BeeTextItem
 from beeref.view import BeeGraphicsView
@@ -576,6 +577,23 @@ def test_on_action_cut(copy_mock, view, item):
     copy_mock.assert_called_once_with()
     assert view.scene.items() == []
     assert view.undo_stack.isClean() is False
+
+
+def test_on_selection_changed_updates_grayscale_action(view):
+    item = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item)
+    item.grayscale = True
+    actions.actions['grayscale'].qaction.setChecked(False)
+    item.setSelected(True)
+    assert actions.actions['grayscale'].qaction.isChecked() is True
+
+
+def test_on_selection_changed_grayscale_action_ignores_textitem(view):
+    item = BeeTextItem('foo')
+    view.scene.addItem(item)
+    actions.actions['grayscale'].qaction.setChecked(True)
+    item.setSelected(True)
+    assert actions.actions['grayscale'].qaction.isChecked() is False
 
 
 def test_on_action_reset_scale(view, item):
