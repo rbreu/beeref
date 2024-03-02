@@ -132,9 +132,39 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         logger.debug('Setting grayscale for {self} to {value}')
         self._grayscale = value
         if value is True:
-            img = self.pixmap().toImage()
-            img = img.convertToFormat(QtGui.QImage.Format.Format_Grayscale8)
+            # Using the grayscale image format to convert to grayscale
+            # loses an image's tranparency. So the straightworward
+            # following method gives us an ugly black replacement:
+            # img = img.convertToFormat(QtGui.QImage.Format.Format_Grayscale8)
+
+            # Instead, we will fill the background with the current
+            # canvas colour, so the issue is only visible if the image
+            # overlaps other images. The way we do it here only works
+            # as long as the canvas colour is itself grayscale,
+            # though.
+            img = QtGui.QImage(
+                self.pixmap().size(), QtGui.QImage.Format.Format_Grayscale8)
+            img.fill(QtGui.QColor(*COLORS['Scene:Canvas']))
+            painter = QtGui.QPainter(img)
+            painter.drawPixmap(0, 0, self.pixmap())
+            painter.end()
             self._grayscale_pixmap = QtGui.QPixmap.fromImage(img)
+
+            # Alternative methods that have their own issues:
+            #
+            # 1. Use setAlphaChannel of the resulting grayscale
+            # image. How do we get the original alpha channel? Using
+            # the whole original image also takes color values into
+            # account, not just their alpha values.
+            #
+            # 2. QtWidgets.QGraphicsColorizeEffect() with black colour
+            # on the GraphicsItem. This applys to everything the paint
+            # method does, so the selection outline/handles will also
+            # be gray. setGraphicsEffect is only available on some
+            # widgets, so we can't apply it selectively.
+            #
+            # 3. Going through every pixel and doing it manually — bad
+            # performance.
         else:
             self._grayscale_pixmap = None
 
