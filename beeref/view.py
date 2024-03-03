@@ -621,7 +621,10 @@ class BeeGraphicsView(MainControlsMixin,
             item.setScale(1 / self.get_scale())
             self.undo_stack.push(commands.InsertItems(self.scene, [item], pos))
             return
-        logger.info('No image data or text in clipboard')
+
+        msg = 'No image data or text in clipboard'
+        logger.info(msg)
+        widgets.BeeNotification(self, msg)
 
     def on_action_open_settings_dir(self):
         dirname = os.path.dirname(self.settings.fileName())

@@ -560,12 +560,16 @@ def test_on_action_paste_when_text(img_mock, text_mock, clear_mock, view):
 @patch('beeref.scene.BeeGraphicsScene.clearSelection')
 @patch('PyQt6.QtGui.QClipboard.text')
 @patch('PyQt6.QtGui.QClipboard.image')
-def test_on_action_paste_when_empty(img_mock, text_mock, clear_mock, view):
+@patch('beeref.widgets.BeeNotification')
+def test_on_action_paste_when_empty(
+        notification_mock, img_mock, text_mock, clear_mock, view):
     view.cancel_active_modes = MagicMock()
     img_mock.return_value = QtGui.QImage()
     text_mock.return_value = ''
     view.on_action_paste()
     assert len(view.scene.items()) == 0
+    notification_mock.assert_called_once_with(
+        view, 'No image data or text in clipboard')
     clear_mock.assert_not_called()
     view.cancel_active_modes.assert_called_once_with()
 

@@ -8,6 +8,8 @@ Added
   the default arrow cursor.
 * Added a color sampler which can copy colors from images to the
   clipboard in hex format (Images -> Sample Color)
+* Added notification when attempting to paste from an empty or
+  unusable clipboard
 
 
 Fixed
