@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from beeref.config import CommandlineArgs
+from beeref.config.settings import CommandlineArgs
 
 
 def test_command_line_args_singleton():
@@ -13,7 +13,7 @@ def test_command_line_args_singleton():
     CommandlineArgs._instance = None
 
 
-@patch('beeref.config.parser.parse_args')
+@patch('beeref.config.settings.parser.parse_args')
 def test_command_line_args_with_check_forces_new_parsing(parse_mock):
     args1 = CommandlineArgs()
     args2 = CommandlineArgs(with_check=True)
@@ -117,48 +117,3 @@ def test_settings_recent_files_update_respects_max_num(settings):
     assert len(recent) == 10
     assert recent[0] == os.path.abspath('14.bee')
     assert recent[-1] == os.path.abspath('5.bee')
-
-
-def test_keyboardsettings_set_shortcuts(kbsettings):
-    kbsettings.set_shortcuts('Actions', 'foo', ['Ctrl+F'])
-    assert kbsettings.get_shortcuts('Actions', 'foo') == ['Ctrl+F']
-
-
-def test_keyboardsettings_set_shortcuts_multiple(kbsettings):
-    kbsettings.set_shortcuts('Actions', 'foo', ['Ctrl+F', 'Alt+O'])
-    assert kbsettings.get_shortcuts('Actions', 'foo') == ['Ctrl+F', 'Alt+O']
-
-
-def test_keyboardsettings_get_shortcuts_existing(kbsettings):
-    kbsettings.set_shortcuts('Actions', 'bar', ['Ctrl+R'])
-    shortcuts = kbsettings.get_shortcuts('Actions', 'bar', ['Ctrl+B'])
-    assert shortcuts == ['Ctrl+R']
-
-
-def test_keyboardsettings_get_shortcuts_default(kbsettings):
-    shortcuts = kbsettings.get_shortcuts('Actions', 'bar', ['Ctrl+B'])
-    assert shortcuts == ['Ctrl+B']
-
-
-@patch('beeref.config.KeyboardSettings.setValue')
-@patch('beeref.config.KeyboardSettings.remove')
-def test_keyboardsettings_set_shortcuts_other_than_default_saves(
-        remove_mock, set_mock, kbsettings):
-    kbsettings.set_shortcuts('Actions', 'bar', ['Ctrl+R'], ['Ctrl+Z'])
-    set_mock.assert_called_once_with('Actions/bar', 'Ctrl+R')
-    remove_mock.assert_not_called()
-
-
-@patch('beeref.config.KeyboardSettings.setValue')
-@patch('beeref.config.KeyboardSettings.remove')
-def test_keyboardsettings_set_shortcuts_with_than_default_doesnt_save(
-        remove_mock, set_mock, kbsettings):
-    kbsettings.set_shortcuts('Actions', 'bar', ['Ctrl+R'], ['Ctrl+R'])
-    set_mock.assert_not_called()
-    remove_mock.assert_called_once_with('Actions/bar')
-
-
-def test_keyboardsettings_restore_defaults_restores(kbsettings):
-    kbsettings.setValue('Actions/bar', 'Ctrl+R')
-    kbsettings.restore_defaults()
-    assert kbsettings.contains('Actions/bar') is False

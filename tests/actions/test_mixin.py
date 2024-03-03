@@ -4,8 +4,9 @@ from unittest.mock import patch, MagicMock, call
 from PyQt6 import QtWidgets
 
 from beeref.actions import ActionsMixin
-from beeref.actions.actions import Action, ActionList
+from beeref.actions.actions import Action
 from beeref.actions.menu_structure import MENU_SEPARATOR
+from beeref.utils import ActionList
 
 
 class FooWidget(QtWidgets.QWidget, ActionsMixin):
@@ -28,13 +29,13 @@ class FooWidget(QtWidgets.QWidget, ActionsMixin):
 @patch('beeref.actions.mixin.menu_structure',
        [{'menu': 'Foo', 'items': ['foo']}])
 @patch('beeref.actions.mixin.actions',
-       ActionList([Action({
-           'id': 'foo',
-           'text': '&Foo',
-           'shortcuts': ['Ctrl+F'],
-           'callback': 'on_foo',
-       })]))
-@patch('beeref.config.KeyboardSettings.get_shortcuts')
+       ActionList([Action(
+           id='foo',
+           text='&Foo',
+           shortcuts=['Ctrl+F'],
+           callback='on_foo',
+       )]))
+@patch('beeref.config.KeyboardSettings.get_list')
 def test_create_actions(kb_mock, toggle_mock, trigger_mock, qapp):
     kb_mock.side_effect = lambda group, key, default: default
     widget = FooWidget()
@@ -56,15 +57,15 @@ def test_create_actions(kb_mock, toggle_mock, trigger_mock, qapp):
        [{'menu': 'Foo', 'items': ['foo']}])
 def test_create_actions_with_shortcut_from_settings(qapp, kbsettings):
     with patch('beeref.actions.mixin.actions',
-               ActionList([Action({
-                   'id': 'foo',
-                   'text': '&Foo',
-                   'shortcuts': ['Ctrl+F'],
-                   'callback': 'on_foo'})])):
+               ActionList([Action(
+                   id='foo',
+                   text='&Foo',
+                   shortcuts=['Ctrl+F'],
+                   callback='on_foo')])):
         # Create Action inside the test function so that its
         # kbsettings get created after the kbsettings fixture changes
         # the file path
-        kbsettings.set_shortcuts('Actions', 'foo', ['Alt+O'])
+        kbsettings.set_list('Actions', 'foo', ['Alt+O'])
         widget = FooWidget()
         widget.build_menu_and_actions()
         qaction = widget.actions()[0]
@@ -76,12 +77,12 @@ def test_create_actions_with_shortcut_from_settings(qapp, kbsettings):
 @patch('beeref.actions.mixin.menu_structure',
        [{'menu': 'Foo', 'items': ['foo']}])
 @patch('beeref.actions.mixin.actions',
-       ActionList([Action({
-           'id': 'foo',
-           'text': '&Foo',
-           'checkable': True,
-           'callback': 'on_foo',
-       })]))
+       ActionList([Action(
+           id='foo',
+           text='&Foo',
+           checkable=True,
+           callback='on_foo',
+       )]))
 def test_create_actions_checkable(toggle_mock, trigger_mock, qapp):
     widget = FooWidget()
     widget.build_menu_and_actions()
@@ -100,13 +101,13 @@ def test_create_actions_checkable(toggle_mock, trigger_mock, qapp):
 @patch('beeref.actions.mixin.menu_structure',
        [{'menu': 'Foo', 'items': ['foo']}])
 @patch('beeref.actions.mixin.actions',
-       ActionList([Action({
-           'id': 'foo',
-           'text': '&Foo',
-           'checkable': True,
-           'checked': True,
-           'callback': 'on_foo',
-       })]))
+       ActionList([Action(
+           id='foo',
+           text='&Foo',
+           checkable=True,
+           checked=True,
+           callback='on_foo',
+       )]))
 def test_create_actions_checkable_checked_true(
         toggle_mock, trigger_mock, qapp):
     widget = FooWidget()
@@ -127,13 +128,13 @@ def test_create_actions_checkable_checked_true(
 @patch('beeref.actions.mixin.menu_structure',
        [{'menu': 'Foo', 'items': ['foo']}])
 @patch('beeref.actions.mixin.actions',
-       ActionList([Action({
-           'id': 'foo',
-           'text': '&Foo',
-           'checkable': True,
-           'settings': 'foo/bar',
-           'callback': 'on_foo',
-       })]))
+       ActionList([Action(
+           id='foo',
+           text='&Foo',
+           checkable=True,
+           settings='foo/bar',
+           callback='on_foo',
+       )]))
 def test_create_actions_checkable_with_settings(
         toggle_mock, settings_mock, callback_mock, qapp):
     widget = FooWidget()
@@ -150,12 +151,12 @@ def test_create_actions_checkable_with_settings(
 @patch('beeref.actions.mixin.menu_structure',
        [{'menu': 'Foo', 'items': ['foo']}])
 @patch('beeref.actions.mixin.actions',
-       ActionList([Action({
-           'id': 'foo',
-           'text': '&Foo',
-           'callback': 'on_foo',
-           'group': 'bar',
-       })]))
+       ActionList([Action(
+           id='foo',
+           text='&Foo',
+           callback='on_foo',
+           group='bar',
+       )]))
 def test_create_actions_with_group(qapp):
     widget = FooWidget()
     widget.build_menu_and_actions()
@@ -167,11 +168,11 @@ def test_create_actions_with_group(qapp):
 @patch('beeref.actions.mixin.menu_structure',
        [{'menu': 'Foo', 'items': ['foo']}])
 @patch('beeref.actions.mixin.actions',
-       ActionList([Action({
-           'id': 'foo',
-           'text': '&Foo',
-           'callback': 'on_foo',
-       })]))
+       ActionList([Action(
+           id='foo',
+           text='&Foo',
+           callback='on_foo',
+       )]))
 def test_build_menu_and_actions_with_actions(qapp):
     widget = FooWidget()
     with patch('PyQt6.QtWidgets.QMenu.addAction') as add_mock:
@@ -195,11 +196,11 @@ def test_build_menu_and_actions_with_separator(qapp):
 @patch('beeref.actions.mixin.menu_structure',
        [{'menu': 'Foo', 'items': [{'menu': 'Bar', 'items': ['foo']}]}])
 @patch('beeref.actions.mixin.actions',
-       ActionList([Action({
-           'id': 'foo',
-           'text': '&Foo',
-           'callback': 'on_foo',
-       })]))
+       ActionList([Action(
+           id='foo',
+           text='&Foo',
+           callback='on_foo',
+       )]))
 def test_build_menu_and_actions_with_submenu(qapp):
     widget = FooWidget()
     with patch('PyQt6.QtWidgets.QMenu.addAction') as add_mock:
@@ -216,18 +217,18 @@ def test_build_menu_and_actions_with_submenu(qapp):
        [{'menu': 'Foo', 'items': ['foo']}])
 @patch('beeref.actions.mixin.actions',
        ActionList([
-           Action({
-               'id': 'foo',
-               'text': '&Foo',
-               'callback': 'on_foo',
-               'group': 'g1',
-           }),
-           Action({
-               'id': 'bar',
-               'text': '&Bar',
-               'callback': 'on_foo',
-               'group': 'g2',
-           }),
+           Action(
+               id='foo',
+               text='&Foo',
+               callback='on_foo',
+               group='g1',
+           ),
+           Action(
+               id='bar',
+               text='&Bar',
+               callback='on_foo',
+               group='g2',
+           ),
        ]))
 def test_actiongroup_set_enabled(qapp):
     widget = FooWidget()
@@ -241,12 +242,12 @@ def test_actiongroup_set_enabled(qapp):
 @patch('beeref.actions.mixin.menu_structure',
        [{'menu': 'Foo', 'items': ['foo']}])
 @patch('beeref.actions.mixin.actions',
-       ActionList([Action({
-           'id': 'foo',
-           'text': '&Foo',
-           'callback': 'on_foo',
-           'group': 'active_when_selection',
-       })]))
+       ActionList([Action(
+           id='foo',
+           text='&Foo',
+           callback='on_foo',
+           group='active_when_selection',
+       )]))
 def test_build_menu_and_actions_disables_actiongroups(qapp):
     widget = FooWidget()
     widget.scene.has_selection.return_value = False
@@ -256,7 +257,7 @@ def test_build_menu_and_actions_disables_actiongroups(qapp):
 
 
 @patch('PyQt6.QtGui.QAction.triggered')
-@patch('beeref.config.KeyboardSettings.get_shortcuts')
+@patch('beeref.config.KeyboardSettings.get_list')
 @patch('beeref.actions.mixin.menu_structure',
        [{'menu': 'Foo', 'items': '_build_recent_files'}])
 @patch('beeref.actions.mixin.actions', ActionList([]))
@@ -294,7 +295,7 @@ def test_create_recent_files_more_than_10_files(
 @patch('beeref.actions.mixin.menu_structure',
        [{'menu': 'Foo', 'items': '_build_recent_files'}])
 @patch('beeref.actions.mixin.actions', ActionList([]))
-@patch('beeref.config.KeyboardSettings.get_shortcuts')
+@patch('beeref.config.KeyboardSettings.get_list')
 def test_create_recent_files_fewer_files_than_10_files(
         kb_mock, triggered_mock, qapp):
     kb_mock.side_effect = lambda group, key, default: default
@@ -329,7 +330,7 @@ def test_create_recent_files_fewer_files_than_10_files(
 @patch('beeref.actions.mixin.menu_structure',
        [{'menu': 'Foo', 'items': '_build_recent_files'}])
 @patch('beeref.actions.mixin.actions', ActionList([]))
-@patch('beeref.config.KeyboardSettings.get_shortcuts')
+@patch('beeref.config.KeyboardSettings.get_list')
 def test_create_recent_files_when_no_files(kb_mock, qapp):
     kb_mock.side_effect = lambda group, key, default: default
     widget = FooWidget()

@@ -2,6 +2,7 @@ import pytest
 
 from PyQt6 import QtCore, QtGui
 
+from beeref.actions.actions import Action
 from beeref import utils
 
 
@@ -78,3 +79,19 @@ def test_get_file_extension_from_format(formatstr, expected):
                           ((255, 0, 0, 100), '#ff000064')])
 def test_qcolor_to_hex(rgba, expected):
     assert utils.qcolor_to_hex(QtGui.QColor(*rgba)) == expected
+
+
+def test_actionlist_inits_dict():
+    action1 = Action(id='foo', text='Foo')
+    action2 = Action(id='bar', text='Bar')
+    actionlist = utils.ActionList([action1, action2])
+    actionlist['foo'] == action1
+    actionlist['bar'] == action2
+
+
+def test_actionlist_acts_as_list():
+    action1 = Action(id='foo', text='Foo')
+    action2 = Action(id='bar', text='Bar')
+    actionlist = utils.ActionList([action1, action2])
+    actionlist[0] == action1
+    actionlist[1] == action2

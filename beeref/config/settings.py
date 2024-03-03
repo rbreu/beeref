@@ -13,17 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Handling of command line args and Qt settings."""
-
 import argparse
 import logging
-import logging.config
 import os.path
 
 from PyQt6 import QtCore
 
 from beeref import constants
-from beeref.logging import qt_message_handler
 
 
 logger = logging.getLogger(__name__)
@@ -142,7 +138,6 @@ class BeeSettings(QtCore.QSettings):
         'validate' are specified in the FIELDS entry for the given
         key. The default value will be returned if validation or type
         casting fails.
-
         """
 
         val = self.value(key)
@@ -205,94 +200,3 @@ class BeeSettings(QtCore.QSettings):
         if existing_only:
             values = [f for f in values if os.path.exists(f)]
         return values
-
-
-class KeyboardSettings(QtCore.QSettings):
-
-    def __init__(self):
-        settings_format = QtCore.QSettings.Format.IniFormat
-        filename = os.path.join(
-            os.path.dirname(BeeSettings().fileName()),
-            'KeyboardSettings.ini')
-        super().__init__(filename, settings_format)
-
-    def set_shortcuts(self, group, key, values, default=None):
-        if values == default:
-            self.remove(f'{group}/{key}')
-        else:
-            self.setValue(f'{group}/{key}', ', '.join(values))
-
-    def get_shortcuts(self, group, key, default=None):
-        values = self.value(f'{group}/{key}')
-        if values is not None:
-            values = list(filter(lambda x: x, values.split(', ')))
-            return values
-
-        return list(default or [])  # Always return new instance of default
-
-    def restore_defaults(self):
-        """Restore all the values specified in FILEDS to their default values
-        by removing them from the settings file.
-        """
-
-        logger.debug('Restoring keyboard shortcuts to defaults')
-        for key in self.allKeys():
-            self.remove(key)
-        settings_events.restore_keyboard_defaults.emit()
-
-
-def logfile_name():
-    return os.path.join(
-        os.path.dirname(BeeSettings().fileName()), f'{constants.APPNAME}.log')
-
-
-logging_conf = {
-    'version': 1,
-    'formatters': {
-        'verbose': {
-            'format': ('{asctime} {name} {process:d} {thread:d} {message}'),
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {name}: {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
-            'level': CommandlineArgs().loglevel,
-        },
-        'file': {
-            'class': 'beeref.logging.BeeRotatingFileHandler',
-            'formatter': 'verbose',
-            'filename': logfile_name(),
-            'maxBytes': 1024 * 1000,  # 1MB
-            'backupCount': 1,
-            'level': 'DEBUG',
-            'delay': True,
-        }
-    },
-    'loggers': {
-        'beeref': {
-            'handlers': ['console', 'file'],
-            'level': 'TRACE',
-            'propagate': False,
-        },
-        'Qt': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-    },
-    'root': {
-        'handlers': ['console', 'file'],
-        'level': 'DEBUG',
-    },
-}
-
-logging.config.dictConfig(logging_conf)
-
-# Redirect Qt logging to Python logger:
-QtCore.qInstallMessageHandler(qt_message_handler)

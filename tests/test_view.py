@@ -376,7 +376,7 @@ def test_on_action_settings(show_mock, view):
     show_mock.assert_called_once()
 
 
-@patch('beeref.widgets.settings.KeyboardSettingsDialog.show')
+@patch('beeref.widgets.controls.ControlsDialog.show')
 def test_on_action_keyboard_settings(show_mock, view):
     view.on_action_keyboard_settings()
     show_mock.assert_called_once()
@@ -940,6 +940,19 @@ def test_wheel_event_zoom(zoom_mock, view):
     event.accept.assert_called_once_with()
 
 
+@patch('beeref.view.BeeGraphicsView.zoom')
+def test_wheel_event_zoom_custom_inverted(zoom_mock, view, kbsettings):
+    kbsettings.MOUSEWHEEL_ACTIONS['zoom2'].set_modifiers(['Alt'])
+    kbsettings.MOUSEWHEEL_ACTIONS['zoom2'].set_inverted(True)
+    event = MagicMock()
+    event.angleDelta.return_value = QtCore.QPointF(0.0, 40.0)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
+    event.modifiers.return_value = Qt.KeyboardModifier.AltModifier
+    view.wheelEvent(event)
+    zoom_mock.assert_called_once_with(-40, QtCore.QPointF(10.0, 20.0))
+    event.accept.assert_called_once_with()
+
+
 @patch('beeref.view.BeeGraphicsView.pan')
 def test_wheel_event_pan_vertically(pan_mock, view):
     event = MagicMock()
@@ -948,7 +961,21 @@ def test_wheel_event_pan_vertically(pan_mock, view):
     event.modifiers.return_value = (Qt.KeyboardModifier.ShiftModifier
                                     | Qt.KeyboardModifier.ControlModifier)
     view.wheelEvent(event)
-    pan_mock.assert_called_once_with(QtCore.QPointF(0, 20))
+    pan_mock.assert_called_once_with(QtCore.QPointF(20, 0))
+    event.accept.assert_called_once_with()
+
+
+@patch('beeref.view.BeeGraphicsView.pan')
+def test_wheel_event_pan_vertically_custom_inverted(
+        pan_mock, view, kbsettings):
+    kbsettings.MOUSEWHEEL_ACTIONS['pan_vertical2'].set_modifiers(['Alt'])
+    kbsettings.MOUSEWHEEL_ACTIONS['pan_vertical2'].set_inverted(True)
+    event = MagicMock()
+    event.angleDelta.return_value = QtCore.QPointF(0.0, 40.0)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
+    event.modifiers.return_value = Qt.KeyboardModifier.AltModifier
+    view.wheelEvent(event)
+    pan_mock.assert_called_once_with(QtCore.QPointF(-20, 0))
     event.accept.assert_called_once_with()
 
 
@@ -959,7 +986,21 @@ def test_wheel_event_pan_horizontally(pan_mock, view):
     event.position.return_value = QtCore.QPointF(10.0, 20.0)
     event.modifiers.return_value = Qt.KeyboardModifier.ShiftModifier
     view.wheelEvent(event)
-    pan_mock.assert_called_once_with(QtCore.QPointF(20, 0))
+    pan_mock.assert_called_once_with(QtCore.QPointF(0, 20))
+    event.accept.assert_called_once_with()
+
+
+@patch('beeref.view.BeeGraphicsView.pan')
+def test_wheel_event_pan_horizontally_custom_inverted(
+        pan_mock, view, kbsettings):
+    kbsettings.MOUSEWHEEL_ACTIONS['pan_horizontal2'].set_modifiers(['Alt'])
+    kbsettings.MOUSEWHEEL_ACTIONS['pan_horizontal2'].set_inverted(True)
+    event = MagicMock()
+    event.angleDelta.return_value = QtCore.QPointF(0.0, 40.0)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
+    event.modifiers.return_value = Qt.KeyboardModifier.AltModifier
+    view.wheelEvent(event)
+    pan_mock.assert_called_once_with(QtCore.QPointF(0, -20))
     event.accept.assert_called_once_with()
 
 
@@ -973,6 +1014,26 @@ def test_mouse_press_zoom(mouse_event_mock, view):
     assert view.active_mode == view.ZOOM_MODE
     assert view.event_start == QtCore.QPointF(10.0, 20.0)
     assert view.event_anchor == QtCore.QPointF(10.0, 20.0)
+    assert view.event_inverted is False
+    mouse_event_mock.assert_not_called()
+    event.accept.assert_called_once_with()
+
+
+@patch('PyQt6.QtWidgets.QGraphicsView.mousePressEvent')
+def test_mouse_press_zoom_custom_inverted(mouse_event_mock, view, kbsettings):
+    kbsettings.MOUSE_ACTIONS['zoom1'].set_button('Left')
+    kbsettings.MOUSE_ACTIONS['zoom1'].set_modifiers(['Alt', 'Shift'])
+    kbsettings.MOUSE_ACTIONS['zoom1'].set_inverted(True)
+    event = MagicMock()
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
+    event.button.return_value = Qt.MouseButton.LeftButton
+    event.modifiers.return_value = (
+        Qt.KeyboardModifier.AltModifier | Qt.KeyboardModifier.ShiftModifier)
+    view.mousePressEvent(event)
+    assert view.active_mode == view.ZOOM_MODE
+    assert view.event_start == QtCore.QPointF(10.0, 20.0)
+    assert view.event_anchor == QtCore.QPointF(10.0, 20.0)
+    assert view.event_inverted is True
     mouse_event_mock.assert_not_called()
     event.accept.assert_called_once_with()
 
@@ -982,7 +1043,7 @@ def test_mouse_press_pan_middle_drag(mouse_event_mock, view):
     event = MagicMock()
     event.position.return_value = QtCore.QPointF(10.0, 20.0)
     event.button.return_value = Qt.MouseButton.MiddleButton
-    event.modifiers.return_value = None
+    event.modifiers.return_value = Qt.KeyboardModifier.NoModifier
     view.mousePressEvent(event)
     assert view.active_mode == view.PAN_MODE
     assert view.event_start == QtCore.QPointF(10.0, 20.0)
@@ -1136,10 +1197,26 @@ def test_mouse_move_zoom(zoom_mock, mouse_event_mock, view):
     view.active_mode = view.ZOOM_MODE
     view.event_anchor = QtCore.QPointF(55.0, 66.0)
     view.event_start = QtCore.QPointF(10.0, 20.0)
+    view.event_inverted = False
     event = MagicMock()
     event.position.return_value = QtCore.QPointF(10.0, 18.0)
     view.mouseMoveEvent(event)
     zoom_mock.assert_called_once_with(40, QtCore.QPointF(55.0, 66.0))
+    mouse_event_mock.assert_not_called()
+    event.accept.assert_called_once_with()
+
+
+@patch('PyQt6.QtWidgets.QGraphicsView.mouseMoveEvent')
+@patch('beeref.view.BeeGraphicsView.zoom')
+def test_mouse_move_zoom_inverted(zoom_mock, mouse_event_mock, view):
+    view.active_mode = view.ZOOM_MODE
+    view.event_anchor = QtCore.QPointF(55.0, 66.0)
+    view.event_start = QtCore.QPointF(10.0, 20.0)
+    view.event_inverted = True
+    event = MagicMock()
+    event.position.return_value = QtCore.QPointF(10.0, 18.0)
+    view.mouseMoveEvent(event)
+    zoom_mock.assert_called_once_with(-40, QtCore.QPointF(55.0, 66.0))
     mouse_event_mock.assert_not_called()
     event.accept.assert_called_once_with()
 

@@ -13,6 +13,8 @@ Added
 * Added panning via scrollwheel:
   * Scroll wheel + Shift + Ctrl: pan vertically
   * Scroll wheel + Shift: pan horizontally
+* Make mouse and mouse wheel controls configurable
+  (Settings -> Keyboard & Mouse)
 
 
 Fixed
