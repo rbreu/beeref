@@ -10,10 +10,15 @@ assignees: ''
 **Describe the bug**
 A clear and concise description of what the bug is.
 
+**System info**
+
+BeeRef version number:
+Your operating system:
+
 **To Reproduce**
 Steps to reproduce the behavior:
-1. 
-2. 
+1.
+2.
 3.
 
 **Expected behavior**
