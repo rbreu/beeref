@@ -10,8 +10,8 @@ Added
   clipboard in hex format (Images -> Sample Color)
 * Added notification when attempting to paste from an empty or
   unusable clipboard
-* Panning via scrollwheel:
-  * Scroll wheel without modifiers: pan vertically
+* Added panning via scrollwheel:
+  * Scroll wheel + Shift + Ctrl: pan vertically
   * Scroll wheel + Shift: pan horizontally
 
 
@@ -25,12 +25,6 @@ Fixed
 * Removed black line under marching ants outline of crop mode, which
   would scale with the image and get potentially very thick.
 
-
-Changed
--------
-
-* Using the scroll wheel will now only zoom when Ctrl is pressed,
-  instead of zooming all the time regardless of modifiers.
 
 
 0.3.2 - 2024-01-21

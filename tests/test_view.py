@@ -934,7 +934,7 @@ def test_wheel_event_zoom(zoom_mock, view):
     event = MagicMock()
     event.angleDelta.return_value = QtCore.QPointF(0.0, 40.0)
     event.position.return_value = QtCore.QPointF(10.0, 20.0)
-    event.modifiers.return_value = Qt.KeyboardModifier.ControlModifier
+    event.modifiers.return_value = Qt.KeyboardModifier.NoModifier
     view.wheelEvent(event)
     zoom_mock.assert_called_once_with(40, QtCore.QPointF(10.0, 20.0))
     event.accept.assert_called_once_with()
@@ -945,7 +945,8 @@ def test_wheel_event_pan_vertically(pan_mock, view):
     event = MagicMock()
     event.angleDelta.return_value = QtCore.QPointF(0.0, 40.0)
     event.position.return_value = QtCore.QPointF(10.0, 20.0)
-    event.modifiers.return_value = Qt.KeyboardModifier.NoModifier
+    event.modifiers.return_value = (Qt.KeyboardModifier.ShiftModifier
+                                    | Qt.KeyboardModifier.ControlModifier)
     view.wheelEvent(event)
     pan_mock.assert_called_once_with(QtCore.QPointF(0, 20))
     event.accept.assert_called_once_with()
