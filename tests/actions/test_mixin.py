@@ -34,9 +34,9 @@ class FooWidget(QtWidgets.QWidget, ActionsMixin):
            'shortcuts': ['Ctrl+F'],
            'callback': 'on_foo',
        })]))
-@patch('beeref.config.KeyboardSettings.get_shortcuts')
+@patch('beeref.config.KeyboardSettings.get_keyboard_shortcuts')
 def test_create_actions(kb_mock, toggle_mock, trigger_mock, qapp):
-    kb_mock.side_effect = lambda group, key, default: default
+    kb_mock.side_effect = lambda key, default: default
     widget = FooWidget()
     widget.build_menu_and_actions()
     trigger_mock.connect.assert_called_once_with(widget.on_foo)
@@ -49,7 +49,7 @@ def test_create_actions(kb_mock, toggle_mock, trigger_mock, qapp):
     assert qaction.isEnabled() is True
     from beeref.actions.mixin import actions
     assert actions['foo'].qaction == qaction
-    kb_mock.assert_called_once_with('Actions', 'foo', ['Ctrl+F'])
+    kb_mock.assert_called_once_with('foo', ['Ctrl+F'])
 
 
 @patch('beeref.actions.mixin.menu_structure',
@@ -64,7 +64,7 @@ def test_create_actions_with_shortcut_from_settings(qapp, kbsettings):
         # Create Action inside the test function so that its
         # kbsettings get created after the kbsettings fixture changes
         # the file path
-        kbsettings.set_shortcuts('Actions', 'foo', ['Alt+O'])
+        kbsettings.set_keyboard_shortcuts('foo', ['Alt+O'])
         widget = FooWidget()
         widget.build_menu_and_actions()
         qaction = widget.actions()[0]
@@ -256,13 +256,13 @@ def test_build_menu_and_actions_disables_actiongroups(qapp):
 
 
 @patch('PyQt6.QtGui.QAction.triggered')
-@patch('beeref.config.KeyboardSettings.get_shortcuts')
+@patch('beeref.config.KeyboardSettings.get_keyboard_shortcuts')
 @patch('beeref.actions.mixin.menu_structure',
        [{'menu': 'Foo', 'items': '_build_recent_files'}])
 @patch('beeref.actions.mixin.actions', ActionList([]))
 def test_create_recent_files_more_than_10_files(
         kb_mock, triggered_mock, qapp):
-    kb_mock.side_effect = lambda group, key, default: default
+    kb_mock.side_effect = lambda key, default: default
     widget = FooWidget()
     widget.settings.get_recent_files.return_value = [
         os.path.abspath(f'{i}.bee') for i in range(15)]
@@ -285,8 +285,8 @@ def test_create_recent_files_more_than_10_files(
 
     assert kb_mock.call_count == 10
     kb_mock.assert_has_calls(
-        [call('Actions', 'recent_files_0', ['Ctrl+1']),
-         call('Actions', 'recent_files_9', ['Ctrl+0'])],
+        [call('recent_files_0', ['Ctrl+1']),
+         call('recent_files_9', ['Ctrl+0'])],
         any_order=True)
 
 
@@ -294,10 +294,10 @@ def test_create_recent_files_more_than_10_files(
 @patch('beeref.actions.mixin.menu_structure',
        [{'menu': 'Foo', 'items': '_build_recent_files'}])
 @patch('beeref.actions.mixin.actions', ActionList([]))
-@patch('beeref.config.KeyboardSettings.get_shortcuts')
+@patch('beeref.config.KeyboardSettings.get_keyboard_shortcuts')
 def test_create_recent_files_fewer_files_than_10_files(
         kb_mock, triggered_mock, qapp):
-    kb_mock.side_effect = lambda group, key, default: default
+    kb_mock.side_effect = lambda key, default: default
     widget = FooWidget()
     widget.settings.get_recent_files.return_value = [
         os.path.abspath(f'{i}.bee') for i in range(5)]
@@ -321,17 +321,17 @@ def test_create_recent_files_fewer_files_than_10_files(
 
     assert kb_mock.call_count == 5
     kb_mock.assert_has_calls(
-        [call('Actions', 'recent_files_0', ['Ctrl+1']),
-         call('Actions', 'recent_files_4', ['Ctrl+5'])],
+        [call('recent_files_0', ['Ctrl+1']),
+         call('recent_files_4', ['Ctrl+5'])],
         any_order=True)
 
 
 @patch('beeref.actions.mixin.menu_structure',
        [{'menu': 'Foo', 'items': '_build_recent_files'}])
 @patch('beeref.actions.mixin.actions', ActionList([]))
-@patch('beeref.config.KeyboardSettings.get_shortcuts')
+@patch('beeref.config.KeyboardSettings.get_keyboard_shortcuts')
 def test_create_recent_files_when_no_files(kb_mock, qapp):
-    kb_mock.side_effect = lambda group, key, default: default
+    kb_mock.side_effect = lambda key, default: default
     widget = FooWidget()
     widget.settings.get_recent_files.return_value = []
     widget.build_menu_and_actions()

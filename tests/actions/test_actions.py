@@ -33,7 +33,7 @@ def test_action_on_restore_defaults_when_no_defaults(kbsettings, view):
 
 
 def test_action_get_overwritten_shortcuts(kbsettings):
-    kbsettings.set_shortcuts('Actions', 'foo', ['Alt+O'])
+    kbsettings.set_keyboard_shortcuts('foo', ['Alt+O'])
     action = Action({'id': 'foo', 'shortcuts': ['Ctrl+F']})
     assert action.get_shortcuts() == ['Alt+O']
 
@@ -47,14 +47,14 @@ def test_action_set_shortcuts_when_no_qaction(kbsettings):
     action = Action({'id': 'foo'})
     action.qaction = None
     action.set_shortcuts(['Ctrl+F'])
-    assert kbsettings.get_shortcuts('Actions', 'foo') == ['Ctrl+F']
+    assert kbsettings.get_keyboard_shortcuts('foo') == ['Ctrl+F']
 
 
 def test_action_set_shortcuts_when_qaction(kbsettings, view):
     action = Action({'id': 'foo'})
     action.qaction = QtGui.QAction('foo', view)
     action.set_shortcuts(['Ctrl+F'])
-    assert kbsettings.get_shortcuts('Actions', 'foo') == ['Ctrl+F']
+    assert kbsettings.get_keyboard_shortcuts('foo') == ['Ctrl+F']
     assert action.qaction.shortcuts() == ['Ctrl+F']
 
 
@@ -85,7 +85,7 @@ def test_action_shortcuts_changed_when_not_changed(kbsettings):
 
 def test_action_shortcuts_changed_when_changed(kbsettings):
     action = Action({'id': 'foo', 'shortcuts': ['Ctrl+F']})
-    kbsettings.set_shortcuts('Actions', 'foo', ['Ctrl+B'])
+    kbsettings.set_keyboard_shortcuts('foo', ['Ctrl+B'])
     assert action.shortcuts_changed() is True
 
 

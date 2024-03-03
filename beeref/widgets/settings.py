@@ -346,7 +346,7 @@ class KeyboardShortcutsView(QtWidgets.QTableView):
         self.setSelectionMode(
             QtWidgets.QHeaderView.SelectionMode.SingleSelection)
         self.setAlternatingRowColors(True)
-        settings_events.restore_keyboard_defaults.connect(
+        settings_events.restore_defaults.connect(
             self.on_restore_defaults)
 
     def on_restore_defaults(self):
@@ -393,7 +393,8 @@ class KeyboardSettingsDialog(QtWidgets.QDialog):
         reply = QtWidgets.QMessageBox.question(
             self,
             'Restore defaults?',
-            'Do you want to restore all settings to their default values?')
+            'Do you want to restore all keyboard and mouse settings '
+            'to their default values?')
 
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             KeyboardSettings().restore_defaults()
