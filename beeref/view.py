@@ -748,8 +748,18 @@ class BeeGraphicsView(MainControlsMixin,
         self.reset_previous_transform()
 
     def wheelEvent(self, event):
-        self.zoom(event.angleDelta().y(), event.position())
-        event.accept()
+        if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+            self.zoom(event.angleDelta().y(), event.position())
+            event.accept()
+            return
+        if event.modifiers() == Qt.KeyboardModifier.NoModifier:
+            self.pan(QtCore.QPointF(0, 0.5 * event.angleDelta().y()))
+            event.accept()
+            return
+        if event.modifiers() == Qt.KeyboardModifier.ShiftModifier:
+            self.pan(QtCore.QPointF(0.5 * event.angleDelta().y(), 0))
+            event.accept()
+            return
 
     def mousePressEvent(self, event):
         if self.mousePressEventMainControls(event):

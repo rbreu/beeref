@@ -930,12 +930,35 @@ def test_delta_zero(pan_mock, reset_mock, view, item):
 
 
 @patch('beeref.view.BeeGraphicsView.zoom')
-def test_wheel_event(zoom_mock, view):
+def test_wheel_event_zoom(zoom_mock, view):
     event = MagicMock()
     event.angleDelta.return_value = QtCore.QPointF(0.0, 40.0)
     event.position.return_value = QtCore.QPointF(10.0, 20.0)
+    event.modifiers.return_value = Qt.KeyboardModifier.ControlModifier
     view.wheelEvent(event)
     zoom_mock.assert_called_once_with(40, QtCore.QPointF(10.0, 20.0))
+    event.accept.assert_called_once_with()
+
+
+@patch('beeref.view.BeeGraphicsView.pan')
+def test_wheel_event_pan_vertically(pan_mock, view):
+    event = MagicMock()
+    event.angleDelta.return_value = QtCore.QPointF(0.0, 40.0)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
+    event.modifiers.return_value = Qt.KeyboardModifier.NoModifier
+    view.wheelEvent(event)
+    pan_mock.assert_called_once_with(QtCore.QPointF(0, 20))
+    event.accept.assert_called_once_with()
+
+
+@patch('beeref.view.BeeGraphicsView.pan')
+def test_wheel_event_pan_horizontally(pan_mock, view):
+    event = MagicMock()
+    event.angleDelta.return_value = QtCore.QPointF(0.0, 40.0)
+    event.position.return_value = QtCore.QPointF(10.0, 20.0)
+    event.modifiers.return_value = Qt.KeyboardModifier.ShiftModifier
+    view.wheelEvent(event)
+    pan_mock.assert_called_once_with(QtCore.QPointF(20, 0))
     event.accept.assert_called_once_with()
 
 
