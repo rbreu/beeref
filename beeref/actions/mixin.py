@@ -55,10 +55,10 @@ class ActionsMixin:
 
     def _init_action_checkable(self, actiondef, qaction):
         qaction.setCheckable(True)
-        callback = getattr(self, actiondef['callback'])
+        callback = getattr(self, actiondef.callback)
         qaction.toggled.connect(callback)
-        settings_key = actiondef.get('settings')
-        checked = actiondef.get('checked', False)
+        settings_key = actiondef.settings
+        checked = actiondef.checked
         qaction.setChecked(checked)
         if settings_key:
             val = self.settings.value(settings_key, checked, type=bool)
@@ -69,18 +69,18 @@ class ActionsMixin:
 
     def _create_actions(self):
         for action in actions.values():
-            qaction = QtGui.QAction(action['text'], self)
+            qaction = QtGui.QAction(action.text, self)
             shortcuts = action.get_shortcuts()
             if shortcuts:
                 qaction.setShortcuts(shortcuts)
-            if action.get('checkable', False):
+            if action.checkable:
                 self._init_action_checkable(action, qaction)
             else:
-                qaction.triggered.connect(getattr(self, action['callback']))
+                qaction.triggered.connect(getattr(self, action.callback))
             self.addAction(qaction)
-            qaction.setEnabled(action.get('enabled', True))
-            if 'group' in action:
-                self.bee_actiongroups[action['group']].append(qaction)
+            qaction.setEnabled(action.enabled)
+            if action.group:
+                self.bee_actiongroups[action.group].append(qaction)
                 qaction.setEnabled(False)
             action.qaction = qaction
 
@@ -112,10 +112,10 @@ class ActionsMixin:
         for i in range(10):
             action_id = f'recent_files_{i}'
             key = 0 if i == 9 else i + 1
-            action = Action({'id': action_id,
-                             'menu_id': '_build_recent_files',
-                             'text': f'File {i + 1}',
-                             'shortcuts': [f'Ctrl+{key}']})
+            action = Action(id=action_id,
+                            menu_id='_build_recent_files',
+                            text=f'File {i + 1}',
+                            shortcuts=[f'Ctrl+{key}'])
             actions[action_id] = action
 
             if i < len(files):

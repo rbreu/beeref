@@ -19,6 +19,8 @@ VERSION = '0.3.3-dev'
 WEBSITE = 'https://github.com/rbreu/beeref'
 COPYRIGHT = 'Copyright © 2021-2023 Rebecca Breu'
 
+CHANGED_SYMBOL = '✎'
+
 COLORS = {
     # Qt:
     'Active:Base': (60, 60, 60),

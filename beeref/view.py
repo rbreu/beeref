@@ -23,7 +23,7 @@ from PyQt6.QtCore import Qt
 
 from beeref.actions import ActionsMixin, actions
 from beeref import commands
-from beeref.config import CommandlineArgs, BeeSettings
+from beeref.config import CommandlineArgs, BeeSettings, KeyboardSettings
 from beeref import constants
 from beeref import fileio
 from beeref.fileio.export import exporter_registry
@@ -51,6 +51,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.app = app
         self.parent = parent
         self.settings = BeeSettings()
+        self.keyboard_settings = KeyboardSettings()
         self.welcome_overlay = widgets.welcome_overlay.WelcomeOverlay(self)
 
         self.setBackgroundBrush(
@@ -493,7 +494,7 @@ class BeeGraphicsView(MainControlsMixin,
         widgets.settings.SettingsDialog(self)
 
     def on_action_keyboard_settings(self):
-        widgets.settings.KeyboardSettingsDialog(self)
+        widgets.controls.ControlsDialog(self)
 
     def on_action_help(self):
         widgets.HelpDialog(self)
@@ -748,17 +749,22 @@ class BeeGraphicsView(MainControlsMixin,
         self.reset_previous_transform()
 
     def wheelEvent(self, event):
-        if event.modifiers() == Qt.KeyboardModifier.NoModifier:
-            self.zoom(event.angleDelta().y(), event.position())
+        action, inverted\
+            = self.keyboard_settings.mousewheel_action_for_event(event)
+        delta = event.angleDelta().y()
+        if inverted:
+            delta = delta * -1
+
+        if action == 'zoom':
+            self.zoom(delta, event.position())
             event.accept()
             return
-        if event.modifiers() == (Qt.KeyboardModifier.ShiftModifier
-                                 | Qt.KeyboardModifier.ControlModifier):
-            self.pan(QtCore.QPointF(0, 0.5 * event.angleDelta().y()))
+        if action == 'pan_horizontal':
+            self.pan(QtCore.QPointF(0, 0.5 * delta))
             event.accept()
             return
-        if event.modifiers() == Qt.KeyboardModifier.ShiftModifier:
-            self.pan(QtCore.QPointF(0.5 * event.angleDelta().y(), 0))
+        if action == 'pan_vertical':
+            self.pan(QtCore.QPointF(0.5 * delta, 0))
             event.accept()
             return
 

@@ -21,7 +21,12 @@ from PyQt6.QtCore import Qt
 
 from beeref import constants, commands
 from beeref.config import logfile_name
-from beeref.widgets import settings, welcome_overlay, color_gamut  # noqa: F401
+from beeref.widgets import (  # noqa: F401
+    controls,
+    settings,
+    welcome_overlay,
+    color_gamut,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -69,12 +74,12 @@ class HelpDialog(QtWidgets.QDialog):
         # Controls
         with open(os.path.join(docdir, 'controls.html')) as f:
             controls_txt = f.read()
-        controls = QtWidgets.QLabel(controls_txt)
-        controls.setTextInteractionFlags(
+        controls_label = QtWidgets.QLabel(controls_txt)
+        controls_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse)
         scroll = QtWidgets.QScrollArea(self)
         scroll.setWidgetResizable(True)
-        scroll.setWidget(controls)
+        scroll.setWidget(controls_label)
         tabs.addTab(scroll, '&Controls')
 
         layout = QtWidgets.QVBoxLayout()

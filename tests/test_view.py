@@ -376,7 +376,7 @@ def test_on_action_settings(show_mock, view):
     show_mock.assert_called_once()
 
 
-@patch('beeref.widgets.settings.KeyboardSettingsDialog.show')
+@patch('beeref.widgets.controls.ControlsDialog.show')
 def test_on_action_keyboard_settings(show_mock, view):
     view.on_action_keyboard_settings()
     show_mock.assert_called_once()
@@ -948,7 +948,7 @@ def test_wheel_event_pan_vertically(pan_mock, view):
     event.modifiers.return_value = (Qt.KeyboardModifier.ShiftModifier
                                     | Qt.KeyboardModifier.ControlModifier)
     view.wheelEvent(event)
-    pan_mock.assert_called_once_with(QtCore.QPointF(0, 20))
+    pan_mock.assert_called_once_with(QtCore.QPointF(20, 0))
     event.accept.assert_called_once_with()
 
 
@@ -959,7 +959,7 @@ def test_wheel_event_pan_horizontally(pan_mock, view):
     event.position.return_value = QtCore.QPointF(10.0, 20.0)
     event.modifiers.return_value = Qt.KeyboardModifier.ShiftModifier
     view.wheelEvent(event)
-    pan_mock.assert_called_once_with(QtCore.QPointF(20, 0))
+    pan_mock.assert_called_once_with(QtCore.QPointF(0, 20))
     event.accept.assert_called_once_with()
 
 

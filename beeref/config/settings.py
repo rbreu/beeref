@@ -138,7 +138,6 @@ class BeeSettings(QtCore.QSettings):
         'validate' are specified in the FIELDS entry for the given
         key. The default value will be returned if validation or type
         casting fails.
-
         """
 
         val = self.value(key)

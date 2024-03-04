@@ -18,9 +18,11 @@ setup(
         'beeref',
         'beeref.actions',
         'beeref.assets',
+        'beeref.config',
         'beeref.documentation',
         'beeref.fileio',
         'beeref.widgets',
+        'beeref.widgets.controls',
     ],
     entry_points={
         'gui_scripts': [

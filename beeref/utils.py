@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
+from collections import OrderedDict
 import re
 
 from PyQt6 import QtCore, QtGui
@@ -93,3 +94,16 @@ def qcolor_to_hex(color):
     rgb = color.name()
     alpha = hex(color.alpha()).removeprefix('0x')
     return f'{rgb}{alpha}'
+
+
+class ActionList(OrderedDict):
+
+    def __init__(self, actions):
+        super().__init__()
+        for action in actions:
+            self[action.id] = action
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            key = list(self.keys())[key]
+        return super().__getitem__(key)
