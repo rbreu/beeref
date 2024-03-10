@@ -42,6 +42,8 @@ class KeyboardShortcutsEditor(QtWidgets.QKeySequenceEdit):
         self.remove_from_other = None
 
     def on_editing_finished(self):
+        """Don't let users save the same shortcuts on different actions."""
+
         shortcut = self.keySequence().toString()
 
         if self.finished_last_called_with == shortcut:
@@ -118,7 +120,7 @@ class KeyboardShortcutsModel(QtCore.QAbstractTableModel):
                 return 'Changed from default'
             if changed and index.column() > 1:
                 default = action.get_default_shortcut(index.column() - 2)
-                default = default or '-'
+                default = default or 'Not set'
                 return f'Default: {default}'
 
     def setData(self, index, value, role, remove_from_other=None):

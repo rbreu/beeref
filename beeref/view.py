@@ -751,6 +751,7 @@ class BeeGraphicsView(MainControlsMixin,
     def wheelEvent(self, event):
         action, inverted\
             = self.keyboard_settings.mousewheel_action_for_event(event)
+
         delta = event.angleDelta().y()
         if inverted:
             delta = delta * -1

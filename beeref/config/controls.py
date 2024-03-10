@@ -15,7 +15,8 @@
 
 """Handling of keyboard shortcuts and mouse controls."""
 
-import json
+from collections import OrderedDict
+from functools import cached_property
 import logging
 import logging.config
 import os.path
@@ -32,38 +33,63 @@ logger = logging.getLogger(__name__)
 
 class MouseConfig:
 
-    MODIFIER_MAP = {
-        'ctrl': Qt.KeyboardModifier.ControlModifier,
-        'alt': Qt.KeyboardModifier.AltModifier,
-        'shift': Qt.KeyboardModifier.ShiftModifier,
-        'none': Qt.KeyboardModifier.NoModifier,
-    }
+    MODIFIER_MAP = OrderedDict((
+        ('No Modifier', Qt.KeyboardModifier.NoModifier),
+        ('Shift', Qt.KeyboardModifier.ShiftModifier),
+        ('Ctrl', Qt.KeyboardModifier.ControlModifier),
+        ('Alt', Qt.KeyboardModifier.AltModifier),
+        ('Meta', Qt.KeyboardModifier.MetaModifier),
+        ('Keypad', Qt.KeyboardModifier.KeypadModifier),
+    ))
 
-    def __init__(self, id, text, default, invertible):
+    def __init__(self, id, group, text, modifiers, invertible):
         self.id = id
+        self.group = group
         self.text = text
-        self.default = default
+        self.modifiers = modifiers
         self.invertible = invertible
+        self.inverted = False
 
-    def load(self, raw):
-        if raw:
-            values = json.loads(raw)
-        else:
-            values = {}
+    def __eq__(self, other):
+        return self.id == other.id
 
-        self.modifiers = values.get('modifiers', self.default)
-        self.inverted = values.get('inverted', False)
+    @cached_property
+    def kb_settings(self):
+        return KeyboardSettings()
 
-    def matches_event(self, event, with_buttons):
-        if self.modifiers is None:
+    def get_modifiers(self):
+        return self.kb_settings.get_list(
+            'MouseWheel', f'{self.id}_modifiers', self.modifiers)
+
+    def set_modifiers(self, value):
+        logger.debug(
+            f'Setting mouse wheel modifiers for "{self.id}" to: {value}')
+        self.kb_settings.set_list(
+            'MouseWheel', f'{self.id}_modifiers', value, self.modifiers)
+
+    def get_inverted(self):
+        return self.kb_settings.get_value(
+            'MouseWheel', f'{self.id}_inverted', self.inverted)
+
+    def set_inverted(self, value):
+        logger.debug(
+            f'Setting mouse wheel inverted for "{self.id}" to: {value}')
+        self.kb_settings.set_value(
+            'MouseWheel', f'{self.id}_inverted', value, self.inverted)
+
+    def controls_changed(self):
+        """Whether controls have changed from their defaults."""
+        return (set(self.get_modifiers()) != set(self.modifiers)
+                or self.get_inverted() != self.inverted)
+
+    def matches_event(self, event):
+        modifiers = self.get_modifiers()
+        if not modifiers:
             return False
 
-        if len(self.modifiers) == 0:
-            combined = Qt.KeyboardModifier.NoModifier
-        else:
-            combined = self.MODIFIER_MAP[self.modifiers[0]]
-            for mod in self.modifiers[1:]:
-                combined = combined | self.MODIFIER_MAP[mod]
+        combined = self.MODIFIER_MAP[modifiers[0]]
+        for mod in modifiers[1:]:
+            combined = combined | self.MODIFIER_MAP[mod]
 
         return combined == event.modifiers()
 
@@ -72,34 +98,46 @@ class KeyboardSettings(QtCore.QSettings):
 
     MOUSEWHEEL_ACTIONS = ActionList([
         MouseConfig(
-            id='zoom',
+            id='zoom1',
+            group='zoom',
             text='Zoom',
-            default=(),
+            modifiers=('No Modifier',),
             invertible=True,
         ),
         MouseConfig(
-            id='pan_horizontal',
+            id='zoom2',
+            group='zoom',
+            text='Zoom (alternative)',
+            modifiers=(),
+            invertible=True,
+        ),
+        MouseConfig(
+            id='pan_horizontal1',
+            group='pan_horizontal',
             text='Pan horizontally',
-            default=('shift',),
+            modifiers=('Shift',),
             invertible=True,
         ),
         MouseConfig(
-            id='pan_vertical',
+            id='pan_horizontal2',
+            group='pan_horizontal',
+            text='Pan horizontally (alternative)',
+            modifiers=(),
+            invertible=True,
+        ),
+        MouseConfig(
+            id='pan_vertical1',
+            group='pan_vertical',
             text='Pan vertically',
-            default=('shift', 'ctrl'),
+            modifiers=('Shift', 'Ctrl'),
             invertible=True,
         ),
         MouseConfig(
-            id='movewin_horizontal',
-            text='Move window horizontally',
-            default=None,
-            invertible=False,
-        ),
-        MouseConfig(
-            id='movewin_vertical',
-            text='Move window vertically',
-            default=None,
-            invertible=False,
+            id='pan_vertical2',
+            group='pan_vertical',
+            text='Pan vertically (alternative)',
+            modifiers=(),
+            invertible=True,
         ),
     ])
 
@@ -110,22 +148,29 @@ class KeyboardSettings(QtCore.QSettings):
             'KeyboardSettings.ini')
         super().__init__(filename, settings_format)
 
-        for action in self.MOUSEWHEEL_ACTIONS:
-            self.get_mousewheel_config(action)
-
-    def set_keyboard_shortcuts(self, key, values, default=None):
+    def set_list(self, group, key, values, default=None):
         if values == default:
-            self.remove(f'Actions/{key}')
+            self.remove(f'{group}/{key}')
         else:
-            self.setValue(f'Actions/{key}', ', '.join(values))
+            self.setValue(f'{group}/{key}', ', '.join(values))
 
-    def get_keyboard_shortcuts(self, key, default=None):
-        values = self.value(f'Actions/{key}')
+    def get_list(self, group, key, default=None):
+        values = self.value(f'{group}/{key}')
         if values is not None:
             values = list(filter(lambda x: x, values.split(', ')))
             return values
 
         return list(default or [])  # Always return new instance of default
+
+    def get_value(self, group, key, default=None):
+        value = self.value(f'{group}/{key}')
+        return default if value is None else value
+
+    def set_value(self, group, key, value, default=None):
+        if value == default:
+            self.remove(f'{group}/{key}')
+        else:
+            self.setValue(f'{group}/{key}', value)
 
     def restore_defaults(self):
         """Restore all the values specified in FILEDS to their default values
@@ -137,12 +182,8 @@ class KeyboardSettings(QtCore.QSettings):
             self.remove(key)
         settings_events.restore_keyboard_defaults.emit()
 
-    def get_mousewheel_config(self,  key):
-        conf = self.MOUSEWHEEL_ACTIONS[key]
-        conf.load(self.value(f'MouseWheel/{key}'))
-        return conf
-
     def mousewheel_action_for_event(self, event):
         for action in self.MOUSEWHEEL_ACTIONS.values():
-            if action.matches_event(event, with_buttons=False):
-                return action.id, action.inverted
+            if action.matches_event(event):
+                return action.group, action.get_inverted()
+        return None, None

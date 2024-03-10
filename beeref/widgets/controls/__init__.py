@@ -19,6 +19,7 @@ from PyQt6 import QtWidgets
 
 from beeref.config import KeyboardSettings
 from beeref.widgets.controls.keyboard import KeyboardShortcutsView
+from beeref.widgets.controls.mousewheel import MouseWheelView
 
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 class ControlsDialog(QtWidgets.QDialog):
     def __init__(self, parent):
         super().__init__(parent)
-        self.setWindowTitle('Keyboard Shortcuts')
+        self.setWindowTitle('Keyboard & Mouse Controls')
         tabs = QtWidgets.QTabWidget()
 
         # Keyboard shortcuts
@@ -37,11 +38,22 @@ class ControlsDialog(QtWidgets.QDialog):
         table = KeyboardShortcutsView(keyboard)
         search_input = QtWidgets.QLineEdit()
         search_input.setPlaceholderText('Search...')
-        search_input.textChanged.connect(
-            lambda value: table.model().setFilterFixedString(value))
+        search_input.textChanged.connect(table.model().setFilterFixedString)
         kb_layout.addWidget(search_input)
         kb_layout.addWidget(table)
         tabs.addTab(keyboard, '&Keyboard Shortcuts')
+
+        # Mouse wheel shortcuts
+        mousewheel = QtWidgets.QWidget(parent)
+        wheel_layout = QtWidgets.QVBoxLayout()
+        mousewheel.setLayout(wheel_layout)
+        table = MouseWheelView(mousewheel)
+        search_input = QtWidgets.QLineEdit()
+        search_input.setPlaceholderText('Search...')
+        search_input.textChanged.connect(table.model().setFilterFixedString)
+        wheel_layout.addWidget(search_input)
+        wheel_layout.addWidget(table)
+        tabs.addTab(mousewheel, 'Mouse &Wheel')
 
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)

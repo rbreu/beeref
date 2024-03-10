@@ -81,13 +81,12 @@ class Action:
         return path[::-1]
 
     def get_shortcuts(self):
-        return self.kb_settings.get_keyboard_shortcuts(
-            self.id, self.shortcuts)
+        return self.kb_settings.get_list('Actions', self.id, self.shortcuts)
 
     def set_shortcuts(self, value):
         logger.debug(f'Setting shortcut "{self.id}" to: {value}')
-        self.kb_settings.set_keyboard_shortcuts(
-            self.id, value, self.shortcuts)
+        self.kb_settings.set_list(
+            'Actions', self.id, value, self.shortcuts)
         if self.qaction:
             self.qaction.setShortcuts(value)
 
