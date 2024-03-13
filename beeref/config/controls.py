@@ -31,8 +31,7 @@ from PyQt6.QtCore import Qt
 logger = logging.getLogger(__name__)
 
 
-class MouseConfig:
-
+class MouseConfigBase:
     MODIFIER_MAP = OrderedDict((
         ('No Modifier', Qt.KeyboardModifier.NoModifier),
         ('Shift', Qt.KeyboardModifier.ShiftModifier),
@@ -42,6 +41,55 @@ class MouseConfig:
         ('Keypad', Qt.KeyboardModifier.KeypadModifier),
     ))
 
+    BUTTON_MAP = OrderedDict((
+        ('Not Configured', Qt.MouseButton.NoButton),
+        ('Left', Qt.MouseButton.LeftButton),
+        ('Middle',  Qt.MouseButton.MiddleButton),
+    ))
+
+    def __eq__(self, other):
+        return self.id == other.id
+
+    def __str__(self):
+        return self.id
+
+    @cached_property
+    def kb_settings(self):
+        return KeyboardSettings()
+
+    def get_modifiers(self):
+        return self.kb_settings.get_list(
+            self.SETTINGS_GROUP, f'{self.id}_modifiers', self.modifiers)
+
+    def set_modifiers(self, value):
+        logger.debug(
+            f'Setting {self.SETTINGS_GROUP} modifiers '
+            f'for "{self.id}" to: {value}')
+        self.kb_settings.set_list(
+            self.SETTINGS_GROUP, f'{self.id}_modifiers', value, self.modifiers)
+
+    def get_inverted(self):
+        return self.kb_settings.get_value(
+            self.SETTINGS_GROUP, f'{self.id}_inverted', self.inverted)
+
+    def set_inverted(self, value):
+        logger.debug(
+            f'Setting {self.SETTINGS_GROUP} inverted '
+            f'for "{self.id}" to: {value}')
+        self.kb_settings.set_value(
+            self.SETTINGS_GROUP, f'{self.id}_inverted', value, self.inverted)
+
+    def modifiers_to_qt(self, modifiers):
+        combined = self.MODIFIER_MAP[modifiers[0]]
+        for mod in modifiers[1:]:
+            combined = combined | self.MODIFIER_MAP[mod]
+        return combined
+
+
+class MouseWheelConfig(MouseConfigBase):
+
+    SETTINGS_GROUP = 'MouseWheel'
+
     def __init__(self, id, group, text, modifiers, invertible):
         self.id = id
         self.group = group
@@ -50,94 +98,176 @@ class MouseConfig:
         self.invertible = invertible
         self.inverted = False
 
-    def __eq__(self, other):
-        return self.id == other.id
-
-    @cached_property
-    def kb_settings(self):
-        return KeyboardSettings()
-
-    def get_modifiers(self):
-        return self.kb_settings.get_list(
-            'MouseWheel', f'{self.id}_modifiers', self.modifiers)
-
-    def set_modifiers(self, value):
-        logger.debug(
-            f'Setting mouse wheel modifiers for "{self.id}" to: {value}')
-        self.kb_settings.set_list(
-            'MouseWheel', f'{self.id}_modifiers', value, self.modifiers)
-
-    def get_inverted(self):
-        return self.kb_settings.get_value(
-            'MouseWheel', f'{self.id}_inverted', self.inverted)
-
-    def set_inverted(self, value):
-        logger.debug(
-            f'Setting mouse wheel inverted for "{self.id}" to: {value}')
-        self.kb_settings.set_value(
-            'MouseWheel', f'{self.id}_inverted', value, self.inverted)
-
     def controls_changed(self):
         """Whether controls have changed from their defaults."""
         return (set(self.get_modifiers()) != set(self.modifiers)
                 or self.get_inverted() != self.inverted)
 
+    def is_configured(self):
+        """Whether controls have been configured for this action."""
+        return bool(self.get_modifiers())
+
+    def conflicts_with(self, other):
+        """Whether controls conflict with `other`.
+
+        For unconfigured controls, always return False."""
+        return (self.is_configured()
+                and other.is_configured()
+                and set(self.get_modifiers()) == set(other.get_modifiers()))
+
     def matches_event(self, event):
-        modifiers = self.get_modifiers()
-        if not modifiers:
+        if not self.is_configured():
             return False
+        return self.modifiers_to_qt(modifiers) == event.modifiers()
 
-        combined = self.MODIFIER_MAP[modifiers[0]]
-        for mod in modifiers[1:]:
-            combined = combined | self.MODIFIER_MAP[mod]
 
-        return combined == event.modifiers()
+class MouseConfig(MouseConfigBase):
+
+    SETTINGS_GROUP = 'Mouse'
+
+    def __init__(self, id, group, text, button, modifiers, invertible):
+        self.id = id
+        self.group = group
+        self.text = text
+        self.button = button
+        self.modifiers = modifiers
+        self.invertible = invertible
+        self.inverted = False
+
+    def get_button(self):
+        return self.kb_settings.get_value(
+            self.SETTINGS_GROUP, f'{self.id}_button', self.button)
+
+    def set_button(self, value):
+        logger.debug(
+            f'Setting {self.SETTINGS_GROUP} button '
+            f'for "{self.id}" to: {value}')
+        self.kb_settings.set_value(
+            self.SETTINGS_GROUP, f'{self.id}_button', value, self.button)
+
+    def conflicts_with(self, other):
+        """Whether controls conflict with `other`.
+
+        For unconfigured controls, always return False.
+        """
+        return (self.is_configured()
+                and other.is_configured()
+                and self.get_button() == other.get_button()
+                and set(self.get_modifiers()) == set(other.get_modifiers()))
+
+    def controls_changed(self):
+        """Whether controls have changed from their defaults."""
+        return (self.get_button() != self.button
+                or set(self.get_modifiers()) != set(self.modifiers)
+                or self.get_inverted() != self.inverted)
+
+    def is_configured(self):
+        """Whether controls have been configured for this action."""
+        return self.get_button() != 'Not Configured'
+
+    def matches_event(self, event):
+        if not self.is_configured():
+            return False
+        modifiers = self.get_modifiers()
+        return (self.modifiers_to_qt(modifiers) == event.modifiers()
+                and self.BUTTON_MAP[self.get_button()] == event.button())
 
 
 class KeyboardSettings(QtCore.QSettings):
 
     MOUSEWHEEL_ACTIONS = ActionList([
-        MouseConfig(
+        MouseWheelConfig(
             id='zoom1',
             group='zoom',
             text='Zoom',
             modifiers=('No Modifier',),
             invertible=True,
         ),
-        MouseConfig(
+        MouseWheelConfig(
             id='zoom2',
             group='zoom',
             text='Zoom (alternative)',
             modifiers=(),
             invertible=True,
         ),
-        MouseConfig(
+        MouseWheelConfig(
             id='pan_horizontal1',
             group='pan_horizontal',
             text='Pan horizontally',
             modifiers=('Shift',),
             invertible=True,
         ),
-        MouseConfig(
+        MouseWheelConfig(
             id='pan_horizontal2',
             group='pan_horizontal',
             text='Pan horizontally (alternative)',
             modifiers=(),
             invertible=True,
         ),
-        MouseConfig(
+        MouseWheelConfig(
             id='pan_vertical1',
             group='pan_vertical',
             text='Pan vertically',
             modifiers=('Shift', 'Ctrl'),
             invertible=True,
         ),
-        MouseConfig(
+        MouseWheelConfig(
             id='pan_vertical2',
             group='pan_vertical',
             text='Pan vertically (alternative)',
             modifiers=(),
             invertible=True,
+        ),
+    ])
+
+    MOUSE_ACTIONS = ActionList([
+        MouseConfig(
+            id='zoom1',
+            group='zoom',
+            text='Zoom',
+            button='Middle',
+            modifiers=('Ctrl',),
+            invertible=True,
+        ),
+        MouseConfig(
+            id='zoom2',
+            group='zoom',
+            text='Zoom (alternative)',
+            button='Not Configured',
+            modifiers=(),
+            invertible=True,
+        ),
+        MouseConfig(
+            id='pan1',
+            group='pan',
+            text='Pan',
+            button='Middle',
+            modifiers=('No Modifier',),
+            invertible=False,
+        ),
+        MouseConfig(
+            id='pan2',
+            group='pan',
+            text='Pan (alternative)',
+            button='Left',
+            modifiers=('Alt',),
+            invertible=False,
+        ),
+        MouseConfig(
+            id='movewin1',
+            group='movewin',
+            text='Move Window',
+            button='Left',
+            modifiers=('Ctrl', 'Alt'),
+            invertible=False,
+        ),
+        MouseConfig(
+            id='movewin2',
+            group='movewin (alternative)',
+            text='Move Window',
+            button='Not Configured',
+            modifiers=(),
+            invertible=False,
         ),
     ])
 
@@ -184,6 +314,12 @@ class KeyboardSettings(QtCore.QSettings):
 
     def mousewheel_action_for_event(self, event):
         for action in self.MOUSEWHEEL_ACTIONS.values():
+            if action.matches_event(event):
+                return action.group, action.get_inverted()
+        return None, None
+
+    def mouse_action_for_event(self, event):
+        for action in self.MOUSE_ACTIONS.values():
             if action.matches_event(event):
                 return action.group, action.get_inverted()
         return None, None

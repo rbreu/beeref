@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class Action:
+    SETTINGS_GROUP = 'Actions'
 
     def __init__(self, id, text, callback=None, shortcuts=None,
                  checkable=False, checked=False, group=None, settings=None,
@@ -49,6 +50,9 @@ class Action:
 
     def __eq__(self, other):
         return self.id == other.id
+
+    def __str__(self):
+        return self.id
 
     def on_restore_defaults(self):
         if self.qaction:
@@ -81,12 +85,13 @@ class Action:
         return path[::-1]
 
     def get_shortcuts(self):
-        return self.kb_settings.get_list('Actions', self.id, self.shortcuts)
+        return self.kb_settings.get_list(
+            self.SETTINGS_GROUP, self.id, self.shortcuts)
 
     def set_shortcuts(self, value):
         logger.debug(f'Setting shortcut "{self.id}" to: {value}')
         self.kb_settings.set_list(
-            'Actions', self.id, value, self.shortcuts)
+            self.SETTINGS_GROUP, self.id, value, self.shortcuts)
         if self.qaction:
             self.qaction.setShortcuts(value)
 

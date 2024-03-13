@@ -19,6 +19,7 @@ from PyQt6 import QtWidgets
 
 from beeref.config import KeyboardSettings
 from beeref.widgets.controls.keyboard import KeyboardShortcutsView
+from beeref.widgets.controls.mouse import MouseView
 from beeref.widgets.controls.mousewheel import MouseWheelView
 
 
@@ -43,7 +44,19 @@ class ControlsDialog(QtWidgets.QDialog):
         kb_layout.addWidget(table)
         tabs.addTab(keyboard, '&Keyboard Shortcuts')
 
-        # Mouse wheel shortcuts
+        # Mouse controls
+        mouse = QtWidgets.QWidget(parent)
+        mouse_layout = QtWidgets.QVBoxLayout()
+        mouse.setLayout(mouse_layout)
+        table = MouseView(mouse)
+        search_input = QtWidgets.QLineEdit()
+        search_input.setPlaceholderText('Search...')
+        search_input.textChanged.connect(table.model().setFilterFixedString)
+        mouse_layout.addWidget(search_input)
+        mouse_layout.addWidget(table)
+        tabs.addTab(mouse, '&Mouse')
+
+        # Mouse wheel controls
         mousewheel = QtWidgets.QWidget(parent)
         wheel_layout = QtWidgets.QVBoxLayout()
         mousewheel.setLayout(wheel_layout)
