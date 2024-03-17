@@ -118,7 +118,11 @@ class MouseWheelConfig(MouseConfigBase):
     def matches_event(self, event):
         if not self.is_configured():
             return False
+        modifiers = self.get_modifiers()
         return self.modifiers_to_qt(modifiers) == event.modifiers()
+
+    def unset_controls(self):
+        self.set_modifiers(['No Modifiers'])
 
 
 class MouseConfig(MouseConfigBase):
@@ -171,6 +175,10 @@ class MouseConfig(MouseConfigBase):
         modifiers = self.get_modifiers()
         return (self.modifiers_to_qt(modifiers) == event.modifiers()
                 and self.BUTTON_MAP[self.get_button()] == event.button())
+
+    def unset_controls(self):
+        self.set_button('Not Configured')
+        self.set_modifiers([])
 
 
 class KeyboardSettings(QtCore.QSettings):
@@ -254,16 +262,16 @@ class KeyboardSettings(QtCore.QSettings):
             invertible=False,
         ),
         MouseConfig(
-            id='movewin1',
-            group='movewin',
+            id='movewindow1',
+            group='movewindow',
             text='Move Window',
             button='Left',
             modifiers=('Ctrl', 'Alt'),
             invertible=False,
         ),
         MouseConfig(
-            id='movewin2',
-            group='movewin (alternative)',
+            id='movewindow2',
+            group='movewindow (alternative)',
             text='Move Window',
             button='Not Configured',
             modifiers=(),

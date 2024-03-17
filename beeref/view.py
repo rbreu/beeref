@@ -791,17 +791,17 @@ class BeeGraphicsView(MainControlsMixin,
             event.accept()
             return
 
-        if (event.button() == Qt.MouseButton.MiddleButton
-                and event.modifiers() == Qt.KeyboardModifier.ControlModifier):
+        action, inverted = self.keyboard_settings.mouse_action_for_event(event)
+
+        if action == 'zoom':
             self.active_mode = self.ZOOM_MODE
             self.event_start = event.position()
             self.event_anchor = event.position()
+            self.event_inverted = inverted
             event.accept()
             return
 
-        if (event.button() == Qt.MouseButton.MiddleButton
-            or (event.button() == Qt.MouseButton.LeftButton
-                and event.modifiers() == Qt.KeyboardModifier.AltModifier)):
+        if action == 'pan':
             logger.trace('Begin pan')
             self.active_mode = self.PAN_MODE
             self.event_start = event.position()
@@ -827,6 +827,8 @@ class BeeGraphicsView(MainControlsMixin,
             self.reset_previous_transform()
             pos = event.position()
             delta = (self.event_start - pos).y()
+            if self.event_inverted:
+                delta *= -1
             self.event_start = pos
             self.zoom(delta * 20, self.event_anchor)
             event.accept()

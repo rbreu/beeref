@@ -17,109 +17,34 @@ from functools import partial
 import logging
 
 from PyQt6 import QtWidgets, QtCore
-from PyQt6.QtCore import Qt
 
-from beeref import constants
 from beeref.config import KeyboardSettings, settings_events
-from beeref.config.controls import MouseConfig
+from beeref.config.controls import MouseWheelConfig
+from beeref.widgets.controls.common import (
+    MouseControlsEditorBase,
+    MouseControlsModelBase,
+)
 
 
 logger = logging.getLogger(__name__)
 
 
-class MouseWheelModifiersEditor(QtWidgets.QDialog):
-
-    saved = QtCore.pyqtSignal()
+class MouseWheelModifiersEditor(MouseControlsEditorBase):
 
     def __init__(self, parent, index):
-        super().__init__(parent)
-        self.action = KeyboardSettings.MOUSEWHEEL_ACTIONS[index.row()]
-        self.setWindowTitle(f'MouseWheel Controls for: {self.action.text}')
-        self.old_modifiers = self.action.get_modifiers()
-        self.remove_from_other = None
-        self.ignore_on_changed = False
-
-        self.setAutoFillBackground(True)
-        layout = QtWidgets.QVBoxLayout()
-
-        self.checkboxes = {}
-        for mod in self.action.MODIFIER_MAP.keys():
-            checkbox = QtWidgets.QCheckBox(mod)
-            checkbox.setChecked(mod in self.old_modifiers)
-            checkbox.stateChanged.connect(partial(self.on_changed, mod))
-            self.checkboxes[mod] = checkbox
-            layout.addWidget(checkbox)
-
-        buttons = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.Cancel
-            | QtWidgets.QDialogButtonBox.StandardButton.Ok)
-        buttons.accepted.connect(self.on_save)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-        self.setLayout(layout)
-        self.setModal(True)
+        self.init_dialog(parent, index, KeyboardSettings.MOUSEWHEEL_ACTIONS,
+                         'MouseWheel Controls for:')
+        self.init_modifiers_input()
+        self.init_button_row()
         self.show()
 
-    def on_changed(self, modifier, value):
-        """Ensure that when 'No Modifiers' is checked, nothing else is
-        checked at the same time.
-        """
-        if self.ignore_on_changed:
-            return
+    def get_temp_action(self):
+        return MouseWheelConfig(
+            modifiers=self.get_modifiers(),
+            group=None, text=None, invertible=None, id=None)
 
-        checked = value == Qt.CheckState.Checked.value
-        self.ignore_on_changed = True
-
-        if checked and modifier == 'No Modifier':
-            for key, checkbox in self.checkboxes.items():
-                if key == modifier:
-                    continue
-                checkbox.setChecked(False)
-
-        if checked and modifier != 'No Modifier':
-            self.checkboxes['No Modifier'].setChecked(False)
-
-        self.ignore_on_changed = False
-
-    def get_modifiers(self):
-        modifiers = [key for key, checkbox in self.checkboxes.items()
-                     if checkbox.isChecked()]
-        if 'No Modifier' in modifiers:
-            # In this case the list already should only have the one
-            # entry, but just to make sure...
-            return ['No Modifier']
-        return modifiers
-
-    def set_modifiers(self, modifiers):
-        for key, checkbox in self.checkboxes.items():
-            checkbox.setChecked(key in modifiers)
-
-    def on_save(self):
-        """Don't let users save the same controls on different actions."""
-
-        temp = MouseConfig(button=self.get_button(),
-                           modifiers=self.get_modifiers(),
-                           group=None, text=None, invertible=None, id=None)
-        self.remove_from_other = None
-        for action in KeyboardSettings.MOUSEWHEEL_ACTIONS.values():
-            if action == self.action:
-                continue
-            if action.conflicts_with(temp):
-                msg = ('<p>These controls are already used for:</p>'
-                       f'<p>{action.text}</p>'
-                       '<p>Do you want to remove the other controls'
-                       ' to save these ones?</p>')
-                reply = QtWidgets.QMessageBox.question(
-                    self, 'Save Controls?', msg)
-                if reply == QtWidgets.QMessageBox.StandardButton.Yes:
-                    self.remove_from_other = action
-                    self.accept()
-                    self.saved.emit()
-                else:
-                    self.set_modifiers(self.old_modifiers)
-                return
-        self.accept()
-        self.saved.emit()
+    def reset_inputs(self):
+        self.set_modifiers(self.old_modifiers)
 
 
 class MouseWheelDelegate(QtWidgets.QStyledItemDelegate):
@@ -146,101 +71,19 @@ class MouseWheelDelegate(QtWidgets.QStyledItemDelegate):
                 remove_from_other=editor.remove_from_other)
 
 
-class MouseWheelModel(QtCore.QAbstractTableModel):
+class MouseWheelModel(MouseControlsModelBase):
     """An entry in the keyboard shortcuts table."""
 
-    HEADER = ('Action', constants.CHANGED_SYMBOL, 'Modifiers', 'Inverted')
+    COLUMNS = (MouseControlsModelBase.COL_ACTION,
+               MouseControlsModelBase.COL_CHANGED,
+               MouseControlsModelBase.COL_MODIFIERS,
+               MouseControlsModelBase.COL_INVERTED)
 
     def __init__(self):
-        super().__init__()
-        self.settings = KeyboardSettings()
-        self.actions = self.settings.MOUSEWHEEL_ACTIONS
+        super().__init__(KeyboardSettings.MOUSEWHEEL_ACTIONS)
 
-    def rowCount(self, parent):
-        return len(self.actions)
-
-    def columnCount(self, parent):
-        return len(self.HEADER)
-
-    def data(self, index, role):
-        action = self.actions[index.row()]
-
-        if role in (QtCore.Qt.ItemDataRole.DisplayRole,
-                    QtCore.Qt.ItemDataRole.EditRole):
-            if index.column() == 0:
-                return action.text
-            if index.column() == 1 and action.controls_changed():
-                return constants.CHANGED_SYMBOL
-            if index.column() == 2:
-                return ' + '.join(action.get_modifiers())
-            if index.column() == 3:
-                if not action.is_configured() or not action.invertible:
-                    return ''
-                return 'Yes' if action.get_inverted() else 'No'
-
-        if role == QtCore.Qt.ItemDataRole.ToolTipRole:
-            changed = action.controls_changed()
-            if changed and index.column() == 1:
-                return 'Changed from default'
-            if changed and index.column() == 2:
-                if not action.is_configured():
-                    return 'Not configured'
-                else:
-                    default = ' + '.join(action.modifiers)
-
-                return f'Default: {default}'
-            if changed and index.column() == 3:
-                default = 'Yes' if action.inverted else 'No'
-                return f'Default: {default}'
-
-        if role == QtCore.Qt.ItemDataRole.CheckStateRole:
-            if (index.column() == 3
-                    and action.is_configured()
-                    and action.invertible):
-                return (Qt.CheckState.Checked if action.get_inverted()
-                        else Qt.CheckState.Unchecked)
-
-    def setData(self, index, value, role, remove_from_other=None):
-        action = self.actions[index.row()]
-
-        if index.column() == 3:
-            action.set_inverted(
-                True if value == Qt.CheckState.Checked.value else False)
-        else:
-            action.set_modifiers(value)
-            if remove_from_other:
-                # These controls has conflicts with another action and the
-                # user chose to remove the other controls
-                remove_from_other.set_modifiers([])
-                row = list(self.actions.keys()).index(remove_from_other.id)
-                self.dataChanged.emit(self.index(row, 1),
-                                      self.index(row, 3))
-
-        # Whole row might be affected, so excpliclity emit dataChanged
-        self.dataChanged.emit(self.index(index.row(), 1),
-                              self.index(index.row(), 3))
-        return True
-
-    def headerData(self, section, orientation, role):
-        if (role == QtCore.Qt.ItemDataRole.DisplayRole
-                and orientation == QtCore.Qt.Orientation.Horizontal):
-            return self.HEADER[section]
-
-    def flags(self, index):
-        base = (QtCore.Qt.ItemFlag.ItemIsEnabled
-                | QtCore.Qt.ItemFlag.ItemNeverHasChildren)
-        if index.column() <= 1:
-            return base
-        elif index.column() == 2:
-            return (base | QtCore.Qt.ItemFlag.ItemIsEditable)
-        elif index.column() == 3:
-            action = self.actions[index.row()]
-            if action.invertible and action.is_configured():
-                return (base
-                        | QtCore.Qt.ItemFlag.ItemIsEditable
-                        | QtCore.Qt.ItemFlag.ItemIsUserCheckable)
-            else:
-                return base
+    def set_data_on_action(self, action, value):
+        action.set_modifiers(value)
 
 
 class MouseWheelProxy(QtCore.QSortFilterProxyModel):
