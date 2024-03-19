@@ -79,10 +79,11 @@ class MouseConfigBase:
         self.kb_settings.set_value(
             self.SETTINGS_GROUP, f'{self.id}_inverted', value, self.inverted)
 
-    def modifiers_to_qt(self, modifiers):
-        combined = self.MODIFIER_MAP[modifiers[0]]
+    @classmethod
+    def modifiers_to_qt(cls, modifiers):
+        combined = cls.MODIFIER_MAP[modifiers[0]]
         for mod in modifiers[1:]:
-            combined = combined | self.MODIFIER_MAP[mod]
+            combined = combined | cls.MODIFIER_MAP[mod]
         return combined
 
 
@@ -107,6 +108,10 @@ class MouseWheelConfig(MouseConfigBase):
         """Whether controls have been configured for this action."""
         return bool(self.get_modifiers())
 
+    def remove_controls(self):
+        self.set_modifiers([])
+        self.set_inverted(False)
+
     def conflicts_with(self, other):
         """Whether controls conflict with `other`.
 
@@ -120,9 +125,6 @@ class MouseWheelConfig(MouseConfigBase):
             return False
         modifiers = self.get_modifiers()
         return self.modifiers_to_qt(modifiers) == event.modifiers()
-
-    def unset_controls(self):
-        self.set_modifiers(['No Modifiers'])
 
 
 class MouseConfig(MouseConfigBase):
@@ -169,16 +171,17 @@ class MouseConfig(MouseConfigBase):
         """Whether controls have been configured for this action."""
         return self.get_button() != 'Not Configured'
 
+    def remove_controls(self):
+        self.set_button('Not Configured')
+        self.set_modifiers([])
+        self.set_inverted(False)
+
     def matches_event(self, event):
         if not self.is_configured():
             return False
         modifiers = self.get_modifiers()
         return (self.modifiers_to_qt(modifiers) == event.modifiers()
                 and self.BUTTON_MAP[self.get_button()] == event.button())
-
-    def unset_controls(self):
-        self.set_button('Not Configured')
-        self.set_modifiers([])
 
 
 class KeyboardSettings(QtCore.QSettings):

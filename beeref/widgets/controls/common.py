@@ -248,7 +248,7 @@ class MouseControlsModelBase(QtCore.QAbstractTableModel):
             if remove_from_other:
                 # These controls has conflicts with another action and the
                 # user chose to remove the other controls
-                remove_from_other.unset_controls()
+                remove_from_other.remove_controls()
                 row = list(self.actions.keys()).index(remove_from_other.id)
                 self.dataChanged.emit(
                     self.index(row, 0),
