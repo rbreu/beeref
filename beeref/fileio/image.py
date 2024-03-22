@@ -44,9 +44,13 @@ def exif_rotated_image(path=None):
             logger.exception(f'Exif parser failed on image: {path}')
             return img
 
-    if 'orientation' in exifimg.list_all():
-        orientation = exifimg.orientation
-    else:
+    try:
+        if 'orientation' in exifimg.list_all():
+            orientation = exifimg.orientation
+        else:
+            return img
+    except NotImplementedError:
+        logger.exception(f'Exif failed reading orientation of image: {path}')
         return img
 
     transform = QtGui.QTransform()

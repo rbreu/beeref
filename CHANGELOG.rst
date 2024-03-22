@@ -24,6 +24,7 @@ Fixed
   correctly depending on the selected images.
 * Removed black line under marching ants outline of crop mode, which
   would scale with the image and get potentially very thick.
+* Fixed a crash when importing images with unsupported exif orientation info
 
 
 

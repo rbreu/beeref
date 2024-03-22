@@ -29,6 +29,13 @@ def test_exif_rotated_image_exif_unpack_error(qapp, imgfilename3x3):
         assert img.isNull() is False
 
 
+def test_exif_rotated_image_exif_notimplementederror(qapp, imgfilename3x3):
+    with patch('beeref.fileio.image.exif.Image.list_all',
+               side_effect=NotImplementedError()):
+        img = exif_rotated_image(imgfilename3x3)
+        assert img.isNull() is False
+
+
 @pytest.mark.parametrize('path,expected',
                          [('test3x3.png', 'test3x3.png'),
                           ('test3x3_orientation1.jpg', 'test3x3.jpg'),
