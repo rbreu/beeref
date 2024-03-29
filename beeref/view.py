@@ -540,6 +540,7 @@ class BeeGraphicsView(MainControlsMixin,
     def do_insert_images(self, filenames, pos=None):
         if not pos:
             pos = self.get_view_center()
+        self.scene.deselect_all_items()
         self.undo_stack.beginMacro('Insert Images')
         self.worker = fileio.ThreadedIO(
             fileio.load_images,

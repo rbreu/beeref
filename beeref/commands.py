@@ -26,10 +26,11 @@ class InsertItems(QtGui.QUndoCommand):
         self.ignore_first_redo = ignore_first_redo
 
     def redo(self):
-        self.scene.deselect_all_items()
         if self.ignore_first_redo:
             self.ignore_first_redo = False
             return
+
+        self.scene.deselect_all_items()
         if self.position:
             self.old_positions = []
             rect = self.scene.itemsBoundingRect(items=self.items)
