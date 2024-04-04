@@ -30,6 +30,7 @@ Fixed
 * Fixed threading issue when importing images (causing potential
   hangs/weird behaviour)
 * Fixed an intermittent crash when invoking New Scene
+* Fixed bee files hanging on to disk space of deleted images (issue #99)
 
 
 

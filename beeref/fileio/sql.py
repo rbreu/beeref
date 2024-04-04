@@ -261,6 +261,7 @@ class SQLiteIO:
                 if self.worker.canceled:
                     break
         self.delete_items(to_delete)
+        self.ex('VACUUM')
         self.connection.commit()
         if self.worker:
             self.worker.finished.emit(self.filename, [])
