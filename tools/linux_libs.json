@@ -138,7 +138,7 @@
         "libfribidi0",
         "libgcc-s1",
         "libgcrypt20",
-        "libgdk-pixbuf-2.0-0",
+        "libgdk-pixbuf2.0-0",
         "libglib2.0-0",
         "libglvnd0",
         "libglx0",

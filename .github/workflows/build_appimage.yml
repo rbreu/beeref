@@ -8,19 +8,18 @@ jobs:
     name: build_appimage
 
     runs-on: 'ubuntu-20.04'
-    strategy:
 
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11
       - name: Build appimage
         run: |
-          bash tools/build_appimage --version=${{ github.ref_name }} --jsonfile=tools/linux_libs.json
+          python3 tools/build_appimage.py --version=${{ github.ref_name }} --jsonfile=tools/linux_libs.json
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: BeeRef*.appimage
           retention-days: 5
