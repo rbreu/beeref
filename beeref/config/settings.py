@@ -55,6 +55,10 @@ parser.add_argument(
     default=False,
     action='store_true',
     help='draw item\'s transform handle areas for debugging')
+parser.add_argument(
+    '--debug-raise-error',
+    default='',
+    help='immediately exit with given error message')
 
 
 class CommandlineArgs:

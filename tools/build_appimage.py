@@ -137,7 +137,7 @@ ld_paths = ['${APPDIR}' + p for p in paths] + ['${LD_LIBRARY_PATH}']
 ld_paths = ':'.join(ld_paths)
 logger.debug(f'LD_LIBRARY_PATH: {ld_paths}')
 
-content = """#! /bin/bash
+content = ["""#! /bin/bash
 
 # If running from an extracted image, then export ARGV0 and APPDIR
 if [ -z "${APPIMAGE}" ]; then
@@ -154,12 +154,26 @@ export APPIMAGE_COMMAND=$(command -v -- "$ARGV0")
 
 # Export SSL certificate
 export SSL_CERT_FILE="${APPDIR}/opt/_internal/certs.pem"
-"""
-content += f'export LD_LIBRARY_PATH="{ld_paths}"\n'
-content += f'"$APPDIR/opt/python{PYVER}/bin/python{PYVER}" -I -m beeref "$@"\n'
+"""]
+
+runbee = f'"$APPDIR/opt/python{PYVER}/bin/python{PYVER}" -I -m beeref "$@"'
+logfile = '/tmp/BeeRefAppimageLog.txt'
+
+content.extend([
+    f'export LD_LIBRARY_PATH="{ld_paths}"',
+    f'{runbee} 2> >(tee {logfile} >&2)',
+    'if [ $? -ne 0 ]; then',
+    # Workaround for:
+    # https://bugreports.qt.io/browse/QTBUG-114635
+    # See also https://github.com/rbreu/beeref/issues/102
+    f'  if grep -q wl_proxy_marshal_flags {logfile}; then',
+    '    echo "Wayland version error; trying again without Wayland"',
+    f'    QT_QPA_PLATFORM=xcb {runbee}',
+    'fi; fi;'])
+
 
 with open('squashfs-root/AppRun', 'w') as f:
-    f.write(content)
+    f.write('\n'.join(content))
 os.chmod('squashfs-root/AppRun', 0o755)
 
 url = ('https://github.com/AppImage/AppImageKit/releases/download/'
