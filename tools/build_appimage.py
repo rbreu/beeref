@@ -10,6 +10,7 @@
 
 
 import argparse
+import glob
 import json
 import logging
 import os
@@ -176,11 +177,52 @@ with open('squashfs-root/AppRun', 'w') as f:
     f.write('\n'.join(content))
 os.chmod('squashfs-root/AppRun', 0o755)
 
+
+logger.info('Copying appdata.xml...')
+for f in glob.glob('squashfs-root/usr/share/metainfo/*'):
+    os.remove(f)
+
+filename = 'org.beeref.BeeRef.appdata.xml'
+shutil.copyfile(filename, f'squashfs-root/usr/share/metainfo/{filename}')
+
+logger.info('Writing .desktop...')
+for f in glob.glob('squashfs-root/usr/share/applications/*'):
+    os.remove(f)
+for f in glob.glob('squashfs-root/*.desktop'):
+    os.remove(f)
+
+content = f"""[Desktop Entry]
+Name=BeeRef
+GenericName=Image Viewer
+Comment=A simple reference image viewer
+Terminal=false
+Exec=BeeRef-{BEEVERSION}
+Type=Application
+Icon=logo
+
+MimeType=application/x-beeref;
+Categories=Qt;KDE;Graphics;
+X-KDE-NativeMimeType=application/x-beeref
+X-KDE-ExtraNativeMimeTypes=
+
+X-AppImage-Version={BEEVERSION}
+"""
+
+filename = 'squashfs-root/usr/share/applications/org.beeref.BeeRef.desktop'
+with open(filename, 'w') as f:
+    f.write(content)
+os.symlink('usr/share/applications/org.beeref.BeeRef.desktop',
+           'squashfs-root/BeeRef.desktop')
+
+logger.info('Copying logos...')
+shutil.copyfile('./beeref/assets/logo.svg', 'squashfs-root/logo.svg')
+shutil.copyfile('./beeref/assets/logo.png', 'squashfs-root/.DirIcon')
+
+
 url = ('https://github.com/AppImage/AppImageKit/releases/download/'
        'continuous/appimagetool-x86_64.AppImage')
 
 download_file(url, filename='appimagetool.appimage')
 run_command('./appimagetool.appimage',
             'squashfs-root',
-            f'BeeRef-{BEEVERSION}.appimage',
-            '--no-appstream')
+            f'BeeRef-{BEEVERSION}.appimage')

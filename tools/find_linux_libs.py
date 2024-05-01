@@ -101,15 +101,19 @@ if os.path.exists(args.jsonfile):
         data = json.loads(f.read())
     known_libs = data['libs']
     packages = set(data['packages'])
+    excludes = set(data['excludes'])
 else:
     logger.info(f'No file {args.jsonfile}; starting from scratch')
     known_libs = []
     packages = set()
+    excludes = set()
 
 
 for lib in iter_lsofoutput(output):
     links = what_links_to(lib)
-    if len(links) == 1:
+    if len(links) == 0:
+        pass
+    elif len(links) == 1:
         lib = links[0]
     else:
         logger.warning(f'Double check: {lib} {links}')
@@ -117,7 +121,7 @@ for lib in iter_lsofoutput(output):
     if lib in known_libs:
         logger.debug(f'Found known lib: {lib}')
     else:
-        logger.debug(f'Found unknown lib: {lib}')
+        logger.debug(f'Found new lib: {lib}')
         libs.append(lib)
 
 
@@ -155,11 +159,11 @@ for line in response.splitlines():
     line = strip_minor_versions(line)
     exclude_masterlist.add(line)
 
-excludes = []
+
 for ex in exclude_masterlist:
     for lib in (libs + known_libs):
         if lib.endswith(ex):
-            excludes.append(ex)
+            excludes.add(ex)
             continue
 
 

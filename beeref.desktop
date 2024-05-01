@@ -1,11 +1,11 @@
 [Desktop Entry]
 Name=BeeRef
-Comment=BeeRef 0.3.3-dev
+GenericName=Image Viewer
+Comment=A simple reference image viewer
 Terminal=false
 Exec=/home/yourname/path/to/BeeRef-0.3.3-dev-linux
 Type=Application
 Icon=/home/yourname/path/to/logo.png
-Name[en_US]=BeeRef
 
 MimeType=application/x-beeref;
 Categories=Qt;KDE;Graphics;

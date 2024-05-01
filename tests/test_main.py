@@ -33,6 +33,7 @@ def test_main(args_mock, app_mock, qapp):
     app_mock.return_value = qapp
     args_mock.return_value.filename = None
     args_mock.return_value.loglevel = 'WARN'
+    args_mock.return_value.debug_raise_error = ''
     with patch.object(qapp, 'exec') as exec_mock:
         main()
         args_mock.assert_called_once_with(with_check=True)

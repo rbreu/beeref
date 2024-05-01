@@ -4,7 +4,7 @@
     <launchable type="desktop-id">org.beeref.BeeRef.desktop</launchable>
     <name>BeeRef</name>
     <developer_name>BeeRef</developer_name>
-    <summary>A Simple Reference Image Viewer</summary>
+    <summary>A simple reference image viewer</summary>
     <metadata_license>CC0-1.0</metadata_license>
     <project_license>GPL-3.0</project_license>
     <url type="homepage">https://beeref.org/</url>
@@ -14,11 +14,13 @@
     </description>
 
     <screenshots>
-      <screenshot type="default">https://github.com/rbreu/beeref/blob/main/images/screenshot.png?raw=true</screenshot>
+      <screenshot type="default">
+        <image>https://github.com/rbreu/beeref/blob/main/images/screenshot.png?raw=true</image>
+      </screenshot>
     </screenshots>
 
     <releases>
-        <release version="0.3.3-dev" date="(unreleased)"></release>
+        <!-- <release version="0.3.3-dev" date="(unreleased)"></release> -->
         <release version="0.3.2" date="2024-01-21"></release>
         <release version="0.3.1" date="2023-12-10"></release>
         <release version="0.3.0" date="2023-11-23"></release>
