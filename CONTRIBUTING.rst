@@ -7,12 +7,12 @@ BeeRef is written in Python and PyQt6.
 Developing
 ----------
 
-Optional step: Use pyenv to create a virtual environment:
+Optional step: Use pyenv to create a virtual environment::
 
   pyenv install -v 3.11
   pyenv virtualenv 3.11 beeref
 
-Once the vitrual environment is set up, you can enter it with:
+Once the vitrual environment is set up, you can enter it with::
 
   pyenv activate beeref
 

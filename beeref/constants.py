@@ -19,6 +19,8 @@ VERSION = '0.3.3-dev'
 WEBSITE = 'https://github.com/rbreu/beeref'
 COPYRIGHT = 'Copyright © 2021-2023 Rebecca Breu'
 
+CHANGED_SYMBOL = '✎'
+
 COLORS = {
     # Qt:
     'Active:Base': (60, 60, 60),
@@ -31,6 +33,10 @@ COLORS = {
     'Active:ButtonText': (200, 200, 200),
     'Active:Highlight': (83, 167, 165),
     'Active:Link': (90, 181, 179),
+
+    'Disabled:Base': (40, 40, 40),
+    'Disabled:Window': (40, 40, 40, 50),
+    'Disabled:WindowText': (120, 120, 120),
     'Disabled:Light': (0, 0, 0, 0),
     'Disabled:Text': (140, 140, 140),
 

@@ -114,9 +114,10 @@ class MainControlsMixin:
             self.exit_movewin_mode()
             event.accept()
             return True
-        if (event.button() == Qt.MouseButton.LeftButton
-                and event.modifiers() == (Qt.KeyboardModifier.ControlModifier
-                                          | Qt.KeyboardModifier.AltModifier)):
+
+        action, inverted =\
+            self.control_target.keyboard_settings.mouse_action_for_event(event)
+        if action == 'movewindow':
             self.enter_movewin_mode()
             event.accept()
             return True

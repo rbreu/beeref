@@ -13,6 +13,8 @@ Added
 * Added panning via scrollwheel:
   * Scroll wheel + Shift + Ctrl: pan vertically
   * Scroll wheel + Shift: pan horizontally
+* Make mouse and mouse wheel controls configurable
+  (Settings -> Keyboard & Mouse)
 
 
 Fixed
@@ -24,6 +26,11 @@ Fixed
   correctly depending on the selected images.
 * Removed black line under marching ants outline of crop mode, which
   would scale with the image and get potentially very thick.
+* Fixed a crash when importing images with unsupported exif orientation info
+* Fixed threading issue when importing images (causing potential
+  hangs/weird behaviour)
+* Fixed an intermittent crash when invoking New Scene
+* Fixed bee files hanging on to disk space of deleted images (issue #99)
 
 
 

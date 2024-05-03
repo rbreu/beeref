@@ -23,7 +23,7 @@ from PyQt6.QtCore import Qt
 
 from beeref.actions import ActionsMixin, actions
 from beeref import commands
-from beeref.config import CommandlineArgs, BeeSettings
+from beeref.config import CommandlineArgs, BeeSettings, KeyboardSettings
 from beeref import constants
 from beeref import fileio
 from beeref.fileio.export import exporter_registry
@@ -51,6 +51,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.app = app
         self.parent = parent
         self.settings = BeeSettings()
+        self.keyboard_settings = KeyboardSettings()
         self.welcome_overlay = widgets.welcome_overlay.WelcomeOverlay(self)
 
         self.setBackgroundBrush(
@@ -493,7 +494,7 @@ class BeeGraphicsView(MainControlsMixin,
         widgets.settings.SettingsDialog(self)
 
     def on_action_keyboard_settings(self):
-        widgets.settings.KeyboardSettingsDialog(self)
+        widgets.controls.ControlsDialog(self)
 
     def on_action_help(self):
         widgets.HelpDialog(self)
@@ -540,6 +541,7 @@ class BeeGraphicsView(MainControlsMixin,
     def do_insert_images(self, filenames, pos=None):
         if not pos:
             pos = self.get_view_center()
+        self.scene.deselect_all_items()
         self.undo_stack.beginMacro('Insert Images')
         self.worker = fileio.ThreadedIO(
             fileio.load_images,
@@ -748,17 +750,23 @@ class BeeGraphicsView(MainControlsMixin,
         self.reset_previous_transform()
 
     def wheelEvent(self, event):
-        if event.modifiers() == Qt.KeyboardModifier.NoModifier:
-            self.zoom(event.angleDelta().y(), event.position())
+        action, inverted\
+            = self.keyboard_settings.mousewheel_action_for_event(event)
+
+        delta = event.angleDelta().y()
+        if inverted:
+            delta = delta * -1
+
+        if action == 'zoom':
+            self.zoom(delta, event.position())
             event.accept()
             return
-        if event.modifiers() == (Qt.KeyboardModifier.ShiftModifier
-                                 | Qt.KeyboardModifier.ControlModifier):
-            self.pan(QtCore.QPointF(0, 0.5 * event.angleDelta().y()))
+        if action == 'pan_horizontal':
+            self.pan(QtCore.QPointF(0, 0.5 * delta))
             event.accept()
             return
-        if event.modifiers() == Qt.KeyboardModifier.ShiftModifier:
-            self.pan(QtCore.QPointF(0.5 * event.angleDelta().y(), 0))
+        if action == 'pan_vertical':
+            self.pan(QtCore.QPointF(0.5 * delta, 0))
             event.accept()
             return
 
@@ -784,17 +792,17 @@ class BeeGraphicsView(MainControlsMixin,
             event.accept()
             return
 
-        if (event.button() == Qt.MouseButton.MiddleButton
-                and event.modifiers() == Qt.KeyboardModifier.ControlModifier):
+        action, inverted = self.keyboard_settings.mouse_action_for_event(event)
+
+        if action == 'zoom':
             self.active_mode = self.ZOOM_MODE
             self.event_start = event.position()
             self.event_anchor = event.position()
+            self.event_inverted = inverted
             event.accept()
             return
 
-        if (event.button() == Qt.MouseButton.MiddleButton
-            or (event.button() == Qt.MouseButton.LeftButton
-                and event.modifiers() == Qt.KeyboardModifier.AltModifier)):
+        if action == 'pan':
             logger.trace('Begin pan')
             self.active_mode = self.PAN_MODE
             self.event_start = event.position()
@@ -820,6 +828,8 @@ class BeeGraphicsView(MainControlsMixin,
             self.reset_previous_transform()
             pos = event.position()
             delta = (self.event_start - pos).y()
+            if self.event_inverted:
+                delta *= -1
             self.event_start = pos
             self.zoom(delta * 20, self.event_anchor)
             event.accept()

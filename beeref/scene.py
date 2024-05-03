@@ -45,20 +45,22 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         self.max_z = 0
         self.min_z = 0
         self.Z_STEP = 0.001
-        self.multi_select_item = MultiSelectItem()
-        self.rubberband_item = RubberbandItem()
         self.selectionChanged.connect(self.on_selection_change)
         self.changed.connect(self.on_change)
         self.items_to_add = Queue()
-        self.internal_clipboard = []
         self.edit_item = None
         self.crop_item = None
         self.settings = BeeSettings()
+        self.clear()
+        self._clear_ongoing = False
 
     def clear(self):
+        self._clear_ongoing = True
         super().clear()
         self.internal_clipboard = []
         self.rubberband_item = RubberbandItem()
+        self.multi_select_item = MultiSelectItem()
+        self._clear_ongoing = False
 
     def addItem(self, item):
         logger.debug(f'Adding item {item}')
@@ -452,6 +454,10 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         return (rect.topLeft() + rect.bottomRight()) / 2
 
     def on_selection_change(self):
+        if self._clear_ongoing:
+            # Ignore events while clearing the scene since the
+            # multiselect item will get cleared, too
+            return
         if self.has_multi_selection():
             self.multi_select_item.fit_selection_area(
                 self.itemsBoundingRect(selection_only=True))
@@ -462,6 +468,10 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             self.removeItem(self.multi_select_item)
 
     def on_change(self, region):
+        if self._clear_ongoing:
+            # Ignore events while clearing the scene since the
+            # multiselect item will get cleared, too
+            return
         if (self.multi_select_item.scene()
                 and self.multi_select_item.active_mode is None):
             self.multi_select_item.fit_selection_area(

@@ -16,17 +16,13 @@
 from functools import partial
 import logging
 
-from PyQt6 import QtWidgets, QtCore
+from PyQt6 import QtWidgets
 
 from beeref import constants
-from beeref.actions.actions import actions
-from beeref.config import BeeSettings, KeyboardSettings, settings_events
+from beeref.config import BeeSettings, settings_events
 
 
 logger = logging.getLogger(__name__)
-
-
-CHANGED_SYMBOL = '✎'
 
 
 class GroupBase(QtWidgets.QGroupBox):
@@ -47,7 +43,7 @@ class GroupBase(QtWidgets.QGroupBox):
     def update_title(self):
         title = [self.TITLE]
         if self.settings.value_changed(self.KEY):
-            title.append(CHANGED_SYMBOL)
+            title.append(constants.CHANGED_SYMBOL)
         self.setTitle(' '.join(title))
 
     def on_value_changed(self, value):
@@ -178,222 +174,3 @@ class SettingsDialog(QtWidgets.QDialog):
 
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             BeeSettings().restore_defaults()
-
-
-class KeyboardShortcutsEditor(QtWidgets.QKeySequenceEdit):
-
-    def __init__(self, parent, index):
-        super().__init__(parent)
-        self.action = actions[index.row()]
-        try:
-            self.old_value = self.action.get_shortcuts()[index.column() - 2]
-        except IndexError:
-            self.old_value = ''
-        self.setClearButtonEnabled(True)
-        self.setMaximumSequenceLength(1)
-        self.editingFinished.connect(self.on_editing_finished)
-        self.finished_last_called_with = None
-        self.remove_from_other = None
-
-    def on_editing_finished(self):
-        shortcut = self.keySequence().toString()
-
-        if self.finished_last_called_with == shortcut:
-            # Workaround for bug
-            # https://bugreports.qt.io/browse/QTBUG-40
-            # editingFinished signal is emitted twice because of
-            # the QMessageBox below
-            return
-
-        self.remove_from_other = None
-        self.finished_last_called_with = shortcut
-        for action in actions.values():
-            if action == self.action:
-                continue
-            if shortcut in action.get_shortcuts():
-                txt = ': '.join(action.menu_path + [action['text']])
-                txt = txt.replace('&', '').removesuffix('...')
-                msg = ('<p>This shortcut is already used for:</p>'
-                       f'<p>{txt}</p>'
-                       '<p>Do you want to remove the other shortcut'
-                       ' to save this one?</p>')
-                reply = QtWidgets.QMessageBox.question(
-                    self, 'Save Shortcut?', msg)
-                if reply == QtWidgets.QMessageBox.StandardButton.Yes:
-                    self.remove_from_other = action
-                else:
-                    self.setKeySequence(self.old_value)
-
-
-class KeyboardShortcutsDelegate(QtWidgets.QStyledItemDelegate):
-
-    def createEditor(self, parent, option, index):
-        return KeyboardShortcutsEditor(parent, index)
-
-    def setModelData(self, editor, model, index):
-        model.setData(
-            index,
-            editor.keySequence(),
-            QtCore.Qt.ItemDataRole.EditRole,
-            remove_from_other=editor.remove_from_other)
-
-
-class KeyboardShortcutsModel(QtCore.QAbstractTableModel):
-    """An entry in the keyboard shortcuts table."""
-
-    HEADER = ('Action', '✎', 'Shortcut', 'Alternative')
-
-    def __init__(self):
-        super().__init__()
-        self.settings = KeyboardSettings()
-
-    def rowCount(self, parent):
-        return len(actions)
-
-    def columnCount(self, parent):
-        return len(self.HEADER)
-
-    def data(self, index, role):
-        if role in (QtCore.Qt.ItemDataRole.DisplayRole,
-                    QtCore.Qt.ItemDataRole.EditRole):
-            action = actions[index.row()]
-            txt = ': '.join(action.menu_path + [action['text']])
-            if index.column() == 0:
-                return txt.replace('&', '').removesuffix('...')
-            if index.column() == 1 and action.shortcuts_changed():
-                return CHANGED_SYMBOL
-            if index.column() > 1:
-                return action.get_qkeysequence(index.column() - 2)
-
-        if role == QtCore.Qt.ItemDataRole.ToolTipRole:
-            action = actions[index.row()]
-            changed = action.shortcuts_changed()
-            if changed and index.column() == 1:
-                return 'Changed from default'
-            if changed and index.column() > 1:
-                default = action.get_default_shortcut(index.column() - 2)
-                default = default or '-'
-                return f'Default: {default}'
-
-    def setData(self, index, value, role, remove_from_other=None):
-        action = actions[index.row()]
-        shortcuts = action.get_shortcuts() + [None, None]
-        shortcuts[index.column() - 2] = value.toString()
-        shortcuts = list(filter(bool, shortcuts))
-        if len(shortcuts) != len(set(shortcuts)):
-            # We got the same shortcut twice
-            shortcuts = set(shortcuts)
-        action.set_shortcuts(shortcuts)
-        # Whole row might be affected, so excpliclity emit dataChanged
-        self.dataChanged.emit(self.index(index.row(), 1),
-                              self.index(index.row(), 3))
-
-        if remove_from_other:
-            # This shortcut has conflicts with another action and the
-            # user chose to remove the other shortcut
-            shortcuts = remove_from_other.get_shortcuts()
-            shortcuts.remove(value.toString())
-            remove_from_other.set_shortcuts(shortcuts)
-            row = list(actions.keys()).index(remove_from_other['id'])
-            self.dataChanged.emit(self.index(row, 1),
-                                  self.index(row, 3))
-
-        return True
-
-    def headerData(self, section, orientation, role):
-        if (role == QtCore.Qt.ItemDataRole.DisplayRole
-                and orientation == QtCore.Qt.Orientation.Horizontal):
-            return self.HEADER[section]
-
-    def flags(self, index):
-        base = (QtCore.Qt.ItemFlag.ItemIsEnabled
-                | QtCore.Qt.ItemFlag.ItemNeverHasChildren)
-        if index.column() <= 1:
-            return base
-        else:
-            return (base | QtCore.Qt.ItemFlag.ItemIsEditable)
-
-
-class KeyboardShortcutsProxy(QtCore.QSortFilterProxyModel):
-
-    def __init__(self):
-        super().__init__()
-        self.setSourceModel(KeyboardShortcutsModel())
-        self.setFilterCaseSensitivity(
-            QtCore.Qt.CaseSensitivity.CaseInsensitive)
-
-    def setData(self, index, value, role, remove_from_other=None):
-        result = self.sourceModel().setData(
-            self.mapToSource(index),
-            value,
-            role,
-            remove_from_other=remove_from_other)
-        return result
-
-
-class KeyboardShortcutsView(QtWidgets.QTableView):
-
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.setMinimumSize(QtCore.QSize(400, 200))
-        self.setItemDelegate(KeyboardShortcutsDelegate())
-        self.setShowGrid(False)
-        self.setModel(KeyboardShortcutsProxy())
-        self.horizontalHeader().setSectionResizeMode(
-            0, QtWidgets.QHeaderView.ResizeMode.Stretch)
-        self.horizontalHeader().setSectionResizeMode(
-            1, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
-        self.setSelectionMode(
-            QtWidgets.QHeaderView.SelectionMode.SingleSelection)
-        self.setAlternatingRowColors(True)
-        settings_events.restore_keyboard_defaults.connect(
-            self.on_restore_defaults)
-
-    def on_restore_defaults(self):
-        self.viewport().update()
-
-
-class KeyboardSettingsDialog(QtWidgets.QDialog):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.setWindowTitle('Keyboard Shortcuts')
-        tabs = QtWidgets.QTabWidget()
-
-        # Keyboard shortcuts
-        keyboard = QtWidgets.QWidget(parent)
-        kb_layout = QtWidgets.QVBoxLayout()
-        keyboard.setLayout(kb_layout)
-        table = KeyboardShortcutsView(keyboard)
-        search_input = QtWidgets.QLineEdit()
-        search_input.setPlaceholderText('Search...')
-        search_input.textChanged.connect(
-            lambda value: table.model().setFilterFixedString(value))
-        kb_layout.addWidget(search_input)
-        kb_layout.addWidget(table)
-        tabs.addTab(keyboard, '&Keyboard Shortcuts')
-
-        layout = QtWidgets.QVBoxLayout()
-        self.setLayout(layout)
-        layout.addWidget(tabs)
-
-        # Bottom row of buttons
-        buttons = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.Close)
-        buttons.rejected.connect(self.reject)
-        reset_btn = QtWidgets.QPushButton('&Restore Defaults')
-        reset_btn.setAutoDefault(False)
-        reset_btn.clicked.connect(self.on_restore_defaults)
-        buttons.addButton(reset_btn,
-                          QtWidgets.QDialogButtonBox.ButtonRole.ActionRole)
-
-        layout.addWidget(buttons)
-        self.show()
-
-    def on_restore_defaults(self, *args, **kwargs):
-        reply = QtWidgets.QMessageBox.question(
-            self,
-            'Restore defaults?',
-            'Do you want to restore all settings to their default values?')
-
-        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
-            KeyboardSettings().restore_defaults()
