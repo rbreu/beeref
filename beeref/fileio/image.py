@@ -93,9 +93,12 @@ def load_image(path):
     domain = '.'.join(parse.urlparse(url).netloc.split(".")[-2:])
     img = exif_rotated_image()
     if domain == 'pinterest.com':
-        page_data = request.urlopen(url).read()
-        root = etree.HTML(page_data)
-        url = root.xpath("//img")[0].get('src')
+        try:
+            page_data = request.urlopen(url).read()
+            root = etree.HTML(page_data)
+            url = root.xpath("//img")[0].get('src')
+        except Exception as e:
+            logger.debug(f'Pinterest image download failed: {e}')
     try:
         imgdata = request.urlopen(url).read()
     except URLError as e:
