@@ -43,9 +43,6 @@ def register_item(cls):
 class BeeItemMixin(SelectableMixin):
     """Base for all items added by the user."""
 
-    def sample_color_at(self, pos):
-        return None
-
     def set_pos_center(self, pos):
         """Sets the position using the item's center as the origin point."""
 

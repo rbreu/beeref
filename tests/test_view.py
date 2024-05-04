@@ -658,6 +658,24 @@ def test_on_action_sample_color(view):
     view.cancel_active_modes.assert_called_once_with()
 
 
+def test_on_action_sample_color_when_multi_selection(view, item):
+    view.scene.addItem(item)
+    item.setSelected(True)
+    item2 = BeeTextItem('foo')
+    view.scene.addItem(item2)
+    item2.setSelected(True)
+
+    view.cancel_active_modes = MagicMock()
+    view.scene.multi_select_item.lower_behind_selection = MagicMock()
+    view.on_action_sample_color()
+    assert view.active_mode == view.SAMPLE_COLOR_MODE
+    assert isinstance(view.sample_color_widget, widgets.SampleColorWidget)
+    assert view.viewport().cursor() == Qt.CursorShape.CrossCursor
+    view.cancel_active_modes.assert_called_once_with()
+    view.scene.multi_select_item.lower_behind_selection\
+                                .assert_called_once_with()
+
+
 @patch('PyQt6.QtWidgets.QWidget.create')
 @patch('PyQt6.QtWidgets.QWidget.destroy')
 @patch('PyQt6.QtWidgets.QWidget.show')
@@ -813,6 +831,26 @@ def test_cancel_active_modes_when_sample_color_mode(view):
     assert view.active_mode is None
     assert hasattr(view, 'sample_color_widget') is False
     assert view.viewport().cursor() == Qt.CursorShape.ArrowCursor
+
+
+def test_cancel_sample_color_mode_when_multi_selection(view, item):
+    view.scene.addItem(item)
+    item.setSelected(True)
+    item2 = BeeTextItem('foo')
+    view.scene.addItem(item2)
+    item2.setSelected(True)
+
+    view.scene.multi_select_item.bring_to_front = MagicMock()
+    view.active_mode = view.SAMPLE_COLOR_MODE
+    view.sample_color_widget = widgets.SampleColorWidget(
+        view, MagicMock(), MagicMock())
+    view.viewport().setCursor(Qt.CursorShape.CrossCursor)
+    view.cancel_active_modes()
+
+    assert view.active_mode is None
+    assert hasattr(view, 'sample_color_widget') is False
+    assert view.viewport().cursor() == Qt.CursorShape.ArrowCursor
+    view.scene.multi_select_item.bring_to_front.assert_called_once()
 
 
 @patch('PyQt6.QtGui.QUndoStack.isClean', return_value=True)

@@ -110,6 +110,8 @@ class BeeGraphicsView(MainControlsMixin,
         if hasattr(self, 'sample_color_widget'):
             self.sample_color_widget.hide()
             del self.sample_color_widget
+        if self.scene.has_multi_selection():
+            self.scene.multi_select_item.bring_to_front()
 
     def update_window_title(self):
         clean = self.undo_stack.isClean()
@@ -357,6 +359,11 @@ class BeeGraphicsView(MainControlsMixin,
         logger.debug('Entering sample color mode')
         self.viewport().setCursor(Qt.CursorShape.CrossCursor)
         self.active_mode = self.SAMPLE_COLOR_MODE
+
+        if self.scene.has_multi_selection():
+            # We don't want to sample the multi select item, so
+            # temporarily send it to the back:
+            self.scene.multi_select_item.lower_behind_selection()
 
         pos = self.mapFromGlobal(self.cursor().pos())
         self.sample_color_widget = widgets.SampleColorWidget(

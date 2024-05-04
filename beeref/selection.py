@@ -130,6 +130,9 @@ class BaseItemMixin:
         if self.scene():
             self.scene().cursor_cleared.emit()
 
+    def sample_color_at(self, pos):
+        return None
+
 
 class SelectableMixin(BaseItemMixin):
     """Common code for selectable items: Selection outline, handles etc."""
@@ -640,7 +643,15 @@ class MultiSelectItem(SelectableMixin,
     def selection_action_items(self):
         """The items affected by selection actions like scaling and rotating.
         """
-        return list(self.scene().selectedItems())
+        if self.scene():
+            return list(self.scene().selectedItems())
+        return []
+
+    def lower_behind_selection(self):
+        items = self.selection_action_items()
+        if items:
+            min_z = min(item.zValue() for item in items)
+            self.setZValue(min_z - self.scene().Z_STEP)
 
     def fit_selection_area(self, rect):
         """Updates itself to fit the given selection area."""
