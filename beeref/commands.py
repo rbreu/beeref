@@ -40,6 +40,7 @@ class InsertItems(QtGui.QUndoCommand):
         for item in self.items:
             self.scene.addItem(item)
             item.setSelected(True)
+            item.bring_to_front()
 
     def undo(self):
         self.scene.deselect_all_items()

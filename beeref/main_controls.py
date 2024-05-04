@@ -18,7 +18,7 @@ import logging
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import Qt
 
-from beeref import commands
+from beeref import commands, widgets
 from beeref.items import BeePixmapItem
 from beeref import fileio
 
@@ -80,7 +80,9 @@ class MainControlsMixin:
         elif mimedata.hasImage():
             event.acceptProposedAction()
         else:
-            logger.info('Attempted drop not an image')
+            msg = 'Attempted drop not an image'
+            logger.info(msg)
+            widgets.BeeNotification(self.control_target, msg)
 
     def dragMoveEvent(self, event):
         event.acceptProposedAction()
