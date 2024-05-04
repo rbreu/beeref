@@ -17,12 +17,13 @@ import logging
 import os.path
 import tempfile
 from urllib.error import URLError
-from urllib import request
+from urllib import parse, request
 
 from PyQt6 import QtGui
 
 import exif
 import plum
+from lxml import etree
 
 
 logger = logging.getLogger(__name__)
@@ -89,7 +90,15 @@ def load_image(path):
         return (exif_rotated_image(path), path)
 
     url = bytes(path.toEncoded()).decode()
+    domain = '.'.join(parse.urlparse(url).netloc.split(".")[-2:])
     img = exif_rotated_image()
+    if domain == 'pinterest.com':
+        try:
+            page_data = request.urlopen(url).read()
+            root = etree.HTML(page_data)
+            url = root.xpath("//img")[0].get('src')
+        except Exception as e:
+            logger.debug(f'Pinterest image download failed: {e}')
     try:
         imgdata = request.urlopen(url).read()
     except URLError as e:
