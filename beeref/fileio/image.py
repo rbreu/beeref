@@ -22,8 +22,8 @@ from urllib import parse, request
 from PyQt6 import QtGui
 
 import exif
-import plum
 from lxml import etree
+import plum
 
 
 logger = logging.getLogger(__name__)

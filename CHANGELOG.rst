@@ -31,6 +31,7 @@ Fixed
   hangs/weird behaviour)
 * Fixed an intermittent crash when invoking New Scene
 * Fixed bee files hanging on to disk space of deleted images (issue #99)
+* Fixing Drag @ Drop from pinterest feed (by Randommist)
 
 
 

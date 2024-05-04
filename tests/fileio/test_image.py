@@ -122,3 +122,65 @@ def test_load_image_loads_from_web_url_errors(view, imgfilename3x3):
     img, filename = load_image(QtCore.QUrl(url))
     assert img.isNull() is True
     assert filename == url
+
+
+@httpretty.activate
+def test_load_image_from_pinterest_finds_image(view, imgdata3x3):
+    url = 'http://pinterest.com/a1b2c3/'
+    img_url = 'http://pinterest.com/foo.png'
+    httpretty.register_uri(
+        httpretty.GET,
+        url,
+        body=f'<html><body><img src="{img_url}"/></body></html>',
+    )
+    httpretty.register_uri(
+        httpretty.GET,
+        img_url,
+        body=imgdata3x3,
+    )
+    img, filename = load_image(QtCore.QUrl(url))
+    assert img.isNull() is False
+    assert filename == img_url
+
+
+@httpretty.activate
+def test_load_image_from_pinterest_when_already_image(view, imgdata3x3):
+    img_url = 'http://pinterest.com/foo.png'
+    httpretty.register_uri(
+        httpretty.GET,
+        img_url,
+        body=imgdata3x3,
+    )
+    img, filename = load_image(QtCore.QUrl(img_url))
+    assert img.isNull() is False
+    assert filename == img_url
+
+
+@httpretty.activate
+def test_load_image_from_pinterest_when_img_url_not_found(view, imgdata3x3):
+    url = 'http://pinterest.com/a1b2c3/'
+    img_url = 'http://pinterest.com/foo.png'
+    httpretty.register_uri(
+        httpretty.GET,
+        url,
+        body='<html><body><p>no image here</p></body></html>',
+    )
+    httpretty.register_uri(
+        httpretty.GET,
+        img_url,
+        body=imgdata3x3,
+    )
+    img, filename = load_image(QtCore.QUrl(url))
+    assert img.isNull() is True
+
+
+@httpretty.activate
+def test_load_image_from_pinterest_when_url_errors(view, imgdata3x3):
+    url = 'http://pinterest.com/a1b2c3/'
+    httpretty.register_uri(
+        httpretty.GET,
+        url,
+        status=500,
+    )
+    img, filename = load_image(QtCore.QUrl(url))
+    assert img.isNull() is True
