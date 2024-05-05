@@ -3,7 +3,7 @@ Name=BeeRef
 GenericName=Image Viewer
 Comment=A simple reference image viewer
 Terminal=false
-Exec=/home/yourname/path/to/BeeRef-0.3.3-dev-linux
+Exec=/home/yourname/path/to/BeeRef-0.3.3.appimage
 Type=Application
 Icon=/home/yourname/path/to/logo.png
 
