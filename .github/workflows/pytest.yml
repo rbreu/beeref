@@ -3,13 +3,12 @@ name: pytest
 on: [push, pull_request]
 
 jobs:
-  build:
-
+  pytest:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.11']
-        pyqt-version: ['6.5.0', '6.6.1']
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        pyqt-version: ["6.5.3", "6.7.0"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
