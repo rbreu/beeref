@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "BeeRef"
+version = "0.3.4-dev"
+description = "A simple reference image viewer"
+readme = "README.rst"
+license = {file = "LICENSE"}
+authors = [
+    { name = "Rebecca Breu", email = "rebecca@rbreu.de" },
+]
+requires-python = ">=3.9"
+dependencies = [
+    "exif>=1.3.5,<=1.6.0",
+    "lxml==5.1.0",
+    "pyQt6-Qt6>=6.5.0,<=6.6.1",
+    "pyQt6>=6.5.0,<=6.6.1",
+    "rectangle-packer>=2.0.1,<=2.0.2",
+]
+
+[project.gui-scripts]
+beeref = "beeref.__main__:main"
+
+[project.urls]
+Homepage = "https://beeref.org/"
+Repository = "https://github.com/rbreu/beeref"
+# Documentation =
+Issues = "https://github.com/rbreu/beeref/issues"
+Changelog = "https://github.com/rbreu/beeref/blob/main/CHANGELOG.rst"
