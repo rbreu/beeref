@@ -35,3 +35,7 @@ jobs:
           xvfb-run --auto-servernum --server-num=1 --server-args="-screen 1 1920x1200x24 -ac +extension GLX" pytest --cov --cov-report=xml
       - name: Upload Coverage report to Codecov
         uses: codecov/codecov-action@v4
+        with:
+          verbose: true
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
