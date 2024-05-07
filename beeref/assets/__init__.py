@@ -38,6 +38,7 @@ class BeeAssets:
         logger.debug(f'Assets path: {self.PATH}')
 
         self.logo = QtGui.QIcon(os.path.join(self.PATH, 'logo.png'))
+        assert self.logo.isNull() is False
         self.cursor_rotate = self.cursor_from_image(
             'cursor_rotate.png', (20, 20))
         self.cursor_flip_h = self.cursor_from_image(
@@ -49,6 +50,7 @@ class BeeAssets:
         app = QtWidgets.QApplication.instance()
         scaling = app.primaryScreen().devicePixelRatio()
         img = QtGui.QImage(os.path.join(self.PATH, filename))
+        assert img.isNull() is False
         pixmap = QtGui.QPixmap.fromImage(img)
         pixmap.setDevicePixelRatio(scaling)
         return QtGui.QCursor(
