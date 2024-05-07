@@ -13,8 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
+from importlib.resources import files as rsc_files
 import logging
-import os.path
 
 from PyQt6 import QtCore, QtWidgets, QtGui
 from PyQt6.QtCore import Qt
@@ -66,14 +66,12 @@ class HelpDialog(QtWidgets.QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle(f'{constants.APPNAME} Help')
-        docdir = os.path.join(os.path.dirname(__file__),
-                              '..',
-                              'documentation')
+
         tabs = QtWidgets.QTabWidget()
 
         # Controls
-        with open(os.path.join(docdir, 'controls.html')) as f:
-            controls_txt = f.read()
+        controls_txt = rsc_files(
+            'beeref.documentation').joinpath('controls.html').read_text()
         controls_label = QtWidgets.QLabel(controls_txt)
         controls_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse)

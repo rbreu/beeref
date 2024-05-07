@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
+from importlib.resources import files as rsc_files
 import logging
-import os.path
 
 from PyQt6 import QtGui, QtWidgets
 
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class BeeAssets:
     _instance = None
-    PATH = os.path.dirname(__file__)
+    PATH = rsc_files('beeref.assets')
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -37,7 +37,7 @@ class BeeAssets:
     def on_new(self):
         logger.debug(f'Assets path: {self.PATH}')
 
-        self.logo = QtGui.QIcon(os.path.join(self.PATH, 'logo.png'))
+        self.logo = QtGui.QIcon(str(self.PATH.joinpath('logo.png')))
         assert self.logo.isNull() is False
         self.cursor_rotate = self.cursor_from_image(
             'cursor_rotate.png', (20, 20))
@@ -49,7 +49,7 @@ class BeeAssets:
     def cursor_from_image(self, filename, hotspot):
         app = QtWidgets.QApplication.instance()
         scaling = app.primaryScreen().devicePixelRatio()
-        img = QtGui.QImage(os.path.join(self.PATH, filename))
+        img = QtGui.QImage(str(self.PATH.joinpath(filename)))
         assert img.isNull() is False
         pixmap = QtGui.QPixmap.fromImage(img)
         pixmap.setDevicePixelRatio(scaling)
