@@ -135,6 +135,15 @@ class ArrangeGapWidget(IntegerGroup):
     MAX = 200
 
 
+class AllocationLimitWidget(IntegerGroup):
+    TITLE = 'Maximum Image Size:'
+    HELPTEXT = ('The maximum image size that can be loaded (in megabytes). '
+                'Set to 0 for no limitation.')
+    KEY = 'Items/image_allocation_limit'
+    MIN = 0
+    MAX = 10000
+
+
 class SettingsDialog(QtWidgets.QDialog):
     def __init__(self, parent):
         super().__init__(parent)
@@ -147,6 +156,7 @@ class SettingsDialog(QtWidgets.QDialog):
         misc.setLayout(misc_layout)
         misc_layout.addWidget(ImageStorageFormatWidget(), 0, 0)
         misc_layout.addWidget(ArrangeGapWidget(), 0, 1)
+        misc_layout.addWidget(AllocationLimitWidget(), 1, 0)
         tabs.addTab(misc, '&Miscellaneous')
 
         layout = QtWidgets.QVBoxLayout()

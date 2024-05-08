@@ -107,6 +107,7 @@ def main():
     settings = BeeSettings()
     logger.info(f'Using settings: {settings.fileName()}')
     logger.info(f'Logging to: {logfile_name()}')
+    settings.on_startup()
     args = CommandlineArgs(with_check=True)  # Force checking
     assert not args.debug_raise_error, args.debug_raise_error
 

@@ -35,7 +35,7 @@ from PyQt6 import QtGui
 
 from beeref import constants
 from beeref.items import BeePixmapItem
-from .errors import BeeFileIOError
+from .errors import BeeFileIOError, IMG_LOADING_ERROR_MSG
 from .schema import SCHEMA, USER_VERSION, MIGRATIONS, APPLICATION_ID
 
 
@@ -52,7 +52,7 @@ def handle_sqlite_errors(func):
     def wrapper(self, *args, **kwargs):
         try:
             func(self, *args, **kwargs)
-        except sqlite3.Error as e:
+        except (sqlite3.Error, BeeFileIOError) as e:
             logger.exception(f'Error while reading/writing {self.filename}')
             try:
                 # Try to roll back transaction if there is any
@@ -210,8 +210,15 @@ class SQLiteIO:
             }
 
             if data['type'] == 'pixmap':
-                data['item'] = BeePixmapItem(QtGui.QImage())
-                data['item'].pixmap_from_bytes(row[9])
+                item = BeePixmapItem(QtGui.QImage())
+                item.pixmap_from_bytes(row[9])
+                if item.pixmap().isNull():
+                    item = data['data']['text'] = (
+                        f'Image could not be loaded: {item.filename}\n'
+                        + IMG_LOADING_ERROR_MSG)
+                    data['type'] = 'text'
+                data['item'] = item
+                data['data']['is_editable'] = False
 
             self.scene.add_item_later(data)
 

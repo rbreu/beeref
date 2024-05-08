@@ -26,6 +26,7 @@ from beeref import commands
 from beeref.config import CommandlineArgs, BeeSettings, KeyboardSettings
 from beeref import constants
 from beeref import fileio
+from beeref.fileio.errors import IMG_LOADING_ERROR_MSG
 from beeref.fileio.export import exporter_registry
 from beeref import widgets
 from beeref.items import BeePixmapItem, BeeTextItem
@@ -532,13 +533,12 @@ class BeeGraphicsView(MainControlsMixin,
             errornames = [
                 f'<li>{fn}</li>' for fn in errors]
             errornames = '<ul>%s</ul>' % '\n'.join(errornames)
-            msg = ('{errors} image(s) out of {total} '
-                   'could not be opened:'.format(
-                       errors=len(errors), total=len(errors)))
+            num = len(errors)
+            msg = f'{num} image(s) could not be opened.<br/>'
             QtWidgets.QMessageBox.warning(
                 self,
                 'Problem loading images',
-                msg + errornames)
+                msg + IMG_LOADING_ERROR_MSG + errornames)
         self.scene.add_queued_items()
         self.scene.arrange_optimal()
         self.undo_stack.endMacro()
@@ -631,7 +631,7 @@ class BeeGraphicsView(MainControlsMixin,
             self.undo_stack.push(commands.InsertItems(self.scene, [item], pos))
             return
 
-        msg = 'No image data or text in clipboard'
+        msg = 'No image data or text in clipboard or image too big'
         logger.info(msg)
         widgets.BeeNotification(self, msg)
 

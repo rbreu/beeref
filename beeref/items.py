@@ -85,7 +85,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
     TYPE = 'pixmap'
     CROP_HANDLE_SIZE = 15
 
-    def __init__(self, image, filename=None):
+    def __init__(self, image, filename=None, **kwargs):
         super().__init__(QtGui.QPixmap.fromImage(image))
         self.save_id = None
         self.filename = filename
@@ -602,13 +602,13 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
 
     TYPE = 'text'
 
-    def __init__(self, text=None):
+    def __init__(self, text=None, is_editable=True, **kwargs):
         super().__init__(text or "Text")
         self.save_id = None
         logger.debug(f'Initialized {self}')
         self.is_image = False
         self.init_selectable()
-        self.is_editable = True
+        self.is_editable = is_editable
         self.edit_mode = False
         self.setDefaultTextColor(QtGui.QColor(*COLORS['Scene:Text']))
 

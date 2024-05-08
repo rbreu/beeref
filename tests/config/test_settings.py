@@ -1,8 +1,11 @@
+import os
 import os.path
 import tempfile
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
+
+from PyQt6 import QtGui
 
 from beeref.config.settings import CommandlineArgs
 
@@ -33,6 +36,52 @@ def test_command_line_args_get_unknown():
     with pytest.raises(AttributeError):
         args.foo
     CommandlineArgs._instance = None
+
+
+def test_settings_on_startup_sets_alloc_from_settings(settings):
+    settings.setValue('Items/image_allocation_limit', 66)
+    QtGui.QImageReader.setAllocationLimit(100)
+    settings.on_startup()
+    assert QtGui.QImageReader.allocationLimit() == 66
+
+
+def test_settings_on_startup_sets_alloc_from_environment(settings):
+    settings.setValue('Items/image_allocation_limit', 66)
+    os.environ['QT_IMAGEIO_MAXALLOC'] = '42'
+    QtGui.QImageReader.setAllocationLimit(100)
+    settings.on_startup()
+    assert QtGui.QImageReader.allocationLimit() == 42
+
+
+def test_settings_set_value_without_callback(settings):
+    settings.FIELDS = {'foo/bar': {}}
+    settings.setValue('foo/bar', 100)
+    assert settings.value('foo/bar') == 100
+
+
+def test_settings_set_value_with_callback(settings):
+    foo_callback = MagicMock()
+    settings.FIELDS = {'foo/bar': {'post_save_callback': foo_callback}}
+    settings.setValue('foo/bar', 100)
+    foo_callback.assert_called_once_with(100)
+    assert settings.value('foo/bar') == 100
+
+
+def test_settings_remove_without_callback(settings):
+    settings.FIELDS = {'foo/bar': {}}
+    settings.remove('foo/bar')
+    assert settings.value('foo/bar') is None
+
+
+def test_settings_remove_with_callback(settings):
+    foo_callback = MagicMock()
+    settings.FIELDS = {
+        'foo/bar': {'default': 66,
+                    'post_save_callback': foo_callback}
+    }
+    settings.remove('foo/bar')
+    foo_callback.assert_called_once_with(66)
+    assert settings.value('foo/bar') is None
 
 
 def test_settings_value_or_default_gets_default(settings):

@@ -29,12 +29,16 @@ def test_beerefapplication_fileopenevent(open_mock, qapp, main_window):
 
 @patch('beeref.__main__.BeeRefApplication')
 @patch('beeref.__main__.CommandlineArgs')
-def test_main(args_mock, app_mock, qapp):
+@patch('beeref.config.BeeSettings.on_startup')
+def test_main(startup_mock, args_mock, app_mock, qapp):
     app_mock.return_value = qapp
     args_mock.return_value.filename = None
     args_mock.return_value.loglevel = 'WARN'
     args_mock.return_value.debug_raise_error = ''
+
     with patch.object(qapp, 'exec') as exec_mock:
         main()
-        args_mock.assert_called_once_with(with_check=True)
         exec_mock.assert_called_once_with()
+
+    args_mock.assert_called_once_with(with_check=True)
+    startup_mock.assert_called()

@@ -1,3 +1,15 @@
+0.3.4-dev (unreleased)
+======================
+
+Added
+-----
+
+* Added a setting to change the default memory limit for individual
+  images. If a big image won't load, increase this limit. This
+  setting can be overridden by Qt's default environment variable
+  QT_IMAGEIO_MAXALLOC
+
+
 0.3.3 - 2024-05-05
 ==================
 

@@ -120,21 +120,21 @@ def test_all_migrations(tmpfile):
     assert result[3] == b'bla'
 
 
-def test_sqliteio_ẁrite_meta_application_id(tmpfile):
+def test_sqliteio_write_meta_application_id(tmpfile):
     io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
     io.write_meta()
     result = io.fetchone('PRAGMA application_id')
     assert result[0] == schema.APPLICATION_ID
 
 
-def test_sqliteio_ẁrite_meta_user_version(tmpfile):
+def test_sqliteio_write_meta_user_version(tmpfile):
     io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
     io.write_meta()
     result = io.fetchone('PRAGMA user_version')
     assert result[0] == schema.USER_VERSION
 
 
-def test_sqliteio_ẁrite_meta_foreign_keys(tmpfile):
+def test_sqliteio_write_meta_foreign_keys(tmpfile):
     io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
     io.write_meta()
     result = io.fetchone('PRAGMA foreign_keys')
@@ -463,6 +463,8 @@ def test_sqliteio_read_reads_readonly_text_item(tmpfile, view):
     view.scene.add_queued_items()
     assert len(view.scene.items()) == 1
     item = view.scene.items()[0]
+    assert isinstance(item, BeeTextItem)
+    assert item.is_editable is True
     assert item.isSelected() is False
     assert item.save_id == 1
     assert item.pos().x() == 22.2
@@ -493,6 +495,7 @@ def test_sqliteio_read_reads_readonly_pixmap_item(tmpfile, view, imgdata3x3):
     view.scene.add_queued_items()
     assert len(view.scene.items()) == 1
     item = view.scene.items()[0]
+    assert isinstance(item, BeePixmapItem)
     assert item.isSelected() is False
     assert item.save_id == 1
     assert item.pos().x() == 22.2
@@ -507,6 +510,30 @@ def test_sqliteio_read_reads_readonly_pixmap_item(tmpfile, view, imgdata3x3):
     assert item.crop == QtCore.QRectF(0, 0, 3, 3)
     assert item.opacity() == 1
     assert item.grayscale is False
+    assert view.scene.items_to_add.empty() is True
+
+
+def test_sqliteio_read_reads_readonly_pixmap_item_error(tmpfile, view):
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
+    io.create_schema_on_new()
+    io.ex('INSERT INTO items '
+          '(type, x, y, z, scale, rotation, flip, data) '
+          'VALUES (?, ?, ?, ?, ?, ?, ?, ?) ',
+          ('pixmap', 22.2, 33.3, 0.22, 3.4, 45, -1,
+           json.dumps({'filename': 'bee.png'})))
+    io.ex('INSERT INTO sqlar (item_id, data) VALUES (?, ?)',
+          (1, b'not an image'))
+    io.connection.commit()
+    del io
+
+    io = SQLiteIO(tmpfile, view.scene, readonly=True)
+    io.read()
+    view.scene.add_queued_items()
+    assert len(view.scene.items()) == 1
+    item = view.scene.items()[0]
+    assert isinstance(item, BeeTextItem)
+    assert item.is_editable is False
+    item.toPlainText().startswith('Unknown')
     assert view.scene.items_to_add.empty() is True
 
 

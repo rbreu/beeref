@@ -80,7 +80,7 @@ class MainControlsMixin:
         elif mimedata.hasImage():
             event.acceptProposedAction()
         else:
-            msg = 'Attempted drop not an image'
+            msg = 'Attempted drop not an image or image too big'
             logger.info(msg)
             widgets.BeeNotification(self.control_target, msg)
 

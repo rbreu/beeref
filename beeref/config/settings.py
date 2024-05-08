@@ -15,9 +15,10 @@
 
 import argparse
 import logging
+import os
 import os.path
 
-from PyQt6 import QtCore
+from PyQt6 import QtCore, QtGui
 
 from beeref import constants
 
@@ -117,6 +118,12 @@ class BeeSettings(QtCore.QSettings):
             'cast': int,
             'validate': lambda x: 0 <= x <= 200,
         },
+        'Items/image_allocation_limit': {
+            'default': QtGui.QImageReader.allocationLimit(),
+            'cast': int,
+            'validate': lambda x: x >= 0,
+            'post_save_callback': QtGui.QImageReader.setAllocationLimit,
+        }
     }
 
     def __init__(self):
@@ -131,6 +138,26 @@ class BeeSettings(QtCore.QSettings):
             settings_scope,
             constants.APPNAME,
             constants.APPNAME)
+
+    def on_startup(self):
+        """Settings to be applied on application startup."""
+
+        if os.environ.get('QT_IMAGEIO_MAXALLOC'):
+            alloc = int(os.environ['QT_IMAGEIO_MAXALLOC'])
+        else:
+            alloc = self.valueOrDefault('Items/image_allocation_limit')
+        QtGui.QImageReader.setAllocationLimit(alloc)
+
+    def setValue(self, key, value):
+        super().setValue(key, value)
+        if key in self.FIELDS and 'post_save_callback' in self.FIELDS[key]:
+            self.FIELDS[key]['post_save_callback'](value)
+
+    def remove(self, key):
+        super().remove(key)
+        if key in self.FIELDS and 'post_save_callback' in self.FIELDS[key]:
+            value = self.valueOrDefault(key)
+            self.FIELDS[key]['post_save_callback'](value)
 
     def valueOrDefault(self, key):
         """Get the value for key, or the default value specified in FIELDS.

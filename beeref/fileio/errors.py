@@ -13,6 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
+
+IMG_LOADING_ERROR_MSG = (
+    'Unknown format or too big?\n'
+    'Check Settings -> Miscellaneous -> Maximum Image Size')
+
+
 class BeeFileIOError(Exception):
     def __init__(self, msg, filename):
         self.msg = msg
