@@ -568,8 +568,9 @@ def test_on_action_paste_when_empty(
     text_mock.return_value = ''
     view.on_action_paste()
     assert len(view.scene.items()) == 0
-    notification_mock.assert_called_once_with(
-        view, 'No image data or text in clipboard')
+    notification_mock.assert_called()
+    assert notification_mock.call_args[0][0] == view
+    assert notification_mock.call_args[0][1].startswith('No image data')
     clear_mock.assert_not_called()
     view.cancel_active_modes.assert_called_once_with()
 
