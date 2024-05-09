@@ -279,6 +279,7 @@ class SQLiteIO:
             self.worker.finished.emit(self.filename, [])
 
     def delete_items(self, to_delete):
+        to_delete = [(pk,) for pk in to_delete]
         self.exmany('DELETE FROM items WHERE id=?', to_delete)
         self.exmany('DELETE FROM sqlar WHERE item_id=?', to_delete)
         self.connection.commit()
