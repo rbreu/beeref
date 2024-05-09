@@ -98,8 +98,8 @@ class IntegerGroup(GroupBase):
     def __init__(self):
         super().__init__()
         self.input = QtWidgets.QSpinBox()
-        self.input.setValue(self.settings.valueOrDefault(self.KEY))
         self.input.setRange(self.MIN, self.MAX)
+        self.input.setValue(self.settings.valueOrDefault(self.KEY))
         self.input.valueChanged.connect(self.on_value_changed)
         self.layout.addWidget(self.input)
         self.layout.addStretch(100)

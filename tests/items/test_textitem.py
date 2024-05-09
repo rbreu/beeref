@@ -202,9 +202,9 @@ def test_create_copy(qapp):
     assert copy.toPlainText() == 'foo bar'
     assert copy.pos() == QtCore.QPointF(20, 30)
     assert copy.rotation() == 33
-    assert item.flip() == -1
-    assert item.zValue() == 0.5
-    assert item.scale() == 2.2
+    assert copy.flip() == -1
+    assert copy.zValue() == 0.5
+    assert copy.scale() == 2.2
 
 
 def test_enter_edit_mode(view):

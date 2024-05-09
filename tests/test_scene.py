@@ -1058,6 +1058,14 @@ def test_selected_items_user_only(view):
     assert item2 in selected
 
 
+def test_items_by_tpe(view):
+    item1 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item1)
+    item2 = BeeTextItem('foo')
+    view.scene.addItem(item2)
+    assert list(view.scene.items_by_type('text')) == [item2]
+
+
 def test_items_for_save(view):
     item1 = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item1)

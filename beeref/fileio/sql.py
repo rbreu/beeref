@@ -34,7 +34,7 @@ import tempfile
 from PyQt6 import QtGui
 
 from beeref import constants
-from beeref.items import BeePixmapItem
+from beeref.items import BeePixmapItem, BeeErrorItem
 from .errors import BeeFileIOError, IMG_LOADING_ERROR_MSG
 from .schema import SCHEMA, USER_VERSION, MIGRATIONS, APPLICATION_ID
 
@@ -216,9 +216,8 @@ class SQLiteIO:
                     item = data['data']['text'] = (
                         f'Image could not be loaded: {item.filename}\n'
                         + IMG_LOADING_ERROR_MSG)
-                    data['type'] = 'text'
+                    data['type'] = BeeErrorItem.TYPE
                 data['item'] = item
-                data['data']['is_editable'] = False
 
             self.scene.add_item_later(data)
 
@@ -252,7 +251,13 @@ class SQLiteIO:
                 self.write()
 
     def write_data(self):
-        to_delete = self.fetchall('SELECT id from ITEMS')
+        to_delete = {row[0] for row in self.fetchall('SELECT id from ITEMS')}
+        # We don't want to touch existing items that are displayed as errors:
+        keep = {item.original_save_id
+                for item in self.scene.items_by_type(BeeErrorItem.TYPE)}
+        logger.debug(f'Not saving error items: {keep}')
+        to_delete = to_delete - keep
+
         to_save = list(self.scene.items_for_save())
         if self.worker:
             self.worker.begin_processing.emit(len(to_save))
@@ -260,7 +265,7 @@ class SQLiteIO:
             logger.debug(f'Saving {item} with id {item.save_id}')
             if item.save_id:
                 self.update_item(item)
-                to_delete.remove((item.save_id,))
+                to_delete.remove(item.save_id)
             else:
                 self.insert_item(item)
             if self.worker:

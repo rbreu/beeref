@@ -24,7 +24,7 @@ import rpack
 
 from beeref import commands
 from beeref.config import BeeSettings
-from beeref.items import item_registry
+from beeref.items import item_registry, BeeErrorItem
 from beeref.selection import MultiSelectItem, RubberbandItem
 
 
@@ -399,6 +399,12 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             return list(filter(lambda i: hasattr(i, 'save_id'), items))
         return items
 
+    def items_by_type(self, itype):
+        """Returns all items of the given type."""
+
+        return filter(lambda i: getattr(i, 'TYPE', None) == itype,
+                      self.items())
+
     def items_for_save(self):
 
         """Returns the items that are to be saved.
@@ -496,7 +502,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             if not cls:
                 # Just in case we add new item types in future versions
                 logger.warning(f'Encountered item of unknown type: {typ}')
-                cls = item_registry.get('text')
+                cls = BeeErrorItem
                 data['data'] = {'text': f'Item of unknown type: {typ}'}
             item = cls.create_from_data(**data)
             # Set the values common to all item types:

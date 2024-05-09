@@ -602,13 +602,13 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
 
     TYPE = 'text'
 
-    def __init__(self, text=None, is_editable=True, **kwargs):
+    def __init__(self, text=None, **kwargs):
         super().__init__(text or "Text")
         self.save_id = None
         logger.debug(f'Initialized {self}')
         self.is_image = False
         self.init_selectable()
-        self.is_editable = is_editable
+        self.is_editable = True
         self.edit_mode = False
         self.setDefaultTextColor(QtGui.QColor(*COLORS['Scene:Text']))
 
@@ -689,6 +689,81 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
             event.accept()
             return
         super().keyPressEvent(event)
+
+    def copy_to_clipboard(self, clipboard):
+        clipboard.setText(self.toPlainText())
+
+
+@register_item
+class BeeErrorItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
+    """Class for displaying error messages when an item can't be loaded
+    from a bee file.
+
+    This item will be displayed instead of the original item. It won't
+    save to bee files. The original item will be preserved in the bee
+    file, unless this item gets deleted by the user, or a new bee file
+    is saved.
+    """
+
+    TYPE = 'error'
+
+    def __init__(self, text=None, **kwargs):
+        super().__init__(text or "Text")
+        self.original_save_id = None
+        logger.debug(f'Initialized {self}')
+        self.is_image = False
+        self.init_selectable()
+        self.is_editable = False
+        self.setDefaultTextColor(QtGui.QColor(*COLORS['Scene:Text']))
+
+    @classmethod
+    def create_from_data(cls, **kwargs):
+        data = kwargs.get('data', {})
+        item = cls(**data)
+        return item
+
+    def __str__(self):
+        txt = self.toPlainText()[:40]
+        return (f'Error "{txt}"')
+
+    def contains(self, point):
+        return self.boundingRect().contains(point)
+
+    def paint(self, painter, option, widget):
+        painter.setPen(Qt.PenStyle.NoPen)
+        color = QtGui.QColor(200, 0, 0)
+        brush = QtGui.QBrush(color)
+        painter.setBrush(brush)
+        painter.drawRect(QtWidgets.QGraphicsTextItem.boundingRect(self))
+        option.state = QtWidgets.QStyle.StateFlag.State_Enabled
+        super().paint(painter, option, widget)
+        self.paint_selectable(painter, option, widget)
+
+    def update_from_data(self, **kwargs):
+        self.original_save_id = kwargs.get('save_id', self.original_save_id)
+        self.setPos(kwargs.get('x', self.pos().x()),
+                    kwargs.get('y', self.pos().y()))
+        self.setZValue(kwargs.get('z', self.zValue()))
+        self.setScale(kwargs.get('scale', self.scale()))
+        self.setRotation(kwargs.get('rotation', self.rotation()))
+
+    def create_copy(self):
+        item = BeeErrorItem(self.toPlainText())
+        item.setPos(self.pos())
+        item.setZValue(self.zValue())
+        item.setScale(self.scale())
+        item.setRotation(self.rotation())
+        return item
+
+    def flip(self, *args, **kwargs):
+        """Returns the flip value (1 or -1)"""
+        # Never display error messages flipped
+        return 1
+
+    def do_flip(self, *args, **kwargs):
+        """Flips the item."""
+        # Never flip error messages
+        pass
 
     def copy_to_clipboard(self, clipboard):
         clipboard.setText(self.toPlainText())

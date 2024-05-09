@@ -10,7 +10,7 @@ import pytest
 from beeref.fileio import schema, is_bee_file
 from beeref.fileio.errors import BeeFileIOError
 from beeref.fileio.sql import SQLiteIO
-from beeref.items import BeePixmapItem, BeeTextItem
+from beeref.items import BeePixmapItem, BeeTextItem, BeeErrorItem
 
 
 @pytest.mark.parametrize('filename,expected',
@@ -304,6 +304,8 @@ def test_sqliteio_write_updates_existing_text_item(tmpfile, view):
     item.save_id = 1
     io = SQLiteIO(tmpfile, view.scene, create_new=True)
     io.write()
+    assert io.fetchone('SELECT COUNT(*) from items') == (1,)
+
     item.setScale(0.7)
     item.setPos(20, 30)
     item.setZValue(0.33)
@@ -341,6 +343,8 @@ def test_sqliteio_write_updates_existing_pixmap_item(tmpfile, view):
     item.pixmap_to_bytes = MagicMock(return_value=(b'abc', 'png'))
     io = SQLiteIO(tmpfile, view.scene, create_new=True)
     io.write()
+    assert io.fetchone('SELECT COUNT(*) from items') == (1,)
+
     item.setScale(0.7)
     item.setPos(20, 30)
     item.setZValue(0.33)
@@ -372,6 +376,62 @@ def test_sqliteio_write_updates_existing_pixmap_item(tmpfile, view):
         'grayscale': True,
     }
     assert result[7] == b'abc'
+
+
+def test_sqliteio_write_keeps_pixmap_item_of_error_item(tmpfile, view):
+    item = BeePixmapItem(QtGui.QImage(), filename='bee.png')
+    view.scene.addItem(item)
+    item.setScale(1.3)
+    item.setPos(44, 55)
+    item.setZValue(0.22)
+    item.setRotation(33)
+    item.setOpacity(0.2)
+    item.save_id = 1
+    item.crop = QtCore.QRectF(5, 5, 80, 100)
+    item.pixmap_to_bytes = MagicMock(return_value=(b'abc', 'png'))
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
+    io.write()
+    view.scene.removeItem(item)
+    assert io.fetchone('SELECT COUNT(*) from items') == (1,)
+
+    err_item = BeeErrorItem('errormsg')
+    err_item.original_save_id = 1
+    err_item.setScale(0.7)
+    err_item.setPos(20, 30)
+    err_item.setZValue(0.33)
+    err_item.setRotation(100)
+    view.scene.addItem(err_item)
+    io.create_new = False
+    io.write()
+
+    assert io.fetchone('SELECT COUNT(*) from items') == (1,)
+    result = io.fetchone(
+        'SELECT x, y, z, scale, rotation, flip, items.data, sqlar.data '
+        'FROM items '
+        'INNER JOIN sqlar on sqlar.item_id = items.id')
+    assert result[0] == 44
+    assert result[1] == 55
+    assert result[2] == 0.22
+    assert result[3] == 1.3
+    assert result[4] == 33
+    assert result[5] == 1
+    assert json.loads(result[6]) == {
+        'filename': 'bee.png',
+        'crop': [5, 5, 80, 100],
+        'opacity': 0.2,
+        'grayscale': False,
+    }
+    assert result[7] == b'abc'
+
+
+def test_sqliteio_doesnt_write_error_item_to_new_file(tmpfile, view):
+    err_item = BeeErrorItem('errormsg')
+    err_item.original_save_id = 1
+    view.scene.addItem(err_item)
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
+    io.create_new = True
+    io.write()
+    assert io.fetchone('SELECT COUNT(*) from items') == (0,)
 
 
 def test_sqliteio_write_removes_nonexisting_text_item(tmpfile, view):
@@ -464,7 +524,6 @@ def test_sqliteio_read_reads_readonly_text_item(tmpfile, view):
     assert len(view.scene.items()) == 1
     item = view.scene.items()[0]
     assert isinstance(item, BeeTextItem)
-    assert item.is_editable is True
     assert item.isSelected() is False
     assert item.save_id == 1
     assert item.pos().x() == 22.2
@@ -531,8 +590,7 @@ def test_sqliteio_read_reads_readonly_pixmap_item_error(tmpfile, view):
     view.scene.add_queued_items()
     assert len(view.scene.items()) == 1
     item = view.scene.items()[0]
-    assert isinstance(item, BeeTextItem)
-    assert item.is_editable is False
+    assert isinstance(item, BeeErrorItem)
     item.toPlainText().startswith('Unknown')
     assert view.scene.items_to_add.empty() is True
 

@@ -8,6 +8,7 @@ Added
   images. If a big image won't load, increase this limit. This
   setting can be overridden by Qt's default environment variable
   QT_IMAGEIO_MAXALLOC
+* Display error messages when images can't be loaded from bee files
 
 
 0.3.3 - 2024-05-05

@@ -224,6 +224,7 @@ class SelectableMixin(BaseItemMixin):
         pen.setWidth(self.SELECT_LINE_WIDTH)
         pen.setCosmetic(True)
         painter.setPen(pen)
+        painter.setBrush(QtGui.QBrush())
 
         # Draw the main selection rectangle
         painter.drawRect(self.bounding_rect_unselected())

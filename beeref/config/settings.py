@@ -119,7 +119,7 @@ class BeeSettings(QtCore.QSettings):
             'validate': lambda x: 0 <= x <= 200,
         },
         'Items/image_allocation_limit': {
-            'default': QtGui.QImageReader.allocationLimit(),
+            'default': 256,
             'cast': int,
             'validate': lambda x: x >= 0,
             'post_save_callback': QtGui.QImageReader.setAllocationLimit,
