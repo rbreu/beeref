@@ -14,9 +14,9 @@
     </description>
 
     <screenshots>
-      <screenshot type="default">
-        <image>https://github.com/rbreu/beeref/blob/main/images/screenshot.png?raw=true</image>
-      </screenshot>
+        <screenshot type="default">
+            <image>https://raw.githubusercontent.com/rbreu/beeref/main/images/screenshot.png</image>
+        </screenshot>
     </screenshots>
 
     <releases>
