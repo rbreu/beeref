@@ -8,6 +8,7 @@ from beeref.widgets import (
     BeeNotification,
     ChangeOpacityDialog,
     DebugLogDialog,
+    ExportImagesFileExistsDialog,
     SampleColorWidget,
     SceneToPixmapExporterDialog,
 )
@@ -139,3 +140,15 @@ def test_sample_color_widget_paint_event_when_no_color(view):
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0, 0))
         painter_mock.setBrush.assert_called_once_with(brush)
         painter_mock.drawRect.assert_called_once_with(0, 0, 50, 50)
+
+
+def test_export_images_file_exists_dialog(view):
+    dlg = ExportImagesFileExistsDialog(view, '/tmp/foo.png')
+    assert len(dlg.radio_buttons) == 4
+    assert dlg.get_answer() == 'skip'
+
+
+def test_export_images_file_exists_dialog_get_answer(view):
+    dlg = ExportImagesFileExistsDialog(view, '/tmp/foo.png')
+    dlg.radio_buttons['overwrite'].setChecked(True)
+    assert dlg.get_answer() == 'overwrite'

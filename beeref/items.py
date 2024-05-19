@@ -20,6 +20,7 @@ text).
 from collections import defaultdict
 from functools import cached_property
 import logging
+import os.path
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
@@ -196,6 +197,16 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
                          self.crop.topLeft().y(),
                          self.crop.width(),
                          self.crop.height()]}
+
+    def get_filename_for_export(self, imgformat, save_id_default=None):
+        save_id = self.save_id or save_id_default
+        assert save_id is not None
+
+        if self.filename:
+            basename = os.path.splitext(os.path.basename(self.filename))[0]
+            return f'{save_id:04}-{basename}.{imgformat}'
+        else:
+            return f'{save_id:04}.{imgformat}'
 
     def get_imgformat(self, img):
         """Determines the format for storing this image."""

@@ -296,13 +296,7 @@ class SQLiteIO:
 
         if hasattr(item, 'pixmap_to_bytes'):
             pixmap, imgformat = item.pixmap_to_bytes()
-
-            if item.filename:
-                basename = os.path.splitext(os.path.basename(item.filename))[0]
-                name = f'{item.save_id:04}-{basename}.{imgformat}'
-            else:
-                name = f'{item.save_id:04}.{imgformat}'
-
+            name = item.get_filename_for_export(imgformat)
             self.ex(
                 'INSERT INTO sqlar (item_id, name, mode, sz, data) '
                 'VALUES (?, ?, ?, ?, ?)',

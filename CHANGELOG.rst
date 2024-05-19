@@ -9,6 +9,7 @@ Added
   setting can be overridden by Qt's default environment variable
   QT_IMAGEIO_MAXALLOC
 * Display error messages when images can't be loaded from bee files
+* Added option to export all images from scene (File -> Export Images)
 
 
 0.3.3 - 2024-05-05

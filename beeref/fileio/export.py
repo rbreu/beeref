@@ -15,12 +15,14 @@
 
 import base64
 import logging
+import pathlib
 from xml.etree import ElementTree as ET
 
 from PyQt6 import QtCore, QtGui
 
 from .errors import BeeFileIOError
 from beeref import constants, widgets
+from beeref.items import BeePixmapItem
 
 
 logger = logging.getLogger(__name__)
@@ -46,6 +48,36 @@ def register_exporter(cls):
 
 
 class ExporterBase:
+
+    def emit_begin_processing(self, worker, start):
+        if worker:
+            worker.begin_processing.emit(start)
+
+    def emit_progress(self, worker, progress):
+        if worker:
+            worker.progress.emit(progress)
+
+    def emit_finished(self, worker, filename, errors):
+        filename = str(filename)
+        if worker:
+            worker.finished.emit(filename, errors)
+
+    def emit_user_input_required(self, worker, msg):
+        if worker:
+            worker.user_input_required.emit(msg)
+
+    def handle_export_error(self, filename, error, worker):
+        filename = str(filename)
+        logger.debug(f'Export failed: {error}')
+        if worker:
+            worker.finished.emit(filename, [str(error)])
+            return
+        else:
+            e = error if isinstance(error, Exception) else None
+            raise BeeFileIOError(msg=str(error), filename=filename) from e
+
+
+class SceneExporterBase(ExporterBase):
     """For exporting the scene to a single image."""
 
     def __init__(self, scene):
@@ -67,7 +99,7 @@ class ExporterBase:
 
 
 @register_exporter
-class SceneToPixmapExporter(ExporterBase):
+class SceneToPixmapExporter(SceneExporterBase):
 
     TYPE = ExporterRegistry.DEFAULT_TYPE
 
@@ -108,33 +140,25 @@ class SceneToPixmapExporter(ExporterBase):
 
     def export(self, filename, worker=None):
         logger.debug(f'Exporting scene to {filename}')
-        if worker:
-            worker.begin_processing.emit(1)
-
+        self.emit_begin_processing(worker, 1)
         image = self.render_to_image()
 
         if worker and worker.canceled:
             logger.debug('Export canceled')
-            worker.finished.emit(filename, [])
+            self.emit_finished(worker, filename, [])
             return
 
         if not image.save(filename, quality=90):
-            msg = 'Error writing file'
-            logger.debug(f'Export failed: {msg}')
-            if worker:
-                worker.finished.emit(filename, [msg])
-                return
-            else:
-                raise BeeFileIOError(msg, filename=filename)
+            self.handle_export_error(filename, 'Error writing file', worker)
+            return
 
         logger.debug('Export finished')
-        if worker:
-            worker.progress.emit(1)
-            worker.finished.emit(filename, [])
+        self.emit_progress(worker, 1)
+        self.emit_finished(worker, filename, [])
 
 
 @register_exporter
-class SceneToSVGExporter(ExporterBase):
+class SceneToSVGExporter(SceneExporterBase):
 
     TYPE = 'svg'
 
@@ -222,18 +246,15 @@ class SceneToSVGExporter(ExporterBase):
             element.set('opacity', str(item.opacity()))
 
             svg.append(element)
-            if worker:
-                worker.progress.emit(i)
-                if worker.canceled:
-                    return
+            self.emit_progress(worker, i)
+            if worker and worker.canceled:
+                return
 
         return svg
 
     def export(self, filename, worker=None):
         logger.debug(f'Exporting scene to {filename}')
-        if worker:
-            worker.begin_processing.emit(len(self.scene.items()))
-
+        self.emit_begin_processing(worker, len(self.scene.items()))
         svg = self.render_to_svg(worker)
 
         if worker and worker.canceled:
@@ -248,13 +269,89 @@ class SceneToSVGExporter(ExporterBase):
             with open(filename, 'w') as f:
                 tree.write(f, encoding='unicode', xml_declaration=True)
         except OSError as e:
-            logger.debug(f'Export failed: {e}')
-            if worker:
-                worker.finished.emit(filename, [str(e)])
-                return
-            else:
-                raise BeeFileIOError(msg=str(e), filename=filename) from e
+            self.handle_export_error(filename, e, worker)
+            return
 
         logger.debug('Export finished')
-        if worker:
-            worker.finished.emit(filename, [])
+        self.emit_finished(worker, filename, [])
+
+
+class ImagesToDirectoryExporter(ExporterBase):
+    """Export all images to a folder.
+
+    Not registered in the registry as it is accessed via its own menu entry,
+    not auto-detected by file extension.
+    """
+
+    def __init__(self, scene, dirname):
+        self.scene = scene
+        self.dirname = dirname
+        self.items = list(self.scene.items_by_type(BeePixmapItem.TYPE))
+        self.max_save_id = 0
+        for item in self.items:
+            if item.save_id:
+                self.max_save_id = max(self.max_save_id, item.save_id)
+        self.num_total = len(self.items)
+        self.start_from = 0
+        self.handle_existing = None
+
+    def export(self, worker=None):
+        logger.debug(f'Exporting images to {self.dirname}')
+        logger.debug(f'Starting at {self.start_from}')
+
+        self.emit_begin_processing(worker, self.num_total)
+        self.emit_progress(worker, self.start_from)
+
+        for i, item in enumerate(
+                self.items[self.start_from:], start=self.start_from):
+            if worker and worker.canceled:
+                logger.debug('Export canceled')
+                worker.finished.emit(self.dirname, [])
+                return
+
+            pixmap, imgformat = item.pixmap_to_bytes()
+
+            if item.save_id:
+                filename = item.get_filename_for_export(imgformat)
+            else:
+                self.max_save_id += 1
+                save_id = self.max_save_id
+                filename = item.get_filename_for_export(imgformat, save_id)
+
+            try:
+                path = pathlib.Path(self.dirname) / filename
+                path_exists = path.exists()
+            except OSError as e:
+                self.handle_export_error(self.dirname, e, worker)
+                return
+
+            if path_exists:
+                logger.debug(f'File already exists: {path}')
+                if self.handle_existing is None:
+                    self.start_from = i
+                    self.emit_user_input_required(worker, str(path))
+                    return
+                else:
+                    if self.handle_existing == 'skip':
+                        self.handle_existing = None
+                        logger.debug('Skipping file')
+                        continue
+                    elif self.handle_existing == 'skip_all':
+                        logger.debug('Skipping file')
+                        continue
+                    elif self.handle_existing == 'overwrite':
+                        self.handle_existing = None
+                        logger.debug('Overwrite file')
+                    elif self.handle_existing == 'overwrite_all':
+                        logger.debug('Overwrite file')
+
+            logger.debug(f'Writing file: {path}')
+            try:
+                path.write_bytes(pixmap)
+            except OSError as e:
+                self.handle_export_error(path, e, worker)
+                return
+
+            self.emit_progress(worker, i)
+
+        self.emit_finished(worker, self.dirname, [])

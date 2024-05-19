@@ -27,7 +27,7 @@ from beeref.config import CommandlineArgs, BeeSettings, KeyboardSettings
 from beeref import constants
 from beeref import fileio
 from beeref.fileio.errors import IMG_LOADING_ERROR_MSG
-from beeref.fileio.export import exporter_registry
+from beeref.fileio.export import exporter_registry, ImagesToDirectoryExporter
 from beeref import widgets
 from beeref.items import BeePixmapItem, BeeTextItem
 from beeref.main_controls import MainControlsMixin
@@ -396,7 +396,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.worker.progress.connect(self.on_items_loaded)
         self.worker.finished.connect(self.on_loading_finished)
         self.progress = widgets.BeeProgressDialog(
-            'Loading %s' % filename,
+            f'Loading {filename}',
             worker=self.worker,
             parent=self)
         self.worker.start()
@@ -430,7 +430,7 @@ class BeeGraphicsView(MainControlsMixin,
             fileio.save_bee, filename, self.scene, create_new=create_new)
         self.worker.finished.connect(self.on_saving_finished)
         self.progress = widgets.BeeProgressDialog(
-            'Saving %s' % filename,
+            f'Saving {filename}',
             worker=self.worker,
             parent=self)
         self.worker.start()
@@ -481,7 +481,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.worker = fileio.ThreadedIO(exporter.export, filename)
         self.worker.finished.connect(self.on_export_finished)
         self.progress = widgets.BeeProgressDialog(
-            'Exporting %s' % filename,
+            f'Exporting {filename}',
             worker=self.worker,
             parent=self)
         self.worker.start()
@@ -493,6 +493,39 @@ class BeeGraphicsView(MainControlsMixin,
                 self,
                 'Problem writing file',
                 f'<p>Problem writing file {filename}</p><p>{err_msg}</p>')
+
+    def on_action_export_images(self):
+        directory = os.path.dirname(self.filename) if self.filename else None
+        directory = QtWidgets.QFileDialog.getExistingDirectory(
+            parent=self,
+            caption='Export Images',
+            directory=directory)
+
+        if not directory:
+            return
+
+        logger.debug(f'Got export directory {directory}')
+        self.exporter = ImagesToDirectoryExporter(self.scene, directory)
+        self.worker = fileio.ThreadedIO(self.exporter.export)
+        self.worker.user_input_required.connect(
+            self.on_export_images_file_exists)
+        self.worker.finished.connect(self.on_export_finished)
+        self.progress = widgets.BeeProgressDialog(
+            f'Exporting to {directory}',
+            worker=self.worker,
+            parent=self)
+        self.worker.start()
+
+    def on_export_images_file_exists(self, filename):
+        dlg = widgets.ExportImagesFileExistsDialog(self, filename)
+        if dlg.exec() == QtWidgets.QDialog.DialogCode.Accepted:
+            self.exporter.handle_existing = dlg.get_answer()
+            directory = self.exporter.dirname
+            self.progress = widgets.BeeProgressDialog(
+                f'Exporting to {directory}',
+                worker=self.worker,
+                parent=self)
+            self.worker.start()
 
     def on_action_quit(self):
         logger.info('User quit. Exiting...')

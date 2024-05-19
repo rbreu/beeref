@@ -44,6 +44,7 @@ class BeeProgressDialog(QtWidgets.QProgressDialog):
         worker.begin_processing.connect(self.on_begin_processing)
         worker.progress.connect(self.on_progress)
         worker.finished.connect(self.on_finished)
+        worker.user_input_required.connect(self.on_finished)
         self.canceled.connect(worker.on_canceled)
 
     def on_progress(self, value):
@@ -54,7 +55,7 @@ class BeeProgressDialog(QtWidgets.QProgressDialog):
         logger.debug(f'Beginn progress dialog: {value}')
         self.setMaximum(value)
 
-    def on_finished(self, filename, errors):
+    def on_finished(self, *args, **kwargs):
         logger.debug('Finished progress dialog')
         self.setValue(self.maximum())
         self.reset()
@@ -296,3 +297,42 @@ class SampleColorWidget(QtWidgets.QWidget):
         self.set_pos(pos)
         self.color = color
         self.repaint()
+
+
+class ExportImagesFileExistsDialog(QtWidgets.QDialog):
+
+    def __init__(self, parent, filename):
+        super().__init__(parent)
+        self.setWindowTitle('File exists')
+
+        layout = QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
+
+        label = QtWidgets.QLabel(
+            f'File already exists:\n{filename}')
+        layout.addWidget(label)
+
+        choices = (('skip', 'Skip this file'),
+                   ('skip_all', 'Skip all existing files'),
+                   ('overwrite', 'Overwrite this file'),
+                   ('overwrite_all', 'Overwrite all existing files'))
+
+        self.radio_buttons = {}
+        for (value, label) in choices:
+            btn = QtWidgets.QRadioButton(label)
+            self.radio_buttons[value] = btn
+            layout.addWidget(btn)
+        self.radio_buttons['skip'].setChecked(True)
+
+        # Bottom row of buttons
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel)
+        buttons.rejected.connect(self.reject)
+        buttons.accepted.connect(self.accept)
+        layout.addWidget(buttons)
+
+    def get_answer(self):
+        for value, btn in self.radio_buttons.items():
+            if btn.isChecked():
+                return value

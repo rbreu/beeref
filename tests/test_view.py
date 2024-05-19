@@ -1,4 +1,5 @@
 import os.path
+from pathlib import Path
 import shutil
 import sqlite3
 from unittest.mock import MagicMock, patch, mock_open
@@ -368,6 +369,99 @@ def test_on_action_export_scene_settings_input_canceled(
     view.on_action_export_scene()
     value_mock.assert_not_called()
     assert os.path.exists(filename) is False
+
+
+@patch('PyQt6.QtWidgets.QFileDialog.getExistingDirectory')
+def test_on_action_export_images(
+        dir_mock, view, tmpdir, qtbot, imgfilename3x3):
+    item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
+    view.scene.addItem(item)
+    dir_mock.return_value = tmpdir
+    view.on_export_finished = MagicMock()
+
+    view.on_action_export_images()
+    qtbot.waitUntil(lambda: view.on_export_finished.called is True)
+    view.on_export_finished.assert_called_once_with(tmpdir, [])
+    assert os.path.exists(os.path.join(tmpdir, '0001.png'))
+
+
+@patch('PyQt6.QtWidgets.QFileDialog.getExistingDirectory')
+def test_on_action_export_images_no_dirname(
+        dir_mock, view, tmpdir, qtbot, imgfilename3x3):
+    item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
+    view.scene.addItem(item)
+    dir_mock.return_value = None
+    view.on_export_finished = MagicMock()
+
+    view.on_action_export_images()
+    view.on_export_finished.assert_not_called()
+    assert os.path.exists(os.path.join(tmpdir, '0001.png')) is False
+
+
+@patch('beeref.widgets.ExportImagesFileExistsDialog.exec',
+       return_value=QtWidgets.QDialog.DialogCode.Accepted)
+@patch('beeref.widgets.ExportImagesFileExistsDialog.get_answer',
+       return_value='overwrite')
+@patch('PyQt6.QtWidgets.QFileDialog.getExistingDirectory')
+def test_on_action_export_images_file_exists_overwrite(
+        dir_mock, answer_mock, exec_mock, view, tmpdir, qtbot, imgfilename3x3):
+    item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
+    view.scene.addItem(item)
+    dir_mock.return_value = tmpdir
+    view.on_export_finished = MagicMock()
+
+    imgfilename = Path(tmpdir) / '0001.png'
+    imgfilename.write_text('foo')
+
+    view.on_action_export_images()
+    qtbot.waitUntil(lambda: view.on_export_finished.called is True)
+    view.on_export_finished.assert_called_once_with(tmpdir, [])
+    answer_mock.assert_called_once_with()
+    exec_mock.assert_called_once_with()
+    imgfilename.read_bytes().startswith(b'\x89PNG')
+
+
+@patch('beeref.widgets.ExportImagesFileExistsDialog.exec',
+       return_value=QtWidgets.QDialog.DialogCode.Accepted)
+@patch('beeref.widgets.ExportImagesFileExistsDialog.get_answer',
+       return_value='skip')
+@patch('PyQt6.QtWidgets.QFileDialog.getExistingDirectory')
+def test_on_action_export_images_file_exists_skip(
+        dir_mock, answer_mock, exec_mock, view, tmpdir, qtbot, imgfilename3x3):
+    item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
+    view.scene.addItem(item)
+    dir_mock.return_value = tmpdir
+    view.on_export_finished = MagicMock()
+    imgfilename = Path(tmpdir) / '0001.png'
+    imgfilename.write_text('foo')
+
+    view.on_action_export_images()
+    qtbot.waitUntil(lambda: view.on_export_finished.called is True)
+    view.on_export_finished.assert_called_once_with(tmpdir, [])
+    answer_mock.assert_called_once_with()
+    exec_mock.assert_called_once_with()
+    imgfilename.read_text() == 'foo'
+
+
+@patch('beeref.widgets.ExportImagesFileExistsDialog.exec',
+       return_value=QtWidgets.QDialog.DialogCode.Rejected)
+@patch('beeref.widgets.ExportImagesFileExistsDialog.get_answer',
+       return_value='skip')
+@patch('PyQt6.QtWidgets.QFileDialog.getExistingDirectory')
+def test_on_action_export_images_file_exists_canceled(
+        dir_mock, answer_mock, exec_mock, view, tmpdir, qtbot, imgfilename3x3):
+    item = BeePixmapItem(QtGui.QImage(imgfilename3x3))
+    view.scene.addItem(item)
+    dir_mock.return_value = tmpdir
+    view.on_export_finished = MagicMock()
+    imgfilename = Path(tmpdir) / '0001.png'
+    imgfilename.write_text('foo')
+
+    view.on_action_export_images()
+    qtbot.waitUntil(lambda: exec_mock.called is True)
+    view.on_export_finished.assert_not_called()
+    answer_mock.assert_not_called()
+    imgfilename.read_text() == 'foo'
 
 
 @patch('beeref.widgets.settings.SettingsDialog.show')

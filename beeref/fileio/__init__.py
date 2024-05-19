@@ -87,6 +87,7 @@ class ThreadedIO(QtCore.QThread):
     progress = QtCore.pyqtSignal(int)
     finished = QtCore.pyqtSignal(str, list)
     begin_processing = QtCore.pyqtSignal(int)
+    user_input_required = QtCore.pyqtSignal(str)
 
     def __init__(self, func, *args, **kwargs):
         super().__init__()

@@ -98,6 +98,43 @@ def test_get_extra_save_data(item):
     }
 
 
+def test_get_filename_for_export_when_save_id_and_filename(item):
+    item.filename = 'foo.png'
+    item.save_id = 5
+    assert item.get_filename_for_export('jpg', 8) == '0005-foo.jpg'
+
+
+def test_get_filename_for_export_when_save_id_and_no_filename(item):
+    item.filename = None
+    item.save_id = 5
+    assert item.get_filename_for_export('jpg', 8) == '0005.jpg'
+
+
+def test_get_filename_for_export_when_no_save_id_and_filename(item):
+    item.filename = 'foo.png'
+    item.save_id = None
+    assert item.get_filename_for_export('jpg', 8) == '0008-foo.jpg'
+
+
+def test_get_filename_for_export_when_no_save_id_and_no_filename(item):
+    item.filename = None
+    item.save_id = None
+    assert item.get_filename_for_export('jpg', 8) == '0008.jpg'
+
+
+def test_get_filename_for_export_when_save_id_and_no_default(item):
+    item.filename = 'foo.png'
+    item.save_id = 5
+    assert item.get_filename_for_export('jpg') == '0005-foo.jpg'
+
+
+def test_get_filename_for_export_when_no_save_id_and_no_default(item):
+    item.filename = 'foo.png'
+    item.save_id = None
+    with pytest.raises(AssertionError):
+        assert item.get_filename_for_export('jpg')
+
+
 def test_get_imgformat_test_with_real_image(
         qapp, imgfilename3x3, item, settings):
     settings.setValue('Items/image_storage_format', 'best')
