@@ -12,6 +12,15 @@ Added
 * Added option to export all images from scene (File -> Export Images)
 
 
+Fixed
+-----
+
+* Fixed a case where adding/importing an image would hang while
+  reading unsupported exif data (#111)
+* Fixed a hang when saving an open bee file that has been removed
+  since being opened
+
+
 0.3.3 - 2024-05-05
 ==================
 

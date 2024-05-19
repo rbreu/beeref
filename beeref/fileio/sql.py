@@ -52,7 +52,7 @@ def handle_sqlite_errors(func):
     def wrapper(self, *args, **kwargs):
         try:
             func(self, *args, **kwargs)
-        except (sqlite3.Error, BeeFileIOError) as e:
+        except Exception as e:
             logger.exception(f'Error while reading/writing {self.filename}')
             try:
                 # Try to roll back transaction if there is any
@@ -80,6 +80,7 @@ class SQLiteIO:
         self.filename = filename
         self.readonly = readonly
         self.worker = worker
+        self.retry = False
 
     def __del__(self):
         self._close_connection()
@@ -109,7 +110,13 @@ class SQLiteIO:
         self._connection = sqlite3.connect(uri, uri=True)
         self._cursor = self.connection.cursor()
         if not self.create_new:
-            self._migrate()
+            try:
+                self._migrate()
+            except Exception:
+                # Updating a file failed; try creating it from scratch instead
+                logger.exception('Error migrating bee file')
+                self.create_new = True
+                self._establish_connection()
 
     def _migrate(self):
         """Migrate database if necessary."""
@@ -236,16 +243,19 @@ class SQLiteIO:
     def write(self):
         if self.readonly:
             raise sqlite3.OperationalError(
-                'attempt to write a readonly database')
+                'Attempt to write to a readonly database')
         try:
             self.create_schema_on_new()
             self.write_data()
-        except sqlite3.Error:
-            if self.create_new:
-                # If writing to a new file fails, we can't recover
+        except Exception:
+            if self.retry:
+                # Trying to recover failed
                 raise
             else:
-                # Updating a file failed; try creating it from scratch instead
+                self.retry = True
+                # Try creating file from scratch and save again
+                logger.exception(
+                    f'Updating to existing file {self.filename} failed')
                 self.create_new = True
                 self._close_connection()
                 self.write()

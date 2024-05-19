@@ -472,11 +472,22 @@ def test_sqliteio_write_removes_nonexisting_pixmap_item(tmpfile, view):
 
 def test_sqliteio_write_update_recovers_from_borked_file(view, tmpfile):
     item = BeePixmapItem(QtGui.QImage(), filename='bee.png')
+    item.save_id = 1
     view.scene.addItem(item)
 
     with open(tmpfile, 'w') as f:
         f.write('foobar')
 
+    io = SQLiteIO(tmpfile, view.scene, create_new=False)
+    io.write()
+    result = io.fetchone('SELECT COUNT(*) FROM items')
+    assert result[0] == 1
+
+
+def test_sqliteio_write_update_recovers_from_nonexisting_file(view, tmpfile):
+    item = BeePixmapItem(QtGui.QImage(), filename='bee.png')
+    item.save_id = 1
+    view.scene.addItem(item)
     io = SQLiteIO(tmpfile, view.scene, create_new=False)
     io.write()
     result = io.fetchone('SELECT COUNT(*) FROM items')

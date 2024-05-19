@@ -49,7 +49,7 @@ def save_bee(filename, scene, create_new=False, worker=None):
     logger.debug(f'Create new: {create_new}')
     io = SQLiteIO(filename, scene, create_new, worker=worker)
     io.write()
-    logger.info('Saved!')
+    logger.info('End save')
 
 
 def load_images(filenames, pos, scene, worker):
