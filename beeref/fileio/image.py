@@ -50,7 +50,7 @@ def exif_rotated_image(path=None):
             orientation = exifimg.orientation
         else:
             return img
-    except NotImplementedError:
+    except (NotImplementedError, ValueError):
         logger.exception(f'Exif failed reading orientation of image: {path}')
         return img
 
