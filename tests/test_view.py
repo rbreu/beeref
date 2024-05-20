@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch, mock_open
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
-from beeref import widgets
+from beeref import commands, widgets
 from beeref.actions import actions
 from beeref.config import logfile_name
 from beeref.items import BeePixmapItem, BeeTextItem
@@ -153,6 +153,88 @@ def test_fit_rect_toggle_when_previous(center_mock, fit_mock, view):
     assert view.get_scale() == 2
 
 
+@patch('PyQt6.QtWidgets.QMessageBox.question')
+def test_get_confirmation_unsaved_changes_when_no_changes(
+        dlg_mock, settings, view, item):
+    view.scene.addItem(item)
+    assert view.undo_stack.isClean()
+    assert view.get_confirmation_unsaved_changes('foo') is True
+    dlg_mock.assert_not_called()
+
+
+@patch('PyQt6.QtWidgets.QMessageBox.question')
+def test_get_confirmation_unsaved_changes_when_changes_confirmation_disabled(
+        dlg_mock, settings, view, item):
+    settings.setValue('Save/confirm_close_unsaved', False)
+    view.undo_stack.push(
+        commands.InsertItems(view.scene, [item], QtCore.QPointF(0, 0)))
+    assert view.undo_stack.isClean() is False
+    assert view.get_confirmation_unsaved_changes('foo') is True
+    dlg_mock.assert_not_called()
+
+
+@patch('PyQt6.QtWidgets.QMessageBox.question',
+       return_value=QtWidgets.QMessageBox.StandardButton.Yes)
+def test_get_confirmation_unsaved_changes_when_changes_confirmed(
+        dlg_mock, settings, view, item):
+    view.undo_stack.push(
+        commands.InsertItems(view.scene, [item], QtCore.QPointF(0, 0)))
+    assert view.undo_stack.isClean() is False
+    assert view.get_confirmation_unsaved_changes('foo') is True
+    dlg_mock.assert_called_once()
+
+
+@patch('PyQt6.QtWidgets.QMessageBox.question',
+       return_value=QtWidgets.QMessageBox.StandardButton.Cancel)
+def test_get_confirmation_unsaved_changes_when_changes_not_confirmed(
+        dlg_mock, settings, view, item):
+    view.undo_stack.push(
+        commands.InsertItems(view.scene, [item], QtCore.QPointF(0, 0)))
+    assert view.undo_stack.isClean() is False
+    assert view.get_confirmation_unsaved_changes('foo') is False
+    dlg_mock.assert_called_once()
+
+
+@patch('beeref.view.BeeGraphicsView.get_confirmation_unsaved_changes',
+       return_value=False)
+def test_on_action_new_scene_when_unsaved_changes_not_confirmed(
+        confirm_mock, view):
+    view.clear_scene = MagicMock()
+    view.on_action_new_scene()
+    confirm_mock.assert_called_once()
+    view.clear_scene.assert_not_called()
+
+
+@patch('beeref.view.BeeGraphicsView.get_confirmation_unsaved_changes',
+       return_value=True)
+def test_on_action_new_scene_when_unsaved_changes_confirmed(
+        confirm_mock, view):
+    view.clear_scene = MagicMock()
+    view.on_action_new_scene()
+    confirm_mock.assert_called_once()
+    view.clear_scene.assert_called_once_with()
+
+
+@patch('beeref.view.BeeGraphicsView.get_confirmation_unsaved_changes',
+       return_value=False)
+def test_on_action_open_recent_file_when_unsaved_changes_not_confirmed(
+        confirm_mock, view):
+    view.open_from_file = MagicMock()
+    view.on_action_open_recent_file('foo.bee')
+    confirm_mock.assert_called_once()
+    view.open_from_file.assert_not_called()
+
+
+@patch('beeref.view.BeeGraphicsView.get_confirmation_unsaved_changes',
+       return_value=True)
+def test_on_action_open_recent_file_when_unsaved_changes_confirmed(
+        confirm_mock, view):
+    view.open_from_file = MagicMock()
+    view.on_action_open_recent_file('foo.bee')
+    confirm_mock.assert_called_once()
+    view.open_from_file.assert_called_once_with('foo.bee')
+
+
 @patch('beeref.view.BeeGraphicsView.clear_scene')
 def test_open_from_file(clear_mock, view, qtbot):
     root = os.path.dirname(__file__)
@@ -197,6 +279,19 @@ def test_on_action_open(dialog_mock, view, qtbot):
     assert item.pixmap()
     view.on_loading_finished.assert_called_once_with(filename, [])
     view.cancel_active_modes.assert_called_with()
+
+
+@patch('beeref.view.BeeGraphicsView.get_confirmation_unsaved_changes',
+       return_value=False)
+@patch('PyQt6.QtWidgets.QFileDialog.getOpenFileName')
+def test_on_action_open_when_unsaved_changes_not_confirmed(
+        dialog_mock, confirm_mock, view):
+    view.cancel_active_modes = MagicMock()
+    view.open_from_file = MagicMock()
+    view.on_action_open()
+    view.cancel_active_modes.assert_not_called()
+    dialog_mock.assert_not_called()
+    view.open_from_file.assert_not_called()
 
 
 @patch('PyQt6.QtWidgets.QFileDialog.getOpenFileName')
@@ -462,6 +557,26 @@ def test_on_action_export_images_file_exists_canceled(
     view.on_export_finished.assert_not_called()
     answer_mock.assert_not_called()
     imgfilename.read_text() == 'foo'
+
+
+@patch('beeref.view.BeeGraphicsView.get_confirmation_unsaved_changes',
+       return_value=False)
+@patch('beeref.__main__.BeeRefApplication.quit')
+def test_on_action_quit_when_unsaved_changes_not_confirmed(
+        quit_mock, confirm_mock, view):
+    view.on_action_quit()
+    confirm_mock.assert_called_once()
+    quit_mock.assert_not_called()
+
+
+@patch('beeref.view.BeeGraphicsView.get_confirmation_unsaved_changes',
+       return_value=True)
+@patch('beeref.__main__.BeeRefApplication.quit')
+def test_on_action_quit_when_unsaved_changes_confirmed(
+        quit_mock, confirm_mock, view):
+    view.on_action_quit()
+    confirm_mock.assert_called_once()
+    quit_mock.assert_called_once_with()
 
 
 @patch('beeref.widgets.settings.SettingsDialog.show')

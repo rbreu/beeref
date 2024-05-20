@@ -109,6 +109,10 @@ settings_events = BeeSettingsEvents()
 class BeeSettings(QtCore.QSettings):
 
     FIELDS = {
+        'Save/confirm_close_unsaved': {
+            'default': True,
+            'cast': bool,
+        },
         'Items/image_storage_format': {
             'default': 'best',
             'validate': lambda x: x in ('png', 'jpg', 'best'),

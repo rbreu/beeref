@@ -312,7 +312,7 @@ actions = ActionList([
         id='new_scene',
         text='&New Scene',
         shortcuts=['Ctrl+N'],
-        callback='clear_scene',
+        callback='on_action_new_scene',
     ),
     Action(
         id='fit_scene',

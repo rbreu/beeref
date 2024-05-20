@@ -20,7 +20,7 @@ class FooWidget(QtWidgets.QWidget, ActionsMixin):
     def on_bar(self):
         pass
 
-    def open_from_file(self):
+    def on_action_open_recent_file(self, filename):
         pass
 
 

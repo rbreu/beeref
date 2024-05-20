@@ -10,6 +10,9 @@ Added
   QT_IMAGEIO_MAXALLOC
 * Display error messages when images can't be loaded from bee files
 * Added option to export all images from scene (File -> Export Images)
+* Added a confirmation dialog when attempting to close unsaved files.
+  The confirmation dialog can be disalbed in:
+  Settings -> Miscellaneous -> Confirm when closing an unsaved file
 
 
 Fixed

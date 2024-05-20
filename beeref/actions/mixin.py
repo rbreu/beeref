@@ -123,7 +123,7 @@ class ActionsMixin:
                 qaction = QtGui.QAction(os.path.basename(filename), self)
                 qaction.setShortcuts(action.get_shortcuts())
                 qaction.triggered.connect(
-                    partial(self.open_from_file, filename))
+                    partial(self.on_action_open_recent_file, filename))
                 self.addAction(qaction)
                 action.qaction = qaction
                 self._recent_files_submenu.addAction(qaction)

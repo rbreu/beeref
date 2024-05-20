@@ -17,6 +17,7 @@ from functools import partial
 import logging
 
 from PyQt6 import QtWidgets
+from PyQt6.QtCore import Qt
 
 from beeref import constants
 from beeref.config import BeeSettings, settings_events
@@ -26,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 
 class GroupBase(QtWidgets.QGroupBox):
+    TITLE = None
+    HELPTEXT = None
+    KEY = None
 
     def __init__(self):
         super().__init__()
@@ -50,16 +54,24 @@ class GroupBase(QtWidgets.QGroupBox):
         if self.ignore_value_changed:
             return
 
+        value = self.convert_value_from_qt(value)
         if value != self.settings.valueOrDefault(self.KEY):
             logger.debug(f'Setting {self.KEY} changed to: {value}')
             self.settings.setValue(self.KEY, value)
             self.update_title()
 
+    def convert_value_from_qt(self, value):
+        return value
+
+    def on_restore_defaults(self):
+        new_value = self.settings.valueOrDefault(self.KEY)
+        self.ignore_value_changed = True
+        self.set_value(new_value)
+        self.ignore_value_changed = False
+        self.update_title()
+
 
 class RadioGroup(GroupBase):
-    TITLE = None
-    HELPTEXT = None
-    KEY = None
     OPTIONS = None
 
     def __init__(self):
@@ -79,19 +91,12 @@ class RadioGroup(GroupBase):
         self.ignore_value_changed = False
         self.layout.addStretch(100)
 
-    def on_restore_defaults(self):
-        new_value = self.settings.valueOrDefault(self.KEY)
-        self.ignore_value_changed = True
-        for value, btn in self.buttons.items():
-            btn.setChecked(value == new_value)
-        self.ignore_value_changed = False
-        self.update_title()
+    def set_value(self, value):
+        for old_value, btn in self.buttons.items():
+            btn.setChecked(old_value == value)
 
 
 class IntegerGroup(GroupBase):
-    TITLE = None
-    HELPTEXT = None
-    KEY = None
     MIN = None
     MAX = None
 
@@ -99,18 +104,33 @@ class IntegerGroup(GroupBase):
         super().__init__()
         self.input = QtWidgets.QSpinBox()
         self.input.setRange(self.MIN, self.MAX)
-        self.input.setValue(self.settings.valueOrDefault(self.KEY))
+        self.set_value(self.settings.valueOrDefault(self.KEY))
         self.input.valueChanged.connect(self.on_value_changed)
         self.layout.addWidget(self.input)
         self.layout.addStretch(100)
         self.ignore_value_changed = False
 
-    def on_restore_defaults(self):
-        new_value = self.settings.valueOrDefault(self.KEY)
-        self.ignore_value_changed = True
-        self.input.setValue(new_value)
+    def set_value(self, value):
+        self.input.setValue(value)
+
+
+class SingleCheckboxGroup(GroupBase):
+    LABEL = None
+
+    def __init__(self):
+        super().__init__()
+        self.input = QtWidgets.QCheckBox(self.LABEL)
+        self.set_value(self.settings.valueOrDefault(self.KEY))
+        self.input.checkStateChanged.connect(self.on_value_changed)
+        self.layout.addWidget(self.input)
+        self.layout.addStretch(100)
         self.ignore_value_changed = False
-        self.update_title()
+
+    def set_value(self, value):
+        self.input.setChecked(value)
+
+    def convert_value_from_qt(self, value):
+        return value == Qt.CheckState.Checked
 
 
 class ImageStorageFormatWidget(RadioGroup):
@@ -144,6 +164,15 @@ class AllocationLimitWidget(IntegerGroup):
     MAX = 10000
 
 
+class ConfirmCloseUnsavedWidget(SingleCheckboxGroup):
+    TITLE = 'Confirm when closing an unsaved file:'
+    HELPTEXT = (
+        'When about to close an unsaved file, should BeeRef ask for '
+        'confirmation?')
+    LABEL = 'Confirm when closing'
+    KEY = 'Save/confirm_close_unsaved'
+
+
 class SettingsDialog(QtWidgets.QDialog):
     def __init__(self, parent):
         super().__init__(parent)
@@ -154,10 +183,17 @@ class SettingsDialog(QtWidgets.QDialog):
         misc = QtWidgets.QWidget()
         misc_layout = QtWidgets.QGridLayout()
         misc.setLayout(misc_layout)
-        misc_layout.addWidget(ImageStorageFormatWidget(), 0, 0)
-        misc_layout.addWidget(ArrangeGapWidget(), 0, 1)
-        misc_layout.addWidget(AllocationLimitWidget(), 1, 0)
+        misc_layout.addWidget(ConfirmCloseUnsavedWidget(), 0, 0)
         tabs.addTab(misc, '&Miscellaneous')
+
+        # Images & Items
+        items = QtWidgets.QWidget()
+        items_layout = QtWidgets.QGridLayout()
+        items.setLayout(items_layout)
+        items_layout.addWidget(ImageStorageFormatWidget(), 0, 0)
+        items_layout.addWidget(ArrangeGapWidget(), 0, 1)
+        items_layout.addWidget(AllocationLimitWidget(), 1, 0)
+        tabs.addTab(items, '&Images && Items')
 
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)

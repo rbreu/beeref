@@ -200,6 +200,26 @@ class BeeGraphicsView(MainControlsMixin,
         self.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
         logger.trace('Fit view done')
 
+    def get_confirmation_unsaved_changes(self, msg):
+        confirm = self.settings.valueOrDefault('Save/confirm_close_unsaved')
+        if confirm and not self.undo_stack.isClean():
+            answer = QtWidgets.QMessageBox.question(
+                self,
+                'Discard unsaved changes?',
+                msg,
+                QtWidgets.QMessageBox.StandardButton.Yes |
+                QtWidgets.QMessageBox.StandardButton.Cancel)
+            return answer == QtWidgets.QMessageBox.StandardButton.Yes
+
+        return True
+
+    def on_action_new_scene(self):
+        confirm = self.get_confirmation_unsaved_changes(
+            'There are unsaved changes. '
+            'Are you sure you want to open a new scene?')
+        if confirm:
+            self.clear_scene()
+
     def on_action_fit_scene(self):
         self.fit_rect(self.scene.itemsBoundingRect())
 
@@ -388,6 +408,13 @@ class BeeGraphicsView(MainControlsMixin,
             self.scene.add_queued_items()
             self.on_action_fit_scene()
 
+    def on_action_open_recent_file(self, filename):
+        confirm = self.get_confirmation_unsaved_changes(
+            'There are unsaved changes. '
+            'Are you sure you want to open a new scene?')
+        if confirm:
+            self.open_from_file(filename)
+
     def open_from_file(self, filename):
         logger.info(f'Opening file {filename}')
         self.clear_scene()
@@ -402,6 +429,12 @@ class BeeGraphicsView(MainControlsMixin,
         self.worker.start()
 
     def on_action_open(self):
+        confirm = self.get_confirmation_unsaved_changes(
+            'There are unsaved changes. '
+            'Are you sure you want to open a new scene?')
+        if not confirm:
+            return
+
         self.cancel_active_modes()
         filename, f = QtWidgets.QFileDialog.getOpenFileName(
             parent=self,
@@ -528,8 +561,11 @@ class BeeGraphicsView(MainControlsMixin,
             self.worker.start()
 
     def on_action_quit(self):
-        logger.info('User quit. Exiting...')
-        self.app.quit()
+        confirm = self.get_confirmation_unsaved_changes(
+            'There are unsaved changes. Are you sure you want to quit?')
+        if confirm:
+            logger.info('User quit. Exiting...')
+            self.app.quit()
 
     def on_action_settings(self):
         widgets.settings.SettingsDialog(self)

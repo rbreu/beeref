@@ -16,7 +16,7 @@
 
 IMG_LOADING_ERROR_MSG = (
     'Unknown format or too big?\n'
-    'Check Settings -> Miscellaneous -> Maximum Image Size')
+    'Check Settings -> Images & Items -> Maximum Image Size')
 
 
 class BeeFileIOError(Exception):

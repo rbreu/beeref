@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
-        pyqt-version: ["6.5.3", "6.7.0"]
+        pyqt-version: ["6.7.0"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
