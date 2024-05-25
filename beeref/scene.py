@@ -183,7 +183,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         self.cancel_active_modes()
 
-        items = self.selectedItems(user_only=True)
+        items = sort_by_filename(self.selectedItems(user_only=True))
         if len(items) < 2:
             return
 
@@ -258,15 +258,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         self.undo_stack.push(commands.ArrangeItems(self, items, positions))
 
-    def arrange_by_filename(self):
-        """Order items by filename.
-
-        Items with a filename (ordered by filename) first, then items
-        without a filename but with a save_id follow (ordered by
-        save_id), then remaining items in the order that they have
-        been inserted into the scene.
-        """
-
+    def arrange_square(self):
         self.cancel_active_modes()
         max_width = 0
         max_height = 0

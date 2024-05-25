@@ -102,7 +102,7 @@ menu_structure = [
             'arrange_optimal',
             'arrange_horizontal',
             'arrange_vertical',
-            'arrange_by_filename',
+            'arrange_square',
         ],
     },
     {

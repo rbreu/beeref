@@ -251,20 +251,21 @@ def test_normalize_size_when_no_items(view):
 
 def test_arrange_horizontal(view):
     item1 = BeePixmapItem(QtGui.QImage())
+    item1.filename = 'foo.png'
     view.scene.addItem(item1)
     item1.setSelected(True)
     item1.setPos(10, -100)
+    item1.crop = QtCore.QRectF(0, 0, 100, 80)
+
     item2 = BeePixmapItem(QtGui.QImage())
+    item2.filename = 'bar.png'
     view.scene.addItem(item2)
     item2.setSelected(True)
     item2.setPos(-10, 40)
-    view.scene.cancel_crop_mode = MagicMock()
+    item2.crop = QtCore.QRectF(0, 0, 100, 80)
 
-    with patch.object(item1, 'bounding_rect_unselected',
-                      return_value=QtCore.QRectF(0, 0, 100, 80)):
-        with patch.object(item2, 'bounding_rect_unselected',
-                          return_value=QtCore.QRectF(0, 0, 100, 80)):
-            view.scene.arrange()
+    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.arrange()
 
     assert item2.pos() == QtCore.QPointF(-50, -30)
     assert item1.pos() == QtCore.QPointF(50, -30)
@@ -273,21 +274,23 @@ def test_arrange_horizontal(view):
 
 def test_arrange_horizontal_with_gap(view, settings):
     settings.setValue('Items/arrange_gap', 6)
+
     item1 = BeePixmapItem(QtGui.QImage())
+    item1.filename = 'foo.png'
     view.scene.addItem(item1)
     item1.setSelected(True)
     item1.setPos(10, -100)
+    item1.crop = QtCore.QRectF(0, 0, 100, 80)
+
     item2 = BeePixmapItem(QtGui.QImage())
+    item2.filename = 'bar.png'
     view.scene.addItem(item2)
     item2.setSelected(True)
     item2.setPos(-10, 40)
-    view.scene.cancel_crop_mode = MagicMock()
+    item2.crop = QtCore.QRectF(0, 0, 100, 80)
 
-    with patch.object(item1, 'bounding_rect_unselected',
-                      return_value=QtCore.QRectF(0, 0, 100, 80)):
-        with patch.object(item2, 'bounding_rect_unselected',
-                          return_value=QtCore.QRectF(0, 0, 100, 80)):
-            view.scene.arrange()
+    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.arrange()
 
     assert item2.pos() == QtCore.QPointF(-50, -30)
     assert item1.pos() == QtCore.QPointF(56, -30)
@@ -296,47 +299,50 @@ def test_arrange_horizontal_with_gap(view, settings):
 
 def test_arrange_vertical(view):
     item1 = BeePixmapItem(QtGui.QImage())
+    item1.filename = 'foo.png'
     view.scene.addItem(item1)
     item1.setSelected(True)
     item1.setPos(10, -100)
+    item1.crop = QtCore.QRectF(0, 0, 100, 80)
+
     item2 = BeePixmapItem(QtGui.QImage())
+    item2.filename = 'bar.png'
     view.scene.addItem(item2)
     item2.setSelected(True)
     item2.setPos(-10, 40)
-    view.scene.cancel_crop_mode = MagicMock()
+    item2.crop = QtCore.QRectF(0, 0, 100, 80)
 
-    with patch.object(item1, 'bounding_rect_unselected',
-                      return_value=QtCore.QRectF(0, 0, 100, 80)):
-        with patch.object(item2, 'bounding_rect_unselected',
-                          return_value=QtCore.QRectF(0, 0, 100, 80)):
-            view.scene.arrange(vertical=True)
+    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.arrange(vertical=True)
 
     assert item1.pos() == QtCore.QPointF(0, -70)
     assert item2.pos() == QtCore.QPointF(0, 10)
-    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_arrange_vertical_with_gap(view, settings):
     settings.setValue('Items/arrange_gap', 6)
+
     item1 = BeePixmapItem(QtGui.QImage())
+    item1.filename = 'foo.png'
     view.scene.addItem(item1)
     item1.setSelected(True)
     item1.setPos(10, -100)
+    item1.crop = QtCore.QRectF(0, 0, 100, 80)
+
     item2 = BeePixmapItem(QtGui.QImage())
+    item2.filename = 'bar.png'
     view.scene.addItem(item2)
     item2.setSelected(True)
     item2.setPos(-10, 40)
-    view.scene.cancel_crop_mode = MagicMock()
+    item2.crop = QtCore.QRectF(0, 0, 100, 80)
 
-    with patch.object(item1, 'bounding_rect_unselected',
-                      return_value=QtCore.QRectF(0, 0, 100, 80)):
-        with patch.object(item2, 'bounding_rect_unselected',
-                          return_value=QtCore.QRectF(0, 0, 100, 80)):
-            view.scene.arrange(vertical=True)
+    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.arrange(vertical=True)
 
     assert item1.pos() == QtCore.QPointF(0, -70)
     assert item2.pos() == QtCore.QPointF(0, 16)
-    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.cancel_crop_mode.assert_called_once_with()
 
 
 def test_arrange_when_rotated(view):
@@ -429,7 +435,7 @@ def test_arrange_optimal_when_no_items(view):
     view.scene.cancel_crop_mode.assert_called_once_with()
 
 
-def test_arrange_by_filename(view):
+def test_arrange_square(view):
     item1 = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item1)
     item1.setSelected(True)
@@ -456,7 +462,7 @@ def test_arrange_by_filename(view):
     item4.crop = QtCore.QRectF(0, 0, 100, 80)
 
     view.scene.cancel_crop_mode = MagicMock()
-    view.scene.arrange_by_filename()
+    view.scene.arrange_square()
 
     assert item4.pos() == QtCore.QPointF(-50, -40)
     assert item2.pos() == QtCore.QPointF(60, -30)
@@ -465,7 +471,7 @@ def test_arrange_by_filename(view):
     view.scene.cancel_crop_mode.assert_called_once_with()
 
 
-def test_arrange_by_filename_with_gap(view, settings):
+def test_arrange_square_with_gap(view, settings):
     settings.setValue('Items/arrange_gap', 6)
     item1 = BeePixmapItem(QtGui.QImage())
     view.scene.addItem(item1)
@@ -493,7 +499,7 @@ def test_arrange_by_filename_with_gap(view, settings):
     item4.crop = QtCore.QRectF(0, 0, 100, 80)
 
     view.scene.cancel_crop_mode = MagicMock()
-    view.scene.arrange_by_filename()
+    view.scene.arrange_square()
 
     assert item4.pos() == QtCore.QPointF(-53, -43)
     assert item2.pos() == QtCore.QPointF(63, -33)
@@ -502,9 +508,9 @@ def test_arrange_by_filename_with_gap(view, settings):
     view.scene.cancel_crop_mode.assert_called_once_with()
 
 
-def test_arrange_by_filename_when_no_items(view):
+def test_arrange_square_when_no_items(view):
     view.scene.cancel_crop_mode = MagicMock()
-    view.scene.arrange_by_filename()
+    view.scene.arrange_square()
     view.scene.cancel_crop_mode.assert_called_once_with()
 
 

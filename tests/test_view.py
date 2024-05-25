@@ -1011,9 +1011,9 @@ def test_on_action_arrange_optimal(arrange_mock, view):
     arrange_mock.assert_called_once_with()
 
 
-@patch('beeref.scene.BeeGraphicsScene.arrange_by_filename')
-def test_on_action_arrange_by_filename(arrange_mock, view):
-    view.on_action_arrange_by_filename()
+@patch('beeref.scene.BeeGraphicsScene.arrange_square')
+def test_on_action_arrange_square(arrange_mock, view):
+    view.on_action_arrange_square()
     arrange_mock.assert_called_once_with()
 
 

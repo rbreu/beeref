@@ -250,20 +250,20 @@ actions = ActionList([
     ),
     Action(
         id='arrange_horizontal',
-        text='&Horizontal',
+        text='&Horizontal (by filename)',
         callback='on_action_arrange_horizontal',
         group='active_when_selection',
     ),
     Action(
         id='arrange_vertical',
-        text='&Vertical',
+        text='&Vertical (by filename)',
         callback='on_action_arrange_vertical',
         group='active_when_selection',
     ),
     Action(
-        id='arrange_by_filename',
-        text='By &Filename',
-        callback='on_action_arrange_by_filename',
+        id='arrange_square',
+        text='&Square (by filename)',
+        callback='on_action_arrange_square',
         group='active_when_selection',
     ),
     Action(

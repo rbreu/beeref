@@ -13,8 +13,7 @@ Added
 * Added a confirmation dialog when attempting to close unsaved files.
   The confirmation dialog can be disalbed in:
   Settings -> Miscellaneous -> Confirm when closing an unsaved file
-* Add option to arrange by filename (Arrange -> By Filename)
-
+* Add option to arrange by filename (Arrange -> Square (by filename))
 
 Fixed
 -----
@@ -23,6 +22,12 @@ Fixed
   reading unsupported exif data (#111)
 * Fixed a hang when saving an open bee file that has been removed
   since being opened
+
+Changed
+-------
+
+* Arrange Horiszontal/Vertical now also sort by filename instead of
+  the previous seemingly random behaviour
 
 
 0.3.3 - 2024-05-05

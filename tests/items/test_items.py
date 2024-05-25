@@ -1,6 +1,6 @@
 from PyQt6 import QtGui
 
-from beeref.items import sort_by_filename, BeePixmapItem
+from beeref.items import sort_by_filename, BeePixmapItem, BeeTextItem
 
 
 def test_sort_by_filename(view):
@@ -38,3 +38,9 @@ def test_sort_by_filename_when_only_by_save_id(view):
     item2 = BeePixmapItem(QtGui.QImage())
     item2.save_id = 33
     assert sort_by_filename([item1, item2]) == [item2, item1]
+
+
+def test_sort_by_filename_deals_with_text_items(view):
+    item1 = BeeTextItem('Foo')
+    item2 = BeeTextItem('Bar')
+    assert len(sort_by_filename([item1, item2])) == 2
