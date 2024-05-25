@@ -13,6 +13,7 @@ Added
 * Added a confirmation dialog when attempting to close unsaved files.
   The confirmation dialog can be disalbed in:
   Settings -> Miscellaneous -> Confirm when closing an unsaved file
+* Add option to arrange by filename (Arrange -> By Filename)
 
 
 Fixed

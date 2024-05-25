@@ -41,6 +41,32 @@ def register_item(cls):
     return cls
 
 
+def sort_by_filename(items):
+    """Order items by filename.
+
+    Items with a filename (ordered by filename) first, then items
+    without a filename but with a save_id follow (ordered by
+    save_id), then remaining items in the order that they have
+    been inserted into the scene.
+    """
+
+    items_by_filename = []
+    items_by_save_id = []
+    items_remaining = []
+
+    for item in items:
+        if getattr(item, 'filename', None):
+            items_by_filename.append(item)
+        elif getattr(item, 'save_id', None):
+            items_by_save_id.append(item)
+        else:
+            items_remaining.append(item)
+
+    items_by_filename.sort(key=lambda x: x.filename)
+    items_by_save_id.sort(key=lambda x: x.save_id)
+    return items_by_filename + items_by_save_id + items_remaining
+
+
 class BeeItemMixin(SelectableMixin):
     """Base for all items added by the user."""
 

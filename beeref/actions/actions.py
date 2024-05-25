@@ -261,6 +261,12 @@ actions = ActionList([
         group='active_when_selection',
     ),
     Action(
+        id='arrange_by_filename',
+        text='By &Filename',
+        callback='on_action_arrange_by_filename',
+        group='active_when_selection',
+    ),
+    Action(
         id='change_opacity',
         text='Change &Opacity...',
         callback='on_action_change_opacity',

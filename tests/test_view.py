@@ -993,6 +993,30 @@ def test_on_action_delete_items(view, item):
     view.cancel_active_modes.assert_called_once()
 
 
+@patch('beeref.scene.BeeGraphicsScene.arrange')
+def test_on_action_arrange_horizontal(arrange_mock, view):
+    view.on_action_arrange_horizontal()
+    arrange_mock.assert_called_once_with()
+
+
+@patch('beeref.scene.BeeGraphicsScene.arrange')
+def test_on_action_arrange_vertical(arrange_mock, view):
+    view.on_action_arrange_vertical()
+    arrange_mock.assert_called_once_with(vertical=True)
+
+
+@patch('beeref.scene.BeeGraphicsScene.arrange_optimal')
+def test_on_action_arrange_optimal(arrange_mock, view):
+    view.on_action_arrange_optimal()
+    arrange_mock.assert_called_once_with()
+
+
+@patch('beeref.scene.BeeGraphicsScene.arrange_by_filename')
+def test_on_action_arrange_by_filename(arrange_mock, view):
+    view.on_action_arrange_by_filename()
+    arrange_mock.assert_called_once_with()
+
+
 @patch('beeref.widgets.ChangeOpacityDialog.__init__',
        return_value=None)
 def test_on_action_change_opacity(dialog_mock, view):

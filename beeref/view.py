@@ -324,6 +324,9 @@ class BeeGraphicsView(MainControlsMixin,
     def on_action_arrange_optimal(self):
         self.scene.arrange_optimal()
 
+    def on_action_arrange_by_filename(self):
+        self.scene.arrange_by_filename()
+
     def on_action_change_opacity(self):
         images = list(filter(
             lambda item: item.is_image,

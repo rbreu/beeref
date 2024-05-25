@@ -24,7 +24,7 @@ import rpack
 
 from beeref import commands
 from beeref.config import BeeSettings
-from beeref.items import item_registry, BeeErrorItem
+from beeref.items import item_registry, BeeErrorItem, sort_by_filename
 from beeref.selection import MultiSelectItem, RubberbandItem
 
 
@@ -229,7 +229,6 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             return
 
         gap = self.settings.valueOrDefault('Items/arrange_gap')
-        center = self.get_selection_center()
 
         sizes = []
         for item in items:
@@ -252,9 +251,55 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
 
         # We want the items to center around the selection's center,
         # not (0, 0)
+        center = self.get_selection_center()
         bounds = rpack.bbox_size(sizes, positions)
         diff = center - QtCore.QPointF(bounds[0]/2, bounds[1]/2)
         positions = [QtCore.QPointF(*pos) + diff for pos in positions]
+
+        self.undo_stack.push(commands.ArrangeItems(self, items, positions))
+
+    def arrange_by_filename(self):
+        """Order items by filename.
+
+        Items with a filename (ordered by filename) first, then items
+        without a filename but with a save_id follow (ordered by
+        save_id), then remaining items in the order that they have
+        been inserted into the scene.
+        """
+
+        self.cancel_active_modes()
+        max_width = 0
+        max_height = 0
+        gap = self.settings.valueOrDefault('Items/arrange_gap')
+        items = sort_by_filename(self.selectedItems(user_only=True))
+
+        if len(items) < 2:
+            return
+
+        for item in items:
+            rect = self.itemsBoundingRect(items=[item])
+            max_width = max(max_width, rect.width() + gap)
+            max_height = max(max_height, rect.height() + gap)
+
+        # We want the items to center around the selection's center,
+        # not (0, 0)
+        num_rows = math.ceil(math.sqrt(len(items)))
+        center = self.get_selection_center()
+        diff = center - num_rows/2 * QtCore.QPointF(max_width, max_height)
+
+        iter_items = iter(items)
+        positions = []
+        for j in range(num_rows):
+            for i in range(num_rows):
+                try:
+                    item = next(iter_items)
+                    rect = self.itemsBoundingRect(items=[item])
+                    point = QtCore.QPointF(
+                        i * max_width + (max_width - rect.width())/2,
+                        j * max_height + (max_height - rect.height())/2)
+                    positions.append(point + diff)
+                except StopIteration:
+                    break
 
         self.undo_stack.push(commands.ArrangeItems(self, items, positions))
 

@@ -429,6 +429,85 @@ def test_arrange_optimal_when_no_items(view):
     view.scene.cancel_crop_mode.assert_called_once_with()
 
 
+def test_arrange_by_filename(view):
+    item1 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item1)
+    item1.setSelected(True)
+    item1.crop = QtCore.QRectF(0, 0, 100, 80)
+
+    item2 = BeePixmapItem(QtGui.QImage())
+    item2.filename = 'foo.png'
+    item2.save_id = 66
+    view.scene.addItem(item2)
+    item2.setSelected(True)
+    item2.crop = QtCore.QRectF(0, 0, 80, 60)
+
+    item3 = BeePixmapItem(QtGui.QImage())
+    item3.save_id = 33
+    view.scene.addItem(item3)
+    item3.setSelected(True)
+    item3.crop = QtCore.QRectF(0, 0, 100, 80)
+
+    item4 = BeePixmapItem(QtGui.QImage())
+    item4.filename = 'bar.png'
+    item4.save_id = 77
+    view.scene.addItem(item4)
+    item4.setSelected(True)
+    item4.crop = QtCore.QRectF(0, 0, 100, 80)
+
+    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.arrange_by_filename()
+
+    assert item4.pos() == QtCore.QPointF(-50, -40)
+    assert item2.pos() == QtCore.QPointF(60, -30)
+    assert item3.pos() == QtCore.QPointF(-50, 40)
+    assert item1.pos() == QtCore.QPointF(50, 40)
+    view.scene.cancel_crop_mode.assert_called_once_with()
+
+
+def test_arrange_by_filename_with_gap(view, settings):
+    settings.setValue('Items/arrange_gap', 6)
+    item1 = BeePixmapItem(QtGui.QImage())
+    view.scene.addItem(item1)
+    item1.setSelected(True)
+    item1.crop = QtCore.QRectF(0, 0, 100, 80)
+
+    item2 = BeePixmapItem(QtGui.QImage())
+    item2.filename = 'foo.png'
+    item2.save_id = 66
+    view.scene.addItem(item2)
+    item2.setSelected(True)
+    item2.crop = QtCore.QRectF(0, 0, 80, 60)
+
+    item3 = BeePixmapItem(QtGui.QImage())
+    item3.save_id = 33
+    view.scene.addItem(item3)
+    item3.setSelected(True)
+    item3.crop = QtCore.QRectF(0, 0, 100, 80)
+
+    item4 = BeePixmapItem(QtGui.QImage())
+    item4.filename = 'bar.png'
+    item4.save_id = 77
+    view.scene.addItem(item4)
+    item4.setSelected(True)
+    item4.crop = QtCore.QRectF(0, 0, 100, 80)
+
+    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.arrange_by_filename()
+
+    assert item4.pos() == QtCore.QPointF(-53, -43)
+    assert item2.pos() == QtCore.QPointF(63, -33)
+    assert item3.pos() == QtCore.QPointF(-53, 43)
+    assert item1.pos() == QtCore.QPointF(53, 43)
+    view.scene.cancel_crop_mode.assert_called_once_with()
+
+
+def test_arrange_by_filename_when_no_items(view):
+    view.scene.cancel_crop_mode = MagicMock()
+    view.scene.arrange_by_filename()
+    view.scene.cancel_crop_mode.assert_called_once_with()
+
+
 def test_flip_items(view, item):
     view.scene.addItem(item)
     item.setSelected(True)
