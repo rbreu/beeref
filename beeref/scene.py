@@ -13,9 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
-from queue import Queue
+from functools import partial
 import logging
 import math
+from queue import Queue
 
 from PyQt6 import QtCore, QtWidgets, QtGui
 from PyQt6.QtCore import Qt
@@ -177,6 +178,17 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
             scale_factors.append(math.sqrt(avg / rect.width() / rect.height()))
         self.undo_stack.push(
             commands.NormalizeItems(items, scale_factors))
+
+    def arrange_default(self):
+        default = self.settings.valueOrDefault('Items/arrange_default')
+        MAPPING = {
+            'optimal': self.arrange_optimal,
+            'horizontal': self.arrange,
+            'vertical': partial(self.arrange, vertical=True),
+            'square': self.arrange_square,
+        }
+
+        MAPPING[default]()
 
     def arrange(self, vertical=False):
         """Arrange items in a line (horizontally or vertically)."""

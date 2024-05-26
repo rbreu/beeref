@@ -14,6 +14,9 @@ Added
   The confirmation dialog can be disalbed in:
   Settings -> Miscellaneous -> Confirm when closing an unsaved file
 * Add option to arrange by filename (Arrange -> Square (by filename))
+* Added a setting to choose the default arrange method on importing
+  images in batch.
+  (Settings -> Settings -> Images & Items -> Default Arrange Method).
 
 Fixed
 -----

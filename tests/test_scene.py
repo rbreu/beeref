@@ -1,6 +1,7 @@
 import math
 from unittest.mock import patch, MagicMock
 
+import pytest
 from pytest import approx
 
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -247,6 +248,20 @@ def test_normalize_size_when_no_items(view):
     view.scene.cancel_crop_mode = MagicMock()
     view.scene.normalize_size()
     view.scene.cancel_crop_mode.assert_called_once_with()
+
+
+@pytest.mark.parametrize('value,expected_func,expected_kwargs',
+                         [('optimal', 'arrange_optimal', {}),
+                          ('horizontal', 'arrange', {}),
+                          ('vertical', 'arrange', {'vertical': True}),
+                          ('square', 'arrange_square', {})])
+def test_arrange_default(
+        value, expected_func, expected_kwargs, settings, view):
+    settings.setValue('Items/arrange_default', value)
+    setattr(view.scene, expected_func, MagicMock())
+    view.scene.arrange_default()
+    getattr(view.scene, expected_func).assert_called_once_with(
+        **expected_kwargs)
 
 
 def test_arrange_horizontal(view):

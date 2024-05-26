@@ -133,6 +133,19 @@ class SingleCheckboxGroup(GroupBase):
         return value == Qt.CheckState.Checked
 
 
+class ArrangeDefaultWidget(RadioGroup):
+    TITLE = 'Default Arrange Method:'
+    HELPTEXT = ('How images are arranged when inserted in batch')
+    KEY = 'Items/arrange_default'
+    OPTIONS = (
+        ('optimal', 'Optimal', 'Arrange Optimal'),
+        ('horizontal', 'Horizontal (by filename)',
+         'Arrange Horizontal (by filename)'),
+        ('vertical', 'Vertical (by filename)',
+         'Arrange Vertical (by filename)'),
+        ('square', 'Square (by filename)', 'Arrannge Square (by filename)'))
+
+
 class ImageStorageFormatWidget(RadioGroup):
     TITLE = 'Image Storage Format:'
     HELPTEXT = ('How images are stored inside bee files.'
@@ -191,8 +204,9 @@ class SettingsDialog(QtWidgets.QDialog):
         items_layout = QtWidgets.QGridLayout()
         items.setLayout(items_layout)
         items_layout.addWidget(ImageStorageFormatWidget(), 0, 0)
-        items_layout.addWidget(ArrangeGapWidget(), 0, 1)
-        items_layout.addWidget(AllocationLimitWidget(), 1, 0)
+        items_layout.addWidget(AllocationLimitWidget(), 0, 1)
+        items_layout.addWidget(ArrangeGapWidget(), 1, 0)
+        items_layout.addWidget(ArrangeDefaultWidget(), 1, 1)
         tabs.addTab(items, '&Images && Items')
 
         layout = QtWidgets.QVBoxLayout()

@@ -612,7 +612,7 @@ class BeeGraphicsView(MainControlsMixin,
                 'Problem loading images',
                 msg + IMG_LOADING_ERROR_MSG + errornames)
         self.scene.add_queued_items()
-        self.scene.arrange_optimal()
+        self.scene.arrange_default()
         self.undo_stack.endMacro()
         if new_scene:
             self.on_action_fit_scene()

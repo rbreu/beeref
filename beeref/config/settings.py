@@ -122,6 +122,11 @@ class BeeSettings(QtCore.QSettings):
             'cast': int,
             'validate': lambda x: 0 <= x <= 200,
         },
+        'Items/arrange_default': {
+            'default': 'optimal',
+            'validate': lambda x: x in (
+                'optimal', 'horizontal', 'vertical', 'square'),
+        },
         'Items/image_allocation_limit': {
             'default': 256,
             'cast': int,
