@@ -17,6 +17,11 @@ Added
 * Added a setting to choose the default arrange method on importing
   images in batch.
   (Settings -> Settings -> Images & Items -> Default Arrange Method).
+* Added the ability to open image files from command line. If the
+  first command line arg is a bee file, it will be opened and all
+  further files will be ignored, as previously. If the first argument
+  isn't a bee file, all files will be treated as images and inserted
+  as if opened with "Insert -> Images".
 
 Fixed
 -----

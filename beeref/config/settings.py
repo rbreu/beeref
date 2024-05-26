@@ -29,10 +29,14 @@ logger = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(
     description=f'{constants.APPNAME_FULL} {constants.VERSION}')
 parser.add_argument(
-    'filename',
-    nargs='?',
+    'filenames',
+    nargs='*',
     default=None,
-    help='Bee file to open')
+    help=('Bee file or images to open. '
+          'If the first file is a bee file, it will be opened and all '
+          'further files will be ignored. If the first argument isn\'t a '
+          'bee file, all files will be treated as images and inserted as '
+          'if opened with "Insert -> Images".'))
 parser.add_argument(
     '--settings-dir',
     help='settings directory to use instead of default location')

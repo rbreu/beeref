@@ -82,9 +82,14 @@ class BeeGraphicsView(MainControlsMixin,
         self.control_target = self
         self.init_main_controls(main_window=parent)
 
-        # Load file given via command line
-        if commandline_args.filename:
-            self.open_from_file(commandline_args.filename)
+        # Load files given via command line
+        if commandline_args.filenames:
+            fn = commandline_args.filenames[0]
+            if os.path.splitext(fn)[1] == '.bee':
+                self.open_from_file(fn)
+            else:
+                self.do_insert_images(commandline_args.filenames)
+
         self.update_window_title()
 
     @property

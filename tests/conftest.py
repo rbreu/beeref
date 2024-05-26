@@ -30,7 +30,7 @@ def reset_beeref_actions():
 def commandline_args():
     config_patcher = patch('beeref.view.commandline_args')
     config_mock = config_patcher.start()
-    config_mock.filename = None
+    config_mock.filenames = []
     yield config_mock
     config_patcher.stop()
 

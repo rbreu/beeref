@@ -24,8 +24,8 @@ def test_inits_menu(qapp):
 
 
 @patch('beeref.view.BeeGraphicsView.open_from_file')
-def test_init_without_filename(open_file_mock, qapp, commandline_args):
-    commandline_args.filename = None
+def test_init_without_filenames(open_file_mock, qapp, commandline_args):
+    commandline_args.filenames = None
     parent = QtWidgets.QMainWindow()
     view = BeeGraphicsView(qapp, parent)
     open_file_mock.assert_not_called()
@@ -34,11 +34,20 @@ def test_init_without_filename(open_file_mock, qapp, commandline_args):
 
 
 @patch('beeref.view.BeeGraphicsView.open_from_file')
-def test_init_with_filename(open_file_mock, qapp, commandline_args):
-    commandline_args.filename = 'test.bee'
+def test_init_with_filenames_beefile(open_file_mock, qapp, commandline_args):
+    commandline_args.filenames = ['test.bee']
     parent = QtWidgets.QMainWindow()
     view = BeeGraphicsView(qapp, parent)
     open_file_mock.assert_called_once_with('test.bee')
+    del view
+
+
+@patch('beeref.view.BeeGraphicsView.do_insert_images')
+def test_init_with_filenames_images(insert_img_mock, qapp, commandline_args):
+    commandline_args.filenames = ['/foo/bar.png', '/foo/baz.jpg']
+    parent = QtWidgets.QMainWindow()
+    view = BeeGraphicsView(qapp, parent)
+    insert_img_mock.assert_called_once_with(['/foo/bar.png', '/foo/baz.jpg'])
     del view
 
 
