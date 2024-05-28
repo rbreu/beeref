@@ -1,4 +1,4 @@
-USER_VERSION = 2
+USER_VERSION = 3
 APPLICATION_ID = 2060242126
 
 
@@ -30,12 +30,20 @@ SCHEMA = [
              ON UPDATE NO ACTION
     )
     """,
+    """CREATE TABLE info (
+        key TEXT PRIMARY KEY,
+        value TEXT
+    )
+    """,
 ]
 
 
 MIGRATIONS = {
-    2: [
+    2: (
         "ALTER TABLE items ADD COLUMN data JSON",
         "UPDATE items SET data = json_object('filename', filename)",
-    ],
+    ),
+    3: (
+        "CREATE TABLE info (key TEXT PRIMARY KEY, value TEXT)",
+    ),
 }

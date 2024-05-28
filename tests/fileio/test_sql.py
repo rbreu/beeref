@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import os.path
@@ -120,6 +121,36 @@ def test_all_migrations(tmpfile):
     assert result[3] == b'bla'
 
 
+def test_sqliteio_read_info_value_when_exists(tmpfile):
+    io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
+    io.create_schema_on_new()
+    io.ex('INSERT INTO info (key, value) VALUES ("foo", "bar")')
+    io.read_info_value('foo') == 'bar'
+
+
+def test_sqliteio_read_info_value_returns_default_when_doesnt_exists(tmpfile):
+    io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
+    io.create_schema_on_new()
+    io.read_info_value('foo', 'baz') == 'baz'
+
+
+def test_sqliteio_write_info_value_when_doesnt_exist(tmpfile):
+    io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
+    io.create_schema_on_new()
+    io.write_info_value('foo', 'bar')
+    io.read_info_value('foo') == 'bar'
+
+
+def test_sqliteio_write_info_value_when_exist_updates(tmpfile):
+    io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
+    io.create_schema_on_new()
+    io.ex('INSERT INTO info (key, value) VALUES ("foo", "bar")')
+    io.write_info_value('foo', 'baz')
+    io.read_info_value('foo') == 'baz'
+    row = io.fetchone('SELECT COUNT(*) FROM info WHERE key="foo"')
+    assert row[0] == 1
+
+
 def test_sqliteio_write_meta_application_id(tmpfile):
     io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
     io.write_meta()
@@ -148,7 +179,7 @@ def test_sqliteio_create_schema_on_new_when_create_new(tmpfile):
     result = io.fetchone(
         'SELECT COUNT(*) FROM sqlite_master '
         'WHERE type="table" AND name NOT LIKE "sqlite_%"')
-    assert result[0] == 2
+    assert result[0] == 3
     scene_mock.clear_save_ids.assert_called_once()
 
 
@@ -194,6 +225,16 @@ def test_sqliteio_write_calls_write_meta(tmpfile, view):
             with patch.object(io, 'exmany'):
                 io.write()
                 metamock.assert_called_once()
+
+
+def test_sqliteio_write_writes_upddate(tmpfile, view):
+    item = BeeTextItem(text='foo bar')
+    view.scene.addItem(item)
+    io = SQLiteIO(tmpfile, view.scene, create_new=True)
+    io.write()
+    year = datetime.datetime.utcnow().year
+    upddate = io.read_info_value('upddate')
+    assert upddate.startswith(str(year))
 
 
 def test_sqliteio_write_inserts_new_text_item(tmpfile, view):

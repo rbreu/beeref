@@ -23,6 +23,7 @@ https://www.sqlite.org/appfileformat.html
 https://www.sqlite.org/sqlar.html
 """
 
+import datetime
 import json
 import logging
 import os
@@ -51,7 +52,7 @@ def is_bee_file(path):
 def handle_sqlite_errors(func):
     def wrapper(self, *args, **kwargs):
         try:
-            func(self, *args, **kwargs)
+            return func(self, *args, **kwargs)
         except Exception as e:
             logger.exception(f'Error while reading/writing {self.filename}')
             try:
@@ -188,6 +189,22 @@ class SQLiteIO:
                 self.ex(schema)
 
     @handle_sqlite_errors
+    def read_info_value(self, key, default=None):
+        """Reads a value from the info table."""
+
+        rows = self.fetchone('SELECT value FROM info WHERE key=?', (key,))
+        return rows[0] if rows else default
+
+    @handle_sqlite_errors
+    def write_info_value(self, key, value):
+        """Writes a value into the info table."""
+
+        self.ex(
+            'INSERT INTO info (key, value) VALUES (?, ?) '
+            'ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+            (key, value))
+
+    @handle_sqlite_errors
     def read(self):
         rows = self.fetchall(
             'SELECT items.id, type, x, y, z, scale, rotation, flip, '
@@ -283,6 +300,10 @@ class SQLiteIO:
                 if self.worker.canceled:
                     break
         self.delete_items(to_delete)
+
+        timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        self.write_info_value('upddate', timestamp)
+        self.connection.commit()
         self.ex('VACUUM')
         self.connection.commit()
         if self.worker:
