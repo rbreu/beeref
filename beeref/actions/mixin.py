@@ -70,6 +70,7 @@ class ActionsMixin:
     def _create_actions(self):
         for action in actions.values():
             qaction = QtGui.QAction(action.text, self)
+            qaction.setAutoRepeat(False)
             shortcuts = action.get_shortcuts()
             if shortcuts:
                 qaction.setShortcuts(shortcuts)
