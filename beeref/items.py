@@ -584,7 +584,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         return point
 
     def mouseMoveEvent(self, event):
-        if self.crop_mode:
+        if self.crop_mode and self.crop_mode_event_start:
             diff = event.pos() - self.crop_mode_event_start
             if self.crop_mode_move == self.crop_handle_topleft:
                 new = self.ensure_point_within_crop_bounds(
