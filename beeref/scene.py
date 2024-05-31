@@ -87,7 +87,7 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
     def cancel_crop_mode(self):
         """Cancels an ongoing crop mode, if there is any."""
         if self.crop_item:
-            self.crop_item.exit_crop_mode(confirm=False)
+            self.crop_item.exit_crop_mode(confirm=True)
 
     def copy_selection_to_internal_clipboard(self):
         self.internal_clipboard = []
@@ -394,6 +394,10 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         super().mousePressEvent(event)
 
     def mouseDoubleClickEvent(self, event):
+        if self.crop_item:
+            super().mouseDoubleClickEvent(event)
+            return
+
         self.cancel_active_modes()
         item = self.itemAt(event.scenePos(), self.views()[0].transform())
         if item:
