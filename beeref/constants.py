@@ -21,6 +21,9 @@ COPYRIGHT = 'Copyright © 2021-2024 Rebecca Breu'
 
 CHANGED_SYMBOL = '✎'
 
+# Backup filename for unsaved scenes:
+BACKUP_FILENAME = 'BeeRef-d9257003-0191-4bc7-9c9c-3383eeddd739.bee~'
+
 COLORS = {
     # Qt:
     'Active:Base': (60, 60, 60),

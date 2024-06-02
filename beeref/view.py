@@ -68,7 +68,6 @@ class BeeGraphicsView(MainControlsMixin,
         self.undo_stack.cleanChanged.connect(self.on_undo_clean_changed)
 
         self.filename = None
-        self.backup_filename = None
         self.previous_transform = None
         self.active_mode = None
 
@@ -115,19 +114,7 @@ class BeeGraphicsView(MainControlsMixin,
     def backup_filename(self):
         if self.filename:
             return f'{self.filename}~'
-
-        if not self._backup_filename:
-            self._backup_filename = tempfile.NamedTemporaryFile(
-                prefix=constants.APPNAME,
-                suffix='.bee~',
-                delete=False,
-                delete_on_close=False
-            ).name
-        return self._backup_filename
-
-    @backup_filename.setter
-    def backup_filename(self, value):
-        self._backup_filename = value
+        return os.path.join(tempfile.gettempdir(), constants.BACKUP_FILENAME)
 
     def save_backup(self):
         if self.undo_stack.isClean():
@@ -217,7 +204,10 @@ class BeeGraphicsView(MainControlsMixin,
         self.scene.clear()
         self.undo_stack.clear()
         self.filename = None
-        self.backup_filename = None
+        try:
+            os.remove(self.backup_filename)
+        except FileNotFoundError:
+            pass
         self.setTransform(QtGui.QTransform())
 
     def reset_previous_transform(self, toggle_item=None):

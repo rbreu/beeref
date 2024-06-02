@@ -49,6 +49,16 @@ def is_bee_file(path):
     return os.path.splitext(path)[1] == '.bee'
 
 
+def copy_bee_file(src_filename, dst_filename):
+    """Copy a bee file to a new file."""
+
+    src = sqlite3.connect(src_filename)
+    dst = sqlite3.connect(dst_filename)
+    src.backup(dst)
+    src.close()
+    dst.close()
+
+
 def read_uppdate_from_file(filename):
     io = SQLiteIO(filename, None, create_new=False, readonly=True)
     datestring = io.read_info_value('upddate')
@@ -82,11 +92,12 @@ def handle_sqlite_errors(func):
 class SQLiteIO:
 
     def __init__(self, filename, scene, create_new=False, readonly=False,
-                 worker=None):
+                 update_save_ids=True, worker=None):
         self.scene = scene
         self.create_new = create_new
         self.filename = filename
         self.readonly = readonly
+        self.update_save_ids = update_save_ids
         self.worker = worker
         self.retry = False
 
@@ -109,7 +120,7 @@ class SQLiteIO:
                 and os.path.exists(self.filename)):
             os.remove(self.filename)
 
-        if self.create_new:
+        if self.create_new and self.update_save_ids:
             self.scene.clear_save_ids()
 
         uri = pathlib.Path(self.filename).resolve().as_uri()
@@ -330,7 +341,9 @@ class SQLiteIO:
             (item.TYPE, item.pos().x(), item.pos().y(), item.zValue(),
              item.scale(), item.rotation(), item.flip(),
              json.dumps(item.get_extra_save_data())))
-        item.save_id = self.cursor.lastrowid
+
+        if self.update_save_ids:
+            item.save_id = self.cursor.lastrowid
 
         if hasattr(item, 'pixmap_to_bytes'):
             pixmap, imgformat = item.pixmap_to_bytes()

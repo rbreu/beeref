@@ -22,7 +22,12 @@ from PyQt6 import QtCore
 from beeref import commands
 from beeref.fileio.errors import BeeFileIOError
 from beeref.fileio.image import load_image
-from beeref.fileio.sql import SQLiteIO, is_bee_file, read_uppdate_from_file
+from beeref.fileio.sql import (
+    SQLiteIO,
+    copy_bee_file,
+    is_bee_file,
+    read_uppdate_from_file,
+)
 from beeref.items import BeePixmapItem
 
 
@@ -57,28 +62,32 @@ def save_bee(filename, scene, create_new=False, worker=None):
 
 def save_backup(filename, backup_filename, scene, worker=None):
     """Save backup bee file."""
-    logger.info(f'Saving backup to file {filename}...')
+    logger.info(f'Saving backup to file {backup_filename}...')
     copy_to_backup = False
-    past = datetime(2000, 1, 1, tzinfo=datetime.timezone.utc)
+    past = datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc)
 
-    if os.path.exists(filename):
+    if filename and os.path.exists(filename):
         upddate_original = read_uppdate_from_file(filename) or past
         if os.path.exists(backup_filename):
             upddate_backup = read_uppdate_from_file(backup_filename) or past
             if upddate_original > upddate_backup:
                 copy_to_backup = True
                 logger.debug('Original file newer than backup')
-        else:#tbd
+        else:
             copy_to_backup = True
             logger.debug('Backup file does\'t exist yet')
 
     if copy_to_backup:
         logger.debug('Copying original file to backup file...')
-        #tbd
+        copy_bee_file(filename, backup_filename)
 
-    #tbd backup
+    io = SQLiteIO(backup_filename,
+                  scene,
+                  create_new=not os.path.exists(backup_filename),
+                  update_save_ids=False,
+                  worker=worker)
+    io.write()
 
-    worker.finished.emit(filename, [])
 
 def load_images(filenames, pos, scene, worker):
     """Add images to existing scene."""
