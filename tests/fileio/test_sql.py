@@ -10,7 +10,7 @@ import pytest
 
 from beeref.fileio import schema, is_bee_file
 from beeref.fileio.errors import BeeFileIOError
-from beeref.fileio.sql import SQLiteIO
+from beeref.fileio.sql import SQLiteIO, read_uppdate_from_file
 from beeref.items import BeePixmapItem, BeeTextItem, BeeErrorItem
 
 
@@ -20,6 +20,24 @@ from beeref.items import BeePixmapItem, BeeTextItem, BeeErrorItem
                           (os.path.join('foo', 'bar'), False)])
 def test_is_bee_file(filename, expected):
     assert is_bee_file(filename) is expected
+
+
+def test_read_upddate_from_file(tmpfile):
+    io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
+    io.create_schema_on_new()
+    dt = datetime.datetime(2024, 5, 10, 12, 45, tzinfo=datetime.timezone.utc)
+    io.write_info_value('upddate', dt.isoformat())
+    io.connection.commit()
+    del io
+    assert read_uppdate_from_file(tmpfile) == dt
+
+
+def test_read_upddate_from_file_when_not_set(tmpfile):
+    io = SQLiteIO(tmpfile, MagicMock(), create_new=True)
+    io.create_schema_on_new()
+    io.connection.commit()
+    del io
+    assert read_uppdate_from_file(tmpfile) is None
 
 
 def test_sqliteio_migrate_does_nothing_when_version_ok(tmpfile):
@@ -214,8 +232,9 @@ def test_sqliteio_write_calls_create_schema_on_new(tmpfile, view):
     with patch.object(io, 'create_schema_on_new') as crmock:
         with patch.object(io, 'fetchall'):
             with patch.object(io, 'exmany'):
-                io.write()
-                crmock.assert_called_once()
+                with patch.object(io, 'ex'):
+                    io.write()
+                    crmock.assert_called_once()
 
 
 def test_sqliteio_write_calls_write_meta(tmpfile, view):

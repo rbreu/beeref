@@ -49,6 +49,13 @@ def is_bee_file(path):
     return os.path.splitext(path)[1] == '.bee'
 
 
+def read_uppdate_from_file(filename):
+    io = SQLiteIO(filename, None, create_new=False, readonly=True)
+    datestring = io.read_info_value('upddate')
+    if datestring:
+        return datetime.datetime.fromisoformat(datestring)
+
+
 def handle_sqlite_errors(func):
     def wrapper(self, *args, **kwargs):
         try:

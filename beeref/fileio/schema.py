@@ -30,7 +30,8 @@ SCHEMA = [
              ON UPDATE NO ACTION
     )
     """,
-    """CREATE TABLE info (
+    """
+    CREATE TABLE info (
         key TEXT PRIMARY KEY,
         value TEXT
     )

@@ -13,24 +13,27 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
+import datetime
 import logging
+import os
 
 from PyQt6 import QtCore
 
 from beeref import commands
 from beeref.fileio.errors import BeeFileIOError
 from beeref.fileio.image import load_image
-from beeref.fileio.sql import SQLiteIO, is_bee_file
+from beeref.fileio.sql import SQLiteIO, is_bee_file, read_uppdate_from_file
 from beeref.items import BeePixmapItem
 
 
 __all__ = [
     'is_bee_file',
     'load_bee',
-    'save_bee',
     'load_images',
-    'ThreadedLoader',
+    'read_uppdate_from_file'
+    'save_bee',
     'BeeFileIOError',
+    'ThreadedLoader',
 ]
 
 logger = logging.getLogger(__name__)
@@ -51,6 +54,31 @@ def save_bee(filename, scene, create_new=False, worker=None):
     io.write()
     logger.info('End save')
 
+
+def save_backup(filename, backup_filename, scene, worker=None):
+    """Save backup bee file."""
+    logger.info(f'Saving backup to file {filename}...')
+    copy_to_backup = False
+    past = datetime(2000, 1, 1, tzinfo=datetime.timezone.utc)
+
+    if os.path.exists(filename):
+        upddate_original = read_uppdate_from_file(filename) or past
+        if os.path.exists(backup_filename):
+            upddate_backup = read_uppdate_from_file(backup_filename) or past
+            if upddate_original > upddate_backup:
+                copy_to_backup = True
+                logger.debug('Original file newer than backup')
+        else:#tbd
+            copy_to_backup = True
+            logger.debug('Backup file does\'t exist yet')
+
+    if copy_to_backup:
+        logger.debug('Copying original file to backup file...')
+        #tbd
+
+    #tbd backup
+
+    worker.finished.emit(filename, [])
 
 def load_images(filenames, pos, scene, worker):
     """Add images to existing scene."""

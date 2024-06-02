@@ -17,6 +17,7 @@ from functools import partial
 import logging
 import os
 import os.path
+import tempfile
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
@@ -67,6 +68,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.undo_stack.cleanChanged.connect(self.on_undo_clean_changed)
 
         self.filename = None
+        self.backup_filename = None
         self.previous_transform = None
         self.active_mode = None
 
@@ -92,6 +94,11 @@ class BeeGraphicsView(MainControlsMixin,
 
         self.update_window_title()
 
+        # Initiate back
+        timer = QtCore.QTimer(parent=self)
+        timer.timeout.connect(self.save_backup)
+        timer.start(1000 * 5)# tbd configurable
+
     @property
     def filename(self):
         return self._filename
@@ -103,6 +110,42 @@ class BeeGraphicsView(MainControlsMixin,
         if value:
             self.settings.update_recent_files(value)
             self.update_menu_and_actions()
+
+    @property
+    def backup_filename(self):
+        if self.filename:
+            return f'{self.filename}~'
+
+        if not self._backup_filename:
+            self._backup_filename = tempfile.NamedTemporaryFile(
+                prefix=constants.APPNAME,
+                suffix='.bee~',
+                delete=False,
+                delete_on_close=False
+            ).name
+        return self._backup_filename
+
+    @backup_filename.setter
+    def backup_filename(self, value):
+        self._backup_filename = value
+
+    def save_backup(self):
+        if self.undo_stack.isClean():
+            logger.debug('No unsaved changes to back up')
+            return
+
+        if not hasattr(self, 'backup_worker'):
+            self.backup_worker = fileio.ThreadedIO(
+                fileio.save_backup,
+                self.filename, self.backup_filename, self.scene)
+            self.backup_worker.finished.connect(self.on_save_backup_finished)
+            self.backup_worker.start()
+        else:
+            logger.debug('Backup still ongoing, skipping')
+
+    def on_save_backup_finished(self):
+        del self.backup_worker
+        logger.debug('Saving backup finished')
 
     def cancel_active_modes(self):
         self.scene.cancel_active_modes()
@@ -174,6 +217,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.scene.clear()
         self.undo_stack.clear()
         self.filename = None
+        self.backup_filename = None
         self.setTransform(QtGui.QTransform())
 
     def reset_previous_transform(self, toggle_item=None):
