@@ -33,6 +33,8 @@ Fixed
 * Shortcuts now only trigger once when holding down the key
   combination to avoid inconstistend program states and potential
   crashes (by DarkDefender)
+* Fixed a crash when pressing the crop shortcut while dragging an image
+  (by DarkDefender)
 
 
 Changed
