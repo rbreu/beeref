@@ -26,10 +26,14 @@ Added
 Fixed
 -----
 
-* Fixed a case where adding/importing an image would hang while
-  reading unsupported exif data (#111)
-* Fixed a hang when saving an open bee file that has been removed
+* Fixed a case where adding/importing an image would hang when the image
+  contained unsupported exif data (#111)
+* Fixed a hang when saving an open bee file that had been removed
   since being opened
+* Shortcuts now only trigger once when holding down the key
+  combination to avoid inconstistend program states and potential
+  crashes
+
 
 Changed
 -------
