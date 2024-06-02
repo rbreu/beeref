@@ -32,7 +32,7 @@ Fixed
   since being opened
 * Shortcuts now only trigger once when holding down the key
   combination to avoid inconstistend program states and potential
-  crashes
+  crashes (by DarkDefender)
 
 
 Changed
