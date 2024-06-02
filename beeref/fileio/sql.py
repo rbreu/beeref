@@ -123,7 +123,7 @@ class SQLiteIO:
 
         version = self.fetchone('PRAGMA user_version')[0]
         logger.debug(f'Found bee file version: {version}')
-        if version == USER_VERSION:
+        if version >= USER_VERSION:
             logger.debug('Version ok; no migrations necessary')
             return
 
