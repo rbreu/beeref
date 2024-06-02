@@ -13,42 +13,43 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
-from functools import partial
-import logging
-import math
-from queue import Queue
+# 导入必要的模块
+from functools import partial #用于创建部分应用函数
+import logging #用于记录日志
+import math #用于数学计算
+from queue import Queue #用于队列操作
 
-from PyQt6 import QtCore, QtWidgets, QtGui
-from PyQt6.QtCore import Qt
+from PyQt6 import QtCore, QtWidgets, QtGui #用于Qt图形界面
+from PyQt6.QtCore import Qt #用于Qt核心功能
 
-import rpack
+import rpack #用于矩形打包算法
 
-from beeref import commands
-from beeref.config import BeeSettings
-from beeref.items import item_registry, BeeErrorItem, sort_by_filename
-from beeref.selection import MultiSelectItem, RubberbandItem
-
-
-logger = logging.getLogger(__name__)
+from beeref import commands #用于命令执行
+from beeref.config import BeeSettings #用于配置管理
+from beeref.items import item_registry, BeeErrorItem, sort_by_filename #用于项目管理
+from beeref.selection import MultiSelectItem, RubberbandItem #用于选择管理
 
 
-class BeeGraphicsScene(QtWidgets.QGraphicsScene):
-    cursor_changed = QtCore.pyqtSignal(QtGui.QCursor)
-    cursor_cleared = QtCore.pyqtSignal()
+logger = logging.getLogger(__name__) #用于记录日志
 
-    MOVE_MODE = 1
-    RUBBERBAND_MODE = 2
 
-    def __init__(self, undo_stack):
-        super().__init__()
-        self.active_mode = None
+class BeeGraphicsScene(QtWidgets.QGraphicsScene): #用于BeeRef的图形场景
+    cursor_changed = QtCore.pyqtSignal(QtGui.QCursor) #用于游标改变信号
+    cursor_cleared = QtCore.pyqtSignal() #用于游标清除信号  
+
+    MOVE_MODE = 1 #用于移动模式
+    RUBBERBAND_MODE = 2 #用于橡皮筋模式 
+
+    def __init__(self, undo_stack): #用于初始化场景
+        super().__init__() #调用父类初始化方法
+        self.active_mode = None #用于当前活动模式
         self.undo_stack = undo_stack
         self.max_z = 0
         self.min_z = 0
         self.Z_STEP = 0.001
         self.selectionChanged.connect(self.on_selection_change)
         self.changed.connect(self.on_change)
-        self.items_to_add = Queue()
+        self.items_to_add = Queue() 
         self.edit_item = None
         self.crop_item = None
         self.settings = BeeSettings()
