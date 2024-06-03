@@ -520,6 +520,9 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
             if edge().contains(event.pos()):
                 self.set_cursor(self.get_crop_edge_cursor(edge))
                 return
+        if self.crop_temp.contains(event.pos()):
+            self.set_cursor(Qt.CursorShape.SizeAllCursor)
+            return
         self.unset_cursor()
 
     def mousePressEvent(self, event):
