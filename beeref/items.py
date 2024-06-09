@@ -559,7 +559,7 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
 
     def ensure_crop_box_is_inside(self, point):
         """Returns the modified point that ensures that the crop rectangle is
-        still withint the pixmap.
+        still within the pixmap.
 
         The point passed is assumed to be the top
         left crop rectangle position.
@@ -623,7 +623,8 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         if self.crop_mode:
             diff = event.pos() - self.crop_mode_event_start
             if self.crop_mode_move == self.crop_temp:
-                new = self.ensure_crop_box_is_inside(self.crop_temp.topLeft() + diff)
+                new = self.ensure_crop_box_is_inside(
+                        self.crop_temp.topLeft() + diff)
                 self.crop_temp.moveTo(new)
             if self.crop_mode_move == self.crop_handle_topleft:
                 new = self.ensure_point_within_crop_bounds(

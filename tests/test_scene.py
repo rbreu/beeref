@@ -22,7 +22,7 @@ def test_cancel_crop_mode_when_crop(view, item):
     view.scene.crop_item = item
     item.exit_crop_mode = MagicMock()
     view.scene.cancel_crop_mode()
-    item.exit_crop_mode.assert_called_once_with(confirm=False)
+    item.exit_crop_mode.assert_called_once_with(confirm=True)
 
 
 def test_cancel_crop_mode_when_no_crop(view, item):
