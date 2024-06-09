@@ -89,7 +89,9 @@ class CommandlineArgs:
             if with_check:
                 self._args = parser.parse_args()
             else:
-                self._args = parser.parse_known_args()[0]
+                # Do not parse any flags from sys.argv as we are
+                # being used as a module.
+                self._args = parser.parse_args([])
 
     def __getattribute__(self, name):
         if name == '_args':

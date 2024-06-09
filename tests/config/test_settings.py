@@ -20,8 +20,10 @@ def test_command_line_args_singleton():
 def test_command_line_args_with_check_forces_new_parsing(parse_mock):
     args1 = CommandlineArgs()
     args2 = CommandlineArgs(with_check=True)
-    parse_mock.assert_called_once()
+    args3 = CommandlineArgs()
+    assert parse_mock.call_count == 2
     assert args1 is not args2
+    assert args2 is args3
     CommandlineArgs._instance = None
 
 
