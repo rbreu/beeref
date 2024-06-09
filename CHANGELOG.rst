@@ -22,6 +22,11 @@ Added
   further files will be ignored, as previously. If the first argument
   isn't a bee file, all files will be treated as images and inserted
   as if opened with "Insert -> Images".
+* It is now possible to shift around the crop rectagle by clicking and
+  dragging. To confirm the crop, you can now either click outside the
+  crop rectagle or double click inside the crop rectangle. Canceling
+  the crop operation is now only possible by pressing the escape key.
+  (by DarkDefender)
 
 Fixed
 -----

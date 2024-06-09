@@ -734,8 +734,8 @@ def test_mouse_press_event_crop_mode_inside_edge(mouse_mock, qapp, item):
     event.accept.assert_called_once_with()
 
 
-@patch('beeref.selection.SelectableMixin.mousePressEvent')
-def test_mouse_press_event_crop_mode_outside_handle_inside_crop(
+@patch('PyQt6.QtWidgets.QGraphicsScene.mouseDoubleClickEvent')
+def test_mouse_doubleclick_event_crop_mode_outside_handle_inside_crop(
         mouse_mock, qapp, item):
     item.crop_mode = True
     item.crop_temp = QtCore.QRectF(0, 0, 100, 80)
@@ -744,7 +744,7 @@ def test_mouse_press_event_crop_mode_outside_handle_inside_crop(
     event = MagicMock()
     event.pos.return_value = QtCore.QPointF(50, 50)
 
-    item.mousePressEvent(event)
+    item.mouseDoubleClickEvent(event)
     assert item.crop_mode_move is None
     item.exit_crop_mode.assert_called_once_with(confirm=True)
     mouse_mock.assert_not_called()
@@ -763,7 +763,7 @@ def test_mouse_press_event_crop_mode_outside_handle_outside_crop(
 
     item.mousePressEvent(event)
     assert item.crop_mode_move is None
-    item.exit_crop_mode.assert_called_once_with(confirm=False)
+    item.exit_crop_mode.assert_called_once_with(confirm=True)
     mouse_mock.assert_not_called()
     event.accept.assert_called_once_with()
 
@@ -820,6 +820,21 @@ def test_ensure_point_within_crop_bounds(
     assert result == QtCore.QPointF(*expected)
 
 
+@pytest.mark.parametrize('point,expected',
+                         [((-10, -10), (0, 0)),
+                          ((-10, 80), (0, 40)),
+                          ((100, 80), (70, 40)),
+                          ((100, -10), (70, 0))])
+def test_ensure_crop_box_is_inside(
+        point, expected, qapp, item):
+    pixmap = MagicMock()
+    pixmap.size.return_value = QtCore.QRectF(0, 0, 100, 80)
+    item.pixmap = MagicMock(return_value=pixmap)
+    item.crop_temp = QtCore.QRectF(10, 20, 30, 40)
+    result = item.ensure_crop_box_is_inside(QtCore.QPointF(*point))
+    assert result == QtCore.QPointF(*expected)
+
+
 @pytest.mark.parametrize(
     'start,pos,handle,expected',
     [[(10, 10), (5, 5), 'crop_handle_topleft', (5, 15, 35, 45)],
@@ -829,7 +844,8 @@ def test_ensure_point_within_crop_bounds(
      [(25, 10), (20, 5), 'crop_edge_top', (10, 15, 30, 45)],
      [(10, 40), (5, 35), 'crop_edge_left', (5, 20, 35, 40)],
      [(35, 25), (30, 20), 'crop_edge_bottom', (10, 20, 30, 35)],
-     [(40, 40), (35, 35), 'crop_edge_right', (10, 20, 25, 40)]])
+     [(40, 40), (35, 35), 'crop_edge_right', (10, 20, 25, 40)],
+     [(15, 30), (5, 10), 'crop_temp', (0, 0, 30, 40)]])
 @patch('beeref.selection.SelectableMixin.mouseMoveEvent')
 def test_mouse_move_when_crop_mode_inside_handle(
         mouse_mock, start, pos, handle, expected, qapp, item):

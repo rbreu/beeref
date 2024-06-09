@@ -520,6 +520,9 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
             if edge().contains(event.pos()):
                 self.set_cursor(self.get_crop_edge_cursor(edge))
                 return
+        if self.crop_temp.contains(event.pos()):
+            self.set_cursor(Qt.CursorShape.SizeAllCursor)
+            return
         self.unset_cursor()
 
     def mousePressEvent(self, event):
@@ -539,9 +542,42 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
                 self.crop_mode_event_start = event.pos()
                 self.crop_mode_move = edge
                 return
+        if self.crop_temp.contains(event.pos()):
+            self.crop_mode_event_start = event.pos()
+            self.crop_mode_move = self.crop_temp
+            return
         # Click not in handle, end cropping mode:
-        self.exit_crop_mode(
-            confirm=self.crop_temp.contains(event.pos()))
+        self.exit_crop_mode(confirm=True)
+
+    def mouseDoubleClickEvent(self, event):
+        if not self.crop_mode:
+            return super().mouseDoubleClickEvent(event)
+
+        event.accept()
+        if self.crop_temp.contains(event.pos()):
+            self.exit_crop_mode(confirm=True)
+
+    def ensure_crop_box_is_inside(self, point):
+        """Returns the modified point that ensures that the crop rectangle is
+        still within the pixmap.
+
+        The point passed is assumed to be the top
+        left crop rectangle position.
+        """
+
+        max_x_pos = self.pixmap().size().width() - self.crop_temp.width()
+        max_y_pos = self.pixmap().size().height() - self.crop_temp.height()
+
+        if point.x() < 0:
+            point.setX(0)
+        elif point.x() > max_x_pos:
+            point.setX(max_x_pos)
+
+        if point.y() < 0:
+            point.setY(0)
+        elif point.y() > max_y_pos:
+            point.setY(max_y_pos)
+        return point
 
     def ensure_point_within_crop_bounds(self, point, handle):
         """Returns the point, or the nearest point within the pixmap."""
@@ -549,31 +585,31 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
         if handle == self.crop_handle_topleft:
             topleft = QtCore.QPointF(0, 0)
             bottomright = self.crop_temp.bottomRight()
-        if handle == self.crop_handle_bottomleft:
+        elif handle == self.crop_handle_bottomleft:
             topleft = QtCore.QPointF(0, self.crop_temp.top())
             bottomright = QtCore.QPointF(
                 self.crop_temp.right(), self.pixmap().size().height())
-        if handle == self.crop_handle_bottomright:
+        elif handle == self.crop_handle_bottomright:
             topleft = self.crop_temp.topLeft()
             bottomright = QtCore.QPointF(
                 self.pixmap().size().width(), self.pixmap().size().height())
-        if handle == self.crop_handle_topright:
+        elif handle == self.crop_handle_topright:
             topleft = QtCore.QPointF(self.crop_temp.left(), 0)
             bottomright = QtCore.QPointF(
                 self.pixmap().size().width(), self.crop_temp.bottom())
-        if handle == self.crop_edge_top:
+        elif handle == self.crop_edge_top:
             topleft = QtCore.QPointF(0, 0)
             bottomright = QtCore.QPointF(
                 self.pixmap().size().width(), self.crop_temp.bottom())
-        if handle == self.crop_edge_bottom:
+        elif handle == self.crop_edge_bottom:
             topleft = QtCore.QPointF(0, self.crop_temp.top())
             bottomright = QtCore.QPointF(
                 self.pixmap().size().width(), self.pixmap().size().height())
-        if handle == self.crop_edge_left:
+        elif handle == self.crop_edge_left:
             topleft = QtCore.QPointF(0, 0)
             bottomright = QtCore.QPointF(
                 self.crop_temp.right(), self.pixmap().size().height())
-        if handle == self.crop_edge_right:
+        elif handle == self.crop_edge_right:
             topleft = QtCore.QPointF(self.crop_temp.left(), 0)
             bottomright = QtCore.QPointF(
                 self.pixmap().size().width(), self.pixmap().size().height())
@@ -586,35 +622,39 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
     def mouseMoveEvent(self, event):
         if self.crop_mode and self.crop_mode_event_start:
             diff = event.pos() - self.crop_mode_event_start
+            if self.crop_mode_move == self.crop_temp:
+                new = self.ensure_crop_box_is_inside(
+                        self.crop_temp.topLeft() + diff)
+                self.crop_temp.moveTo(new)
             if self.crop_mode_move == self.crop_handle_topleft:
                 new = self.ensure_point_within_crop_bounds(
                     self.crop_temp.topLeft() + diff, self.crop_mode_move)
                 self.crop_temp.setTopLeft(new)
-            if self.crop_mode_move == self.crop_handle_bottomleft:
+            elif self.crop_mode_move == self.crop_handle_bottomleft:
                 new = self.ensure_point_within_crop_bounds(
                     self.crop_temp.bottomLeft() + diff, self.crop_mode_move)
                 self.crop_temp.setBottomLeft(new)
-            if self.crop_mode_move == self.crop_handle_bottomright:
+            elif self.crop_mode_move == self.crop_handle_bottomright:
                 new = self.ensure_point_within_crop_bounds(
                     self.crop_temp.bottomRight() + diff, self.crop_mode_move)
                 self.crop_temp.setBottomRight(new)
-            if self.crop_mode_move == self.crop_handle_topright:
+            elif self.crop_mode_move == self.crop_handle_topright:
                 new = self.ensure_point_within_crop_bounds(
                     self.crop_temp.topRight() + diff, self.crop_mode_move)
                 self.crop_temp.setTopRight(new)
-            if self.crop_mode_move == self.crop_edge_top:
+            elif self.crop_mode_move == self.crop_edge_top:
                 new = self.ensure_point_within_crop_bounds(
                     self.crop_temp.topLeft() + diff, self.crop_mode_move)
                 self.crop_temp.setTop(new.y())
-            if self.crop_mode_move == self.crop_edge_left:
+            elif self.crop_mode_move == self.crop_edge_left:
                 new = self.ensure_point_within_crop_bounds(
                     self.crop_temp.topLeft() + diff, self.crop_mode_move)
                 self.crop_temp.setLeft(new.x())
-            if self.crop_mode_move == self.crop_edge_bottom:
+            elif self.crop_mode_move == self.crop_edge_bottom:
                 new = self.ensure_point_within_crop_bounds(
                     self.crop_temp.bottomLeft() + diff, self.crop_mode_move)
                 self.crop_temp.setBottom(new.y())
-            if self.crop_mode_move == self.crop_edge_right:
+            elif self.crop_mode_move == self.crop_edge_right:
                 new = self.ensure_point_within_crop_bounds(
                     self.crop_temp.topRight() + diff, self.crop_mode_move)
                 self.crop_temp.setRight(new.x())
