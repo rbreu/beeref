@@ -80,16 +80,17 @@ class CommandlineArgs:
     _instance = None
 
     def __new__(cls, *args, **kwargs):
-        if not cls._instance or kwargs.get('with_check'):
+        if not cls._instance:
             cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self, with_check=False):
-        if not hasattr(self, '_args'):
-            if with_check:
-                self._args = parser.parse_args()
-            else:
-                self._args = parser.parse_known_args()[0]
+        if with_check:
+            self._args = parser.parse_args()
+        elif not hasattr(self, '_args'):
+            # Do not parse any flags from sys.argv unless speficially
+            # told to do so.
+            self._args = parser.parse_args([])
 
     def __getattribute__(self, name):
         if name == '_args':

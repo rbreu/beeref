@@ -35,6 +35,8 @@ Fixed
   crashes (by DarkDefender)
 * Fixed a crash when pressing the crop shortcut while dragging an image
   (by DarkDefender)
+* Fix commandline arguments meant for pytest being parsed by BeeRef
+  (by DarkDefender)
 
 
 Changed
