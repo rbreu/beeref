@@ -13,23 +13,24 @@
 # You should have received a copy of the GNU General Public License
 # along with BeeRef.  If not, see <https://www.gnu.org/licenses/>.
 
-from functools import partial
-import logging
-import math
-from queue import Queue
+# 导入必要的模块
+from functools import partial  # 用于创建部分应用函数
+import logging  # 日志模块
+import math  # 数学计算模块
+from queue import Queue  # 队列模块，用于异步添加项目
 
-from PyQt6 import QtCore, QtWidgets, QtGui
-from PyQt6.QtCore import Qt
+from PyQt6 import QtCore, QtWidgets, QtGui  # 导入PyQt6核心模块
+from PyQt6.QtCore import Qt  # 导入Qt常量
 
-import rpack
+import rpack  # 矩形打包算法，用于最优排列
 
-from beeref import commands
-from beeref.config import BeeSettings
-from beeref.items import item_registry, BeeErrorItem, sort_by_filename
-from beeref.selection import MultiSelectItem, RubberbandItem
+from beeref import commands  # 导入命令模块，用于撤销/重做功能
+from beeref.config import BeeSettings  # 导入设置模块
+from beeref.items import item_registry, BeeErrorItem, sort_by_filename  # 导入项目相关模块
+from beeref.selection import MultiSelectItem, RubberbandItem  # 导入选择相关模块
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)  # 创建日志记录器
 
 
 class BeeGraphicsScene(QtWidgets.QGraphicsScene):
