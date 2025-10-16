@@ -43,31 +43,31 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene): #用于BeeRef的图形场景
     def __init__(self, undo_stack): #用于初始化场景
         super().__init__() #调用父类初始化方法
         self.active_mode = None #用于当前活动模式
-        self.undo_stack = undo_stack
-        self.max_z = 0
-        self.min_z = 0
-        self.Z_STEP = 0.001
-        self.selectionChanged.connect(self.on_selection_change)
-        self.changed.connect(self.on_change)
-        self.items_to_add = Queue() 
-        self.edit_item = None
-        self.crop_item = None
-        self.settings = BeeSettings()
-        self.clear()
-        self._clear_ongoing = False
+        self.undo_stack = undo_stack #用于撤销栈
+        self.max_z = 0 #用于最大z值
+        self.min_z = 0 #用于最小z值
+        self.Z_STEP = 0.001 # 用于z值步长
+        self.selectionChanged.connect(self.on_selection_change) #用于选择改变信号连接槽函数
+        self.changed.connect(self.on_change) #用于场景改变信号连接槽函数
+        self.items_to_add = Queue() #用于待添加项目队列
+        self.edit_item = None #用于编辑项目
+        self.crop_item = None #用于裁剪项目
+        self.settings = BeeSettings() #用于配置管理
+        self.clear() #用于清除场景
+        self._clear_ongoing = False #用于清除场景ongoing标志
 
-    def clear(self):
-        self._clear_ongoing = True
-        super().clear()
-        self.internal_clipboard = []
-        self.rubberband_item = RubberbandItem()
-        self.multi_select_item = MultiSelectItem()
-        self._clear_ongoing = False
+    def clear(self): #用于清除场景
+        self._clear_ongoing = True #用于清除场景ongoing标志
+        super().clear() #调用父类清除方法
+        self.internal_clipboard = [] #用于内部剪贴板
+        self.rubberband_item = RubberbandItem() #用于橡皮筋项目
+        self.multi_select_item = MultiSelectItem() #用于多选择项目
+        self._clear_ongoing = False #用于清除场景ongoing标志
 
-    def addItem(self, item):
-        logger.debug(f'Adding item {item}')
-        super().addItem(item)
-
+    def addItem(self, item): #用于添加项目
+        logger.debug(f'Adding item {item} to scene') #用于记录日志
+        super().addItem(item) #调用父类添加方法 
+ 
     def removeItem(self, item):
         logger.debug(f'Removing item {item}')
         super().removeItem(item)
