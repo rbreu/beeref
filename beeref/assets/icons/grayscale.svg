@@ -1,0 +1,20 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M16 2C23.732 2 30 8.26801 30 16C30 23.732 23.732 30 16 30C8.26801 30 2 23.732 2 16C2 8.26801 8.26801 2 16 2ZM16 29C23.1797 29 29 23.1797 29 16C29 8.8203 23.1797 3 16 3V29Z" fill="white"/>
+<path d="M16 16.9286C16 9.74887 16 3 16 3C23.1797 3 29 8.8203 29 16C29 23.1797 23.1797 29 16 29C16 29 16 24.1083 16 16.9286Z" fill="white" fill-opacity="0.24"/>
+<circle cx="18" cy="6" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="18" cy="10" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="22" cy="10" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="22" cy="6" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="18" cy="14" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="22" cy="14" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="26" cy="14" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="26" cy="10" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="18" cy="18" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="22" cy="18" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="26" cy="18" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="26" cy="22" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="18" cy="22" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="22" cy="22" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="22" cy="26" r="1" fill="white" fill-opacity="0.8"/>
+<circle cx="18" cy="26" r="1" fill="white" fill-opacity="0.8"/>
+</svg>

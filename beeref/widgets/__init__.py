@@ -26,6 +26,13 @@ from beeref.widgets import (  # noqa: F401
     settings,
     welcome_overlay,
     color_gamut,
+    floating_menu,
+    text_floating_menu,
+    image_floating_menu,
+    gif_floating_menu,
+    gif_frames_menu,
+    draw_floating_menu,
+    color_picker,
 )
 
 

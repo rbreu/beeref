@@ -135,3 +135,7 @@ dmypy.json
 Gemfile.lock
 _site
 .bundle
+
+# macOS
+.DS_Store
+**/.DS_Store

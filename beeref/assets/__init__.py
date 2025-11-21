@@ -18,7 +18,7 @@
 from importlib.resources import files as rsc_files
 import logging
 
-from PyQt6 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets, QtSvg
 
 
 logger = logging.getLogger(__name__)
@@ -45,6 +45,8 @@ class BeeAssets:
             'cursor_flip_h.png', (20, 20))
         self.cursor_flip_v = self.cursor_from_image(
             'cursor_flip_v.png', (20, 20))
+        self.cursor_draw_line = self.cursor_from_svg(
+            'icons/draw-line.svg', (12, 12))
 
     def cursor_from_image(self, filename, hotspot):
         app = QtWidgets.QApplication.instance()
@@ -52,6 +54,29 @@ class BeeAssets:
         img = QtGui.QImage(str(self.PATH.joinpath(filename)))
         assert img.isNull() is False
         pixmap = QtGui.QPixmap.fromImage(img)
+        pixmap.setDevicePixelRatio(scaling)
+        return QtGui.QCursor(
+            pixmap, int(hotspot[0]/scaling), int(hotspot[1]/scaling))
+
+    def cursor_from_svg(self, filename, hotspot, size=24):
+        """Creates cursor from SVG file."""
+        app = QtWidgets.QApplication.instance()
+        scaling = app.primaryScreen().devicePixelRatio()
+        
+        # Load SVG
+        svg_path = str(self.PATH.joinpath(filename))
+        renderer = QtSvg.QSvgRenderer(svg_path)
+        
+        # Create pixmap of required size
+        pixmap_size = int(size * scaling)
+        pixmap = QtGui.QPixmap(pixmap_size, pixmap_size)
+        pixmap.fill(QtGui.QColor(0, 0, 0, 0))  # Transparent background
+        
+        # Render SVG to pixmap
+        painter = QtGui.QPainter(pixmap)
+        renderer.render(painter)
+        painter.end()
+        
         pixmap.setDevicePixelRatio(scaling)
         return QtGui.QCursor(
             pixmap, int(hotspot[0]/scaling), int(hotspot[1]/scaling))

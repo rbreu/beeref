@@ -34,7 +34,7 @@ import tempfile
 from PyQt6 import QtGui
 
 from beeref import constants
-from beeref.items import BeePixmapItem, BeeErrorItem
+from beeref.items import BeePixmapItem, BeeErrorItem, BeeDrawItem
 from .errors import BeeFileIOError, IMG_LOADING_ERROR_MSG
 from .schema import SCHEMA, USER_VERSION, MIGRATIONS, APPLICATION_ID
 
@@ -81,6 +81,7 @@ class SQLiteIO:
         self.readonly = readonly
         self.worker = worker
         self.retry = False
+        self._migration_retry_count = 0
 
     def __del__(self):
         self._close_connection()
@@ -115,6 +116,10 @@ class SQLiteIO:
             except Exception:
                 # Updating a file failed; try creating it from scratch instead
                 logger.exception('Error migrating bee file')
+                self._migration_retry_count += 1
+                if self._migration_retry_count > 1:
+                    # Prevent infinite recursion
+                    raise
                 self.create_new = True
                 self._establish_connection()
 
@@ -200,6 +205,12 @@ class SQLiteIO:
             ' items.data, null as data '
             'FROM items '
             'WHERE items.type = "text"'))
+        # Fetch draw items separately
+        rows.extend(self.fetchall(
+            'SELECT items.id, type, x, y, z, scale, rotation, flip, '
+            ' items.data, null as data '
+            'FROM items '
+            'WHERE items.type = "draw"'))
         if self.worker:
             self.worker.begin_processing.emit(len(rows))
 
@@ -225,7 +236,28 @@ class SQLiteIO:
                         + IMG_LOADING_ERROR_MSG)
                     data['type'] = BeeErrorItem.TYPE
                 data['item'] = item
-
+            elif data['type'] == 'gif':
+                from beeref.gif_item import BeeGifItem
+                import tempfile
+                # Save GIF data to temporary file
+                if row[9]:  # If there's data in sqlar
+                    with tempfile.NamedTemporaryFile(
+                            suffix='.gif', delete=False) as tmp_file:
+                        tmp_file.write(row[9])
+                        tmp_filename = tmp_file.name
+                    item = BeeGifItem(filename=tmp_filename)
+                    # Save original filename if available
+                    if 'filename' in data['data']:
+                        item.filename = data['data']['filename']
+                else:
+                    # If no data, use original file
+                    filename = data['data'].get('filename')
+                    item = BeeGifItem(filename=filename)
+                data['item'] = item
+            elif data['type'] == 'draw':
+                # Create drawing item from saved data
+                item = BeeDrawItem.create_from_data(**data)
+                data['item'] = item
             self.scene.add_item_later(data)
 
             if self.worker:
@@ -311,6 +343,14 @@ class SQLiteIO:
                 'INSERT INTO sqlar (item_id, name, mode, sz, data) '
                 'VALUES (?, ?, ?, ?, ?)',
                 (item.save_id, name, 0o644, len(pixmap), pixmap))
+        elif hasattr(item, 'gif_to_bytes'):
+            gif_data = item.gif_to_bytes()
+            if gif_data:
+                name = item.get_filename_for_export('gif')
+                self.ex(
+                    'INSERT INTO sqlar (item_id, name, mode, sz, data) '
+                    'VALUES (?, ?, ?, ?, ?)',
+                    (item.save_id, name, 0o644, len(gif_data), gif_data))
         self.connection.commit()
 
     def update_item(self, item):

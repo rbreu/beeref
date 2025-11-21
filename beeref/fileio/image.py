@@ -29,6 +29,17 @@ import plum
 logger = logging.getLogger(__name__)
 
 
+def is_gif_file(path):
+    """Checks if file is a GIF."""
+    if isinstance(path, str):
+        ext = os.path.splitext(path)[1].lower()
+        return ext == '.gif'
+    elif hasattr(path, 'isLocalFile') and path.isLocalFile():
+        ext = os.path.splitext(path.toLocalFile())[1].lower()
+        return ext == '.gif'
+    return False
+
+
 def exif_rotated_image(path=None):
     """Returns a QImage that is transformed according to the source's
     orientation EXIF data.
@@ -84,9 +95,14 @@ def exif_rotated_image(path=None):
 def load_image(path):
     if isinstance(path, str):
         path = os.path.normpath(path)
+        # Check if file is a GIF
+        if is_gif_file(path):
+            return (None, path)  # Return None for image, path for GIF
         return (exif_rotated_image(path), path)
     if path.isLocalFile():
         path = os.path.normpath(path.toLocalFile())
+        if is_gif_file(path):
+            return (None, path)
         return (exif_rotated_image(path), path)
 
     url = bytes(path.toEncoded()).decode()

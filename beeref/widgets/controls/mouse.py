@@ -38,6 +38,7 @@ class MouseControlsEditor(MouseControlsEditorBase):
 
         self.layout.addWidget(QtWidgets.QLabel('Mouse Button:'))
         self.button_input = QtWidgets.QComboBox(parent=parent)
+        self.button_input.setMinimumWidth(40)
         self.button_input.insertItems(0, self.action.BUTTON_MAP.keys())
         values = list(self.action.BUTTON_MAP.keys())
         self.button_input.setCurrentIndex(values.index(self.old_button))

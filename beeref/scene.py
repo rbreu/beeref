@@ -141,7 +141,12 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         scale_factors = []
         for item in items:
             rect = self.itemsBoundingRect(items=[item])
-            scale_factors.append(avg / getattr(rect, mode)())
+            dimension = getattr(rect, mode)()
+            if dimension > 0:
+                scale_factors.append(avg / dimension)
+            else:
+                # Skip items with zero width or height
+                scale_factors.append(1.0)
         self.undo_stack.push(
             commands.NormalizeItems(items, scale_factors))
 
@@ -175,7 +180,11 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         scale_factors = []
         for item in items:
             rect = self.itemsBoundingRect(items=[item])
-            scale_factors.append(math.sqrt(avg / rect.width() / rect.height()))
+            if rect.width() > 0 and rect.height() > 0:
+                scale_factors.append(math.sqrt(avg / rect.width() / rect.height()))
+            else:
+                # Skip items with zero width or height
+                scale_factors.append(1.0)
         self.undo_stack.push(
             commands.NormalizeItems(items, scale_factors))
 

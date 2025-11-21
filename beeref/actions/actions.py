@@ -166,6 +166,12 @@ actions = ActionList([
         callback='on_action_insert_text',
     ),
     Action(
+        id='insert_draw',
+        text='&Draw',
+        shortcuts=['Ctrl+D'],
+        callback='on_action_insert_draw',
+    ),
+    Action(
         id='undo',
         text='&Undo',
         shortcuts=['Ctrl+Z'],
@@ -202,7 +208,7 @@ actions = ActionList([
     Action(
         id='delete',
         text='&Delete',
-        shortcuts=['Del'],
+        shortcuts=['Del', 'Backspace'],
         callback='on_action_delete_items',
         group='active_when_selection',
     ),

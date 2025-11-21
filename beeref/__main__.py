@@ -64,6 +64,15 @@ class BeeRefMainWindow(QtWidgets.QMainWindow):
         self.show()
 
     def closeEvent(self, event):
+        # Check for unsaved changes
+        confirm = self.view.get_confirmation_unsaved_changes(
+            'There are unsaved changes. Are you sure you want to quit?')
+        if not confirm:
+            # User cancelled closing
+            event.ignore()
+            return
+        
+        # Save window geometry
         geom = self.saveGeometry()
         self.view.settings.setValue('MainWindow/geometry', geom)
         event.accept()
@@ -109,9 +118,11 @@ def main():
     logger.info(f'Logging to: {logfile_name()}')
     settings.on_startup()
     args = CommandlineArgs(with_check=True)  # Force checking
-    assert not args.debug_raise_error, args.debug_raise_error
+    if args.debug_raise_error:
+        raise RuntimeError(args.debug_raise_error)
 
-    os.environ["QT_DEBUG_PLUGINS"] = "1"
+    if args.loglevel == 'DEBUG':
+        os.environ["QT_DEBUG_PLUGINS"] = "1"
     app = BeeRefApplication(sys.argv)
     palette = create_palette_from_dict(constants.COLORS)
     app.setPalette(palette)

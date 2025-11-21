@@ -19,7 +19,7 @@ from PyQt6 import QtCore
 
 from beeref import commands
 from beeref.fileio.errors import BeeFileIOError
-from beeref.fileio.image import load_image
+from beeref.fileio.image import load_image, is_gif_file
 from beeref.fileio.sql import SQLiteIO, is_bee_file
 from beeref.items import BeePixmapItem
 
@@ -62,15 +62,24 @@ def load_images(filenames, pos, scene, worker):
         logger.info(f'Loading image from file {filename}')
         img, filename = load_image(filename)
         worker.progress.emit(i)
-        if img.isNull():
+        
+        # Check if file is a GIF
+        if is_gif_file(filename):
+            from beeref.gif_item import BeeGifItem
+            item = BeeGifItem(filename=filename)
+            item.set_pos_center(pos)
+            scene.add_item_later({'item': item, 'type': 'gif'}, selected=True)
+            items.append(item)
+        elif img.isNull():
             logger.info(f'Could not load file {filename}')
             errors.append(filename)
             continue
-
-        item = BeePixmapItem(img, filename)
-        item.set_pos_center(pos)
-        scene.add_item_later({'item': item, 'type': 'pixmap'}, selected=True)
-        items.append(item)
+        else:
+            item = BeePixmapItem(img, filename)
+            item.set_pos_center(pos)
+            scene.add_item_later({'item': item, 'type': 'pixmap'}, selected=True)
+            items.append(item)
+        
         if worker.canceled:
             break
         # Give main thread time to process items:
