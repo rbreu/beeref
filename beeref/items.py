@@ -17,9 +17,11 @@
 text).
 """
 
+import copy
 from collections import defaultdict
 from functools import cached_property
 import logging
+import math
 import os.path
 
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -729,6 +731,173 @@ class BeeTextItem(BeeItemMixin, QtWidgets.QGraphicsTextItem):
 
     def copy_to_clipboard(self, clipboard):
         clipboard.setText(self.toPlainText())
+
+
+@register_item
+class BeePathItem(BeeItemMixin, QtWidgets.QGraphicsItem):
+    """Class for freehand drawing/sketch strokes added by the user."""
+
+    TYPE = 'path'
+
+    def __init__(self, strokes=None, **kwargs):
+        super().__init__()
+        self.save_id = None
+        self.is_image = False
+        self.strokes = strokes or []
+        self.temp_stroke = None
+        self._cached_rect = QtCore.QRectF(0, 0, 1, 1)
+        self._cache_pixmap = None
+        self.init_selectable()
+        logger.debug(f'Initialized {self}')
+
+    @classmethod
+    def create_from_data(cls, **kwargs):
+        data = kwargs.get('data', {})
+        item = cls(strokes=data.get('strokes', []))
+        item._update_bounding_rect()
+        item._invalidate_cache()
+        return item
+
+    def __str__(self):
+        n = len(self.strokes)
+        return f'Path ({n} stroke{"s" if n != 1 else ""})'
+
+    def get_extra_save_data(self):
+        return {'strokes': self.strokes}
+
+    def create_copy(self):
+        item = BeePathItem(strokes=copy.deepcopy(self.strokes))
+        item.setPos(self.pos())
+        item.setZValue(self.zValue())
+        item.setScale(self.scale())
+        item.setRotation(self.rotation())
+        if self.flip() == -1:
+            item.do_flip()
+        item._update_bounding_rect()
+        item._invalidate_cache()
+        return item
+
+    def contains(self, point):
+        return self.boundingRect().contains(point)
+
+    def bounding_rect_unselected(self):
+        rect = QtCore.QRectF(self._cached_rect)
+        if self.temp_stroke:
+            base_size = self.temp_stroke.get('base_size', 10)
+            for pt in self.temp_stroke.get('points', []):
+                r = base_size * pt.get('pressure', 1.0) / 2 + 1
+                rect = rect.united(QtCore.QRectF(
+                    pt['x'] - r, pt['y'] - r, 2 * r, 2 * r))
+        return rect
+
+    def add_stroke(self, stroke):
+        self.prepareGeometryChange()
+        self.strokes.append(stroke)
+        self._update_bounding_rect()
+        self._invalidate_cache()
+        self.update()
+
+    def _invalidate_cache(self):
+        self._cache_pixmap = None
+
+    def _update_bounding_rect(self):
+        if not self.strokes:
+            self._cached_rect = QtCore.QRectF(0, 0, 1, 1)
+            return
+        min_x = float('inf')
+        min_y = float('inf')
+        max_x = float('-inf')
+        max_y = float('-inf')
+        max_r = 0
+        for stroke in self.strokes:
+            base_size = stroke.get('base_size', 10)
+            for pt in stroke.get('points', []):
+                r = base_size * pt.get('pressure', 1.0) / 2
+                if r > max_r:
+                    max_r = r
+                x = pt['x']
+                y = pt['y']
+                if x < min_x:
+                    min_x = x
+                if x > max_x:
+                    max_x = x
+                if y < min_y:
+                    min_y = y
+                if y > max_y:
+                    max_y = y
+        pad = max_r + 1
+        self._cached_rect = QtCore.QRectF(
+            min_x - pad, min_y - pad,
+            (max_x - min_x) + 2 * pad,
+            (max_y - min_y) + 2 * pad)
+
+    def _paint_stroke(self, painter, stroke):
+        color_data = stroke.get('color', [0, 0, 0, 255])
+        color = QtGui.QColor(*color_data)
+        base_size = stroke.get('base_size', 10)
+        points = stroke.get('points', [])
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QtGui.QBrush(color))
+
+        for i, pt in enumerate(points):
+            pressure = pt.get('pressure', 1.0)
+            radius = base_size * pressure / 2
+            painter.drawEllipse(
+                QtCore.QPointF(pt['x'], pt['y']),
+                radius, radius)
+            if i > 0:
+                prev = points[i - 1]
+                dx = pt['x'] - prev['x']
+                dy = pt['y'] - prev['y']
+                dist = math.hypot(dx, dy)
+                if dist > 1:
+                    steps = int(dist)
+                    for s in range(1, steps):
+                        t = s / dist
+                        ix = prev['x'] + dx * t
+                        iy = prev['y'] + dy * t
+                        prev_p = prev.get('pressure', 1.0)
+                        ip = prev_p + (pressure - prev_p) * t
+                        ir = base_size * ip / 2
+                        painter.drawEllipse(
+                            QtCore.QPointF(ix, iy), ir, ir)
+
+    def _ensure_cache(self):
+        if self._cache_pixmap is not None:
+            return
+        if not self.strokes:
+            return
+        rect = self._cached_rect
+        w = max(1, int(math.ceil(rect.width())))
+        h = max(1, int(math.ceil(rect.height())))
+        pixmap = QtGui.QPixmap(w, h)
+        pixmap.fill(QtGui.QColor(0, 0, 0, 0))
+        painter = QtGui.QPainter(pixmap)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+        painter.translate(-rect.x(), -rect.y())
+        for stroke in self.strokes:
+            self._paint_stroke(painter, stroke)
+        painter.end()
+        self._cache_pixmap = pixmap
+
+    def paint(self, painter, option, widget):
+        if self.strokes:
+            self._ensure_cache()
+            if self._cache_pixmap is not None:
+                painter.drawPixmap(
+                    QtCore.QPointF(
+                        self._cached_rect.x(),
+                        self._cached_rect.y()),
+                    self._cache_pixmap)
+
+        if self.temp_stroke:
+            painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+            self._paint_stroke(painter, self.temp_stroke)
+
+        self.paint_selectable(painter, option, widget)
+
+    def copy_to_clipboard(self, clipboard):
+        pass
 
 
 @register_item

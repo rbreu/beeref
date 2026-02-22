@@ -106,6 +106,14 @@ menu_structure = [
         ],
     },
     {
+        'menu': '&Drawing',
+        'items': [
+            'draw_mode',
+            'set_brush_color',
+            'set_brush_size',
+        ],
+    },
+    {
         'menu': '&Images',
         'items': [
             'change_opacity',

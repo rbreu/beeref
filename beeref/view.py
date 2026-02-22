@@ -29,7 +29,7 @@ from beeref import fileio
 from beeref.fileio.errors import IMG_LOADING_ERROR_MSG
 from beeref.fileio.export import exporter_registry, ImagesToDirectoryExporter
 from beeref import widgets
-from beeref.items import BeePixmapItem, BeeTextItem
+from beeref.items import BeePixmapItem, BeeTextItem, BeePathItem
 from beeref.main_controls import MainControlsMixin
 from beeref.scene import BeeGraphicsScene
 from beeref.utils import get_file_extension_from_format, qcolor_to_hex
@@ -46,6 +46,7 @@ class BeeGraphicsView(MainControlsMixin,
     PAN_MODE = 1
     ZOOM_MODE = 2
     SAMPLE_COLOR_MODE = 3
+    DRAW_MODE = 4
 
     def __init__(self, app, parent=None):
         super().__init__(parent)
@@ -69,6 +70,12 @@ class BeeGraphicsView(MainControlsMixin,
         self.filename = None
         self.previous_transform = None
         self.active_mode = None
+        self.draw_item = None
+        self.draw_current_stroke = None
+        self.draw_brush_size = 20.0
+        self.draw_brush_color = [200, 200, 200, 255]
+        self._tablet_pressure = 1.0
+        self._suppress_context_menu = False
 
         self.scene = BeeGraphicsScene(self.undo_stack)
         self.scene.changed.connect(self.on_scene_changed)
@@ -107,6 +114,8 @@ class BeeGraphicsView(MainControlsMixin,
     def cancel_active_modes(self):
         self.scene.cancel_active_modes()
         self.cancel_sample_color_mode()
+        if self.active_mode == self.DRAW_MODE:
+            self.exit_draw_mode(commit=True)
         self.active_mode = None
 
     def cancel_sample_color_mode(self):
@@ -154,6 +163,9 @@ class BeeGraphicsView(MainControlsMixin,
         self.update_window_title()
 
     def on_context_menu(self, point):
+        if self._suppress_context_menu:
+            self._suppress_context_menu = False
+            return
         self.context_menu.exec(self.mapToGlobal(point))
 
     def get_supported_image_formats(self, cls):
@@ -399,6 +411,55 @@ class BeeGraphicsView(MainControlsMixin,
             self,
             pos,
             self.scene.sample_color_at(self.mapToScene(pos)))
+
+    def on_action_draw_mode(self):
+        if self.active_mode == self.DRAW_MODE:
+            self.exit_draw_mode(commit=True)
+        else:
+            self.enter_draw_mode()
+
+    def enter_draw_mode(self):
+        self.cancel_active_modes()
+        self.scene.deselect_all_items()
+        self.active_mode = self.DRAW_MODE
+        self.viewport().setCursor(Qt.CursorShape.CrossCursor)
+        self.setFocus()
+        self.welcome_overlay.hide()
+        logger.debug('Entered draw mode')
+
+    def exit_draw_mode(self, commit=True):
+        logger.debug(f'Exiting draw mode, commit={commit}')
+        if self.draw_item:
+            if self.draw_current_stroke:
+                self.draw_item.add_stroke(self.draw_current_stroke)
+                self.draw_item.temp_stroke = None
+                self.draw_current_stroke = None
+            if commit and self.draw_item.strokes:
+                self.scene.removeItem(self.draw_item)
+                self.undo_stack.push(
+                    commands.InsertItems(
+                        self.scene, [self.draw_item]))
+            else:
+                self.scene.removeItem(self.draw_item)
+            self.draw_item = None
+        self.active_mode = None
+        self.viewport().unsetCursor()
+
+    def on_action_set_brush_color(self):
+        current = QtGui.QColor(*self.draw_brush_color)
+        color = QtWidgets.QColorDialog.getColor(
+            current, self, 'Select Brush Color',
+            QtWidgets.QColorDialog.ColorDialogOption.ShowAlphaChannel)
+        if color.isValid():
+            self.draw_brush_color = [
+                color.red(), color.green(), color.blue(), color.alpha()]
+
+    def on_action_set_brush_size(self):
+        size, ok = QtWidgets.QInputDialog.getInt(
+            self, 'Brush Size', 'Size (px):',
+            int(self.draw_brush_size), 1, 500)
+        if ok:
+            self.draw_brush_size = float(size)
 
     def on_items_loaded(self, value):
         logger.debug('On items loaded: add queued items')
@@ -854,7 +915,45 @@ class BeeGraphicsView(MainControlsMixin,
             event.accept()
             return
 
+    def tabletEvent(self, event):
+        if self.active_mode == self.DRAW_MODE:
+            self._tablet_pressure = event.pressure()
+            # Don't accept — let Qt synthesize mouse events for drawing
+            event.ignore()
+        else:
+            super().tabletEvent(event)
+
     def mousePressEvent(self, event):
+        if self.active_mode == self.DRAW_MODE:
+            if event.button() == Qt.MouseButton.RightButton:
+                self._suppress_context_menu = True
+                self.exit_draw_mode(commit=True)
+                event.accept()
+                return
+            if event.button() == Qt.MouseButton.LeftButton:
+                scene_pos = self.mapToScene(event.pos())
+                if not self.draw_item:
+                    self.draw_item = BeePathItem()
+                    self.draw_item.setPos(scene_pos)
+                    self.scene.addItem(self.draw_item)
+                    self.draw_item.bring_to_front()
+                local_pos = self.draw_item.mapFromScene(scene_pos)
+                self.draw_current_stroke = {
+                    'color': list(self.draw_brush_color),
+                    'base_size': self.draw_brush_size,
+                    'points': [{
+                        'x': round(local_pos.x(), 1),
+                        'y': round(local_pos.y(), 1),
+                        'pressure': self._tablet_pressure,
+                    }],
+                }
+                self.draw_item.temp_stroke = self.draw_current_stroke
+                self.draw_item.update()
+                event.accept()
+                return
+            event.accept()
+            return
+
         if self.mousePressEventMainControls(event):
             return
 
@@ -900,6 +999,21 @@ class BeeGraphicsView(MainControlsMixin,
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
+        if (self.active_mode == self.DRAW_MODE
+                and self.draw_current_stroke is not None):
+            scene_pos = self.mapToScene(event.pos())
+            local_pos = self.draw_item.mapFromScene(scene_pos)
+            self.draw_current_stroke['points'].append({
+                'x': round(local_pos.x(), 1),
+                'y': round(local_pos.y(), 1),
+                'pressure': self._tablet_pressure,
+            })
+            self.draw_item.prepareGeometryChange()
+            self.draw_item.temp_stroke = self.draw_current_stroke
+            self.draw_item.update()
+            event.accept()
+            return
+
         if self.active_mode == self.PAN_MODE:
             self.reset_previous_transform()
             pos = event.position()
@@ -931,6 +1045,15 @@ class BeeGraphicsView(MainControlsMixin,
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
+        if (self.active_mode == self.DRAW_MODE
+                and self.draw_current_stroke is not None):
+            self.draw_item.add_stroke(self.draw_current_stroke)
+            self.draw_item.temp_stroke = None
+            self.draw_current_stroke = None
+            self._tablet_pressure = 1.0
+            event.accept()
+            return
+
         if self.active_mode == self.PAN_MODE:
             logger.trace('End pan')
             self.viewport().unsetCursor()
@@ -953,6 +1076,11 @@ class BeeGraphicsView(MainControlsMixin,
     def keyPressEvent(self, event):
         if self.keyPressEventMainControls(event):
             return
+        if self.active_mode == self.DRAW_MODE:
+            if event.key() == Qt.Key.Key_Escape:
+                self.exit_draw_mode(commit=True)
+                event.accept()
+                return
         if self.active_mode == self.SAMPLE_COLOR_MODE:
             self.cancel_sample_color_mode()
             event.accept()

@@ -447,4 +447,20 @@ actions = ActionList([
         text='&Open Settings Folder',
         callback='on_action_open_settings_dir',
     ),
+    Action(
+        id='draw_mode',
+        text='&Draw',
+        shortcuts=['D'],
+        callback='on_action_draw_mode',
+    ),
+    Action(
+        id='set_brush_color',
+        text='Brush &Color...',
+        callback='on_action_set_brush_color',
+    ),
+    Action(
+        id='set_brush_size',
+        text='Brush &Size...',
+        callback='on_action_set_brush_size',
+    ),
 ])
