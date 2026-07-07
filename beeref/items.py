@@ -203,11 +203,15 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
             pm = self._grayscale_pixmap
         else:
             pm = self.pixmap()
-        img = pm.toImage()
-
-        color = img.pixelColor(int(ipos.x()), int(ipos.y()))
-        if color.alpha():
-            return color
+        # Only copy a 1x1 pixel region instead of converting the entire
+        # image to QImage — dramatically faster for large reference images
+        x = int(ipos.x())
+        y = int(ipos.y())
+        if 0 <= x < pm.width() and 0 <= y < pm.height():
+            img = pm.copy(x, y, 1, 1).toImage()
+            color = img.pixelColor(0, 0)
+            if color.alpha():
+                return color
 
     def bounding_rect_unselected(self):
         if self.crop_mode:
