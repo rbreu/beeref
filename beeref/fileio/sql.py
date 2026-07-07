@@ -109,6 +109,7 @@ class SQLiteIO:
             uri = f'{uri}?mode=rw'
         self._connection = sqlite3.connect(uri, uri=True)
         self._cursor = self.connection.cursor()
+        self.ex('PRAGMA journal_mode=WAL')
         if not self.create_new:
             try:
                 self._migrate()
@@ -267,6 +268,7 @@ class SQLiteIO:
                 for item in self.scene.items_by_type(BeeErrorItem.TYPE)}
         logger.debug(f'Not saving error items: {keep}')
         to_delete = to_delete - keep
+        num_deleted = len(to_delete)
 
         to_save = list(self.scene.items_for_save())
         if self.worker:
@@ -283,7 +285,9 @@ class SQLiteIO:
                 if self.worker.canceled:
                     break
         self.delete_items(to_delete)
-        self.ex('VACUUM')
+        # Only VACUUM when significant data has been removed
+        if num_deleted > 10:
+            self.ex('VACUUM')
         self.connection.commit()
         if self.worker:
             self.worker.finished.emit(self.filename, [])
@@ -292,7 +296,6 @@ class SQLiteIO:
         to_delete = [(pk,) for pk in to_delete]
         self.exmany('DELETE FROM items WHERE id=?', to_delete)
         self.exmany('DELETE FROM sqlar WHERE item_id=?', to_delete)
-        self.connection.commit()
 
     def insert_item(self, item):
         self.ex(
@@ -311,7 +314,6 @@ class SQLiteIO:
                 'INSERT INTO sqlar (item_id, name, mode, sz, data) '
                 'VALUES (?, ?, ?, ?, ?)',
                 (item.save_id, name, 0o644, len(pixmap), pixmap))
-        self.connection.commit()
 
     def update_item(self, item):
         """Update item data.
@@ -327,4 +329,3 @@ class SQLiteIO:
              item.rotation(), item.flip(),
              json.dumps(item.get_extra_save_data()),
              item.save_id))
-        self.connection.commit()
