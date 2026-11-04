@@ -267,6 +267,12 @@ actions = ActionList([
         group='active_when_selection',
     ),
     Action(
+        id='move_to_upper_frame_edge',
+        text='&Move to Upper Frame Edge',
+        callback='on_action_move_to_upper_frame_edge',
+        group='active_when_selection',
+    ),
+    Action(
         id='change_opacity',
         text='Change &Opacity...',
         callback='on_action_change_opacity',

@@ -306,7 +306,14 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
                     break
 
         self.undo_stack.push(commands.ArrangeItems(self, items, positions))
-
+    
+    def move_to_upper_frame_edge(self):
+        self.cancel_active_modes()
+        items = self.selectedItems(user_only=True)
+        rect = self.itemsBoundingRect(items=items)
+        
+        self.undo_stack.push(commands.MoveItemsBy(items,QPointF(0, rect.top()))
+        
     def flip_items(self, vertical=False):
         """Flip selected items."""
         self.cancel_active_modes()

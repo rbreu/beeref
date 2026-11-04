@@ -332,6 +332,9 @@ class BeeGraphicsView(MainControlsMixin,
     def on_action_arrange_square(self):
         self.scene.arrange_square()
 
+    def on_action_move_to_upper_frame_edge(self):
+        self.scene.move_to_upper_frame_edge()
+
     def on_action_change_opacity(self):
         images = list(filter(
             lambda item: item.is_image,
