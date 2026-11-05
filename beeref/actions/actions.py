@@ -269,7 +269,29 @@ actions = ActionList([
     Action(
         id='move_to_upper_frame_edge',
         text='&Move to Upper Frame Edge',
+        shortcuts=['Shift+Up'],
         callback='on_action_move_to_upper_frame_edge',
+        group='active_when_selection',
+    ),
+    Action(
+        id='move_to_lower_frame_edge',
+        text='&Move to Lower Frame Edge',
+        shortcuts=['Shift+Down'],
+        callback='on_action_move_to_lower_frame_edge',
+        group='active_when_selection',
+    ),
+    Action(
+        id='move_to_left_frame_edge',
+        text='&Move to Left Frame Edge',
+        shortcuts=['Shift+Left'],
+        callback='on_action_move_to_left_frame_edge',
+        group='active_when_selection',
+    ),
+    Action(
+        id='move_to_right_frame_edge',
+        text='&Move to Right Frame Edge',
+        shortcuts=['Shift+Right'],
+        callback='on_action_move_to_right_frame_edge',
         group='active_when_selection',
     ),
     Action(

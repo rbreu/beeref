@@ -104,10 +104,10 @@ menu_structure = [
             'arrange_vertical',
             'arrange_square',
             MENU_SEPARATOR,
-            'move_to_upper_frame_edge'#,
-            #'move_to_lower_frame_edge',
-            #'move_to_left_frame_edge',
-            #'move_to_right_frame_edge'
+            'move_to_upper_frame_edge',
+            'move_to_lower_frame_edge',
+            'move_to_left_frame_edge',
+            'move_to_right_frame_edge',
         ],
     },
     {
