@@ -313,9 +313,6 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         rect = self.itemsBoundingRect(items=items)
         
         self.undo_stack.push(commands.MoveItemsBy(items,QtCore.QPointF(0, -rect.top() + viewport_top_left.y())))
-        #self.undo_stack.push(commands.ArrangeItems(self, items, [viewport_top_left]))
-        #self.undo_stack.push(commands.ArrangeItems(self, items, [QtCore.QPointF(rect.left(), viewport_top_left.y() + 1)]))
-        #self.undo_stack.push(commands.MoveItemsBy(items,QtCore.QPointF(0, -rect.top() + viewport_top_left.y() + 2)))
     
     def move_to_lower_frame_edge(self, viewport_bottom_right):
         self.cancel_active_modes()
@@ -323,8 +320,6 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         rect = self.itemsBoundingRect(items=items)
         
         self.undo_stack.push(commands.MoveItemsBy(items,QtCore.QPointF(0, -rect.bottom() + viewport_bottom_right.y())))
-        #self.undo_stack.push(commands.ArrangeItems(self, items, [QtCore.QPointF(rect.left(), viewport_bottom_right.y() - rect.height() + 1)]))
-        #self.undo_stack.push(commands.MoveItemsBy(items,QtCore.QPointF(0, -rect.bottom() + viewport_bottom_right.y() + 2)))
 
     def move_to_left_frame_edge(self, viewport_top_left):
         self.cancel_active_modes()
@@ -332,7 +327,6 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         rect = self.itemsBoundingRect(items=items)
         
         self.undo_stack.push(commands.MoveItemsBy(items,QtCore.QPointF(-rect.left() + viewport_top_left.x(), 0)))
-        #self.undo_stack.push(commands.MoveItemsBy(items,QtCore.QPointF(-rect.left() + viewport_top_left.x() - 1, 0)))
     
     def move_to_right_frame_edge(self, viewport_bottom_right):
         self.cancel_active_modes()
@@ -340,7 +334,6 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
         rect = self.itemsBoundingRect(items=items)
         
         self.undo_stack.push(commands.MoveItemsBy(items,QtCore.QPointF(-rect.right() + viewport_bottom_right.x(), 0)))
-        #self.undo_stack.push(commands.MoveItemsBy(items,QtCore.QPointF(-rect.right() + viewport_bottom_right.x() + 1, 0)))
 
     def flip_items(self, vertical=False):
         """Flip selected items."""
