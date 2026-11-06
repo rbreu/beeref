@@ -58,6 +58,7 @@ class BeeGraphicsView(MainControlsMixin,
         self.setBackgroundBrush(
             QtGui.QBrush(QtGui.QColor(*constants.COLORS['Scene:Canvas'])))
         self.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+        self.setViewportMargins(-2, -2, -2, -2) #An unfortunate hack to counteract the hard coded margins the fitInView method applies. With this, fit commands fit images to the whole view without margin
         self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
 
         self.undo_stack = QtGui.QUndoStack(self)
@@ -331,6 +332,18 @@ class BeeGraphicsView(MainControlsMixin,
 
     def on_action_arrange_square(self):
         self.scene.arrange_square()
+
+    def on_action_move_to_upper_frame_edge(self):
+        self.scene.move_to_upper_frame_edge(self.mapToScene(2,2))
+
+    def on_action_move_to_lower_frame_edge(self):
+        self.scene.move_to_lower_frame_edge(self.mapToScene(self.width()+2, self.height()+2))
+
+    def on_action_move_to_left_frame_edge(self):
+        self.scene.move_to_left_frame_edge(self.mapToScene(2,2))
+
+    def on_action_move_to_right_frame_edge(self):
+        self.scene.move_to_right_frame_edge(self.mapToScene(self.width()+2, self.height()+2))
 
     def on_action_change_opacity(self):
         images = list(filter(

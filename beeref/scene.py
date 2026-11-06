@@ -306,6 +306,34 @@ class BeeGraphicsScene(QtWidgets.QGraphicsScene):
                     break
 
         self.undo_stack.push(commands.ArrangeItems(self, items, positions))
+    
+    def move_to_upper_frame_edge(self, viewport_top_left):
+        self.cancel_active_modes()
+        items = self.selectedItems(user_only=True)
+        rect = self.itemsBoundingRect(items=items)
+        
+        self.undo_stack.push(commands.MoveItemsBy(items,QtCore.QPointF(0, -rect.top() + viewport_top_left.y())))
+    
+    def move_to_lower_frame_edge(self, viewport_bottom_right):
+        self.cancel_active_modes()
+        items = self.selectedItems(user_only=True)
+        rect = self.itemsBoundingRect(items=items)
+        
+        self.undo_stack.push(commands.MoveItemsBy(items,QtCore.QPointF(0, -rect.bottom() + viewport_bottom_right.y())))
+
+    def move_to_left_frame_edge(self, viewport_top_left):
+        self.cancel_active_modes()
+        items = self.selectedItems(user_only=True)
+        rect = self.itemsBoundingRect(items=items)
+        
+        self.undo_stack.push(commands.MoveItemsBy(items,QtCore.QPointF(-rect.left() + viewport_top_left.x(), 0)))
+    
+    def move_to_right_frame_edge(self, viewport_bottom_right):
+        self.cancel_active_modes()
+        items = self.selectedItems(user_only=True)
+        rect = self.itemsBoundingRect(items=items)
+        
+        self.undo_stack.push(commands.MoveItemsBy(items,QtCore.QPointF(-rect.right() + viewport_bottom_right.x(), 0)))
 
     def flip_items(self, vertical=False):
         """Flip selected items."""
