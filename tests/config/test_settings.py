@@ -7,7 +7,7 @@ import pytest
 
 from PyQt6 import QtGui
 
-from beeref.config.settings import CommandlineArgs
+from beeref.config.settings import CommandlineArgs, settings_events
 
 
 def test_command_line_args_singleton():
@@ -115,6 +115,41 @@ def test_settings_value_changed_when_default(settings):
 def test_settings_value_changed_when_chagned(settings):
     settings.setValue('Items/image_storage_format', 'jpg')
     assert settings.value_changed('Items/image_storage_format') is True
+
+
+def test_settings_canvas_color_default(settings):
+    assert settings.canvas_color() == QtGui.QColor(60, 60, 60)
+
+
+def test_settings_canvas_color_from_settings(settings):
+    settings.setValue('View/canvas_color', '#112233')
+    assert settings.canvas_color() == QtGui.QColor(0x11, 0x22, 0x33)
+
+
+def test_settings_canvas_color_default_when_invalid(settings):
+    settings.setValue('View/canvas_color', 'notacolor')
+    assert settings.canvas_color() == QtGui.QColor(60, 60, 60)
+
+
+def test_settings_canvas_color_set_value_emits_changed(settings):
+    callback = MagicMock()
+    settings_events.canvas_color_changed.connect(callback)
+    try:
+        settings.setValue('View/canvas_color', '#112233')
+    finally:
+        settings_events.canvas_color_changed.disconnect(callback)
+    callback.assert_called_once_with()
+
+
+def test_settings_canvas_color_remove_emits_changed(settings):
+    settings.setValue('View/canvas_color', '#112233')
+    callback = MagicMock()
+    settings_events.canvas_color_changed.connect(callback)
+    try:
+        settings.remove('View/canvas_color')
+    finally:
+        settings_events.canvas_color_changed.disconnect(callback)
+    callback.assert_called_once_with()
 
 
 def test_settings_restore_defaults_restores(settings):

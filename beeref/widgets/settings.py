@@ -16,7 +16,7 @@
 from functools import partial
 import logging
 
-from PyQt6 import QtWidgets
+from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
 from beeref import constants
@@ -133,6 +133,34 @@ class SingleCheckboxGroup(GroupBase):
         return value == Qt.CheckState.Checked
 
 
+class ColorGroup(GroupBase):
+    def __init__(self):
+        super().__init__()
+        self.input = QtWidgets.QPushButton()
+        self.input.setAutoDefault(False)
+        self.input.setMinimumWidth(80)
+        self.input.clicked.connect(self.on_button_clicked)
+        self.set_value(self.settings.valueOrDefault(self.KEY))
+        self.layout.addWidget(self.input)
+        self.layout.addStretch(100)
+        self.ignore_value_changed = False
+
+    def set_value(self, value):
+        self.value = value
+        self.input.setText(value)
+        # Keep the hex label readable on both light and dark swatches
+        text = 'black' if QtGui.QColor(value).lightness() > 127 else 'white'
+        self.input.setStyleSheet(
+            f'background-color: {value}; color: {text};')
+
+    def on_button_clicked(self):
+        color = QtWidgets.QColorDialog.getColor(
+            QtGui.QColor(self.value), self, self.TITLE)
+        if color.isValid():
+            self.set_value(color.name())
+            self.on_value_changed(color.name())
+
+
 class ArrangeDefaultWidget(RadioGroup):
     TITLE = 'Default Arrange Method:'
     HELPTEXT = ('How images are arranged when inserted in batch')
@@ -186,6 +214,12 @@ class ConfirmCloseUnsavedWidget(SingleCheckboxGroup):
     KEY = 'Save/confirm_close_unsaved'
 
 
+class CanvasColorWidget(ColorGroup):
+    TITLE = 'Canvas Color:'
+    HELPTEXT = 'The background color of the canvas.'
+    KEY = 'View/canvas_color'
+
+
 class SettingsDialog(QtWidgets.QDialog):
     def __init__(self, parent):
         super().__init__(parent)
@@ -198,6 +232,13 @@ class SettingsDialog(QtWidgets.QDialog):
         misc.setLayout(misc_layout)
         misc_layout.addWidget(ConfirmCloseUnsavedWidget(), 0, 0)
         tabs.addTab(misc, '&Miscellaneous')
+
+        # View
+        view = QtWidgets.QWidget()
+        view_layout = QtWidgets.QGridLayout()
+        view.setLayout(view_layout)
+        view_layout.addWidget(CanvasColorWidget(), 0, 0)
+        tabs.addTab(view, '&View')
 
         # Images & Items
         items = QtWidgets.QWidget()

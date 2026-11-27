@@ -101,6 +101,7 @@ class CommandlineArgs:
 class BeeSettingsEvents(QtCore.QObject):
     restore_defaults = QtCore.pyqtSignal()
     restore_keyboard_defaults = QtCore.pyqtSignal()
+    canvas_color_changed = QtCore.pyqtSignal()
 
 
 # We want to send and receive settings events globally, not per
@@ -136,7 +137,13 @@ class BeeSettings(QtCore.QSettings):
             'cast': int,
             'validate': lambda x: x >= 0,
             'post_save_callback': QtGui.QImageReader.setAllocationLimit,
-        }
+        },
+        'View/canvas_color': {
+            'default': QtGui.QColor(*constants.COLORS['Scene:Canvas']).name(),
+            'validate': QtGui.QColor.isValidColorName,
+            'post_save_callback':
+                lambda _: settings_events.canvas_color_changed.emit(),
+        },
     }
 
     def __init__(self):
@@ -197,6 +204,9 @@ class BeeSettings(QtCore.QSettings):
             if not conf['validate'](val):
                 val = conf['default']
         return val
+
+    def canvas_color(self):
+        return QtGui.QColor(self.valueOrDefault('View/canvas_color'))
 
     def value_changed(self, key):
         """Whether the value for given key has changed from its default."""

@@ -98,6 +98,18 @@ def test_scene_to_pixmap_exporter_render_renders_scene(view):
     assert image.pixel(100, 100) == QtGui.QColor(11, 22, 33)
 
 
+def test_scene_to_pixmap_exporter_render_uses_canvas_color_setting(
+        settings, view):
+    settings.setValue('View/canvas_color', '#ff0000')
+    item = BeePixmapItem(
+        QtGui.QImage(100, 100, QtGui.QImage.Format.Format_RGB32))
+    view.scene.addItem(item)
+    exporter = SceneToPixmapExporter(view.scene)
+    exporter.size = exporter.default_size
+    image = exporter.render_to_image()
+    assert image.pixel(1, 1) == QtGui.QColor(255, 0, 0)
+
+
 def test_scene_to_pixmap_exporter_export_writes_image(view, tmpdir):
     filename = os.path.join(tmpdir, 'foo.png')
     item_img = QtGui.QImage(1000, 1200, QtGui.QImage.Format.Format_RGB32)
