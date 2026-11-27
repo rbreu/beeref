@@ -168,10 +168,11 @@ class BeePixmapItem(BeeItemMixin, QtWidgets.QGraphicsPixmapItem):
             # canvas colour, so the issue is only visible if the image
             # overlaps other images. The way we do it here only works
             # as long as the canvas colour is itself grayscale,
-            # though.
+            # though, and the fill isn't updated when the canvas
+            # colour changes later on.
             img = QtGui.QImage(
                 self.pixmap().size(), QtGui.QImage.Format.Format_Grayscale8)
-            img.fill(QtGui.QColor(*COLORS['Scene:Canvas']))
+            img.fill(self.settings.canvas_color())
             painter = QtGui.QPainter(img)
             painter.drawPixmap(0, 0, self.pixmap())
             painter.end()

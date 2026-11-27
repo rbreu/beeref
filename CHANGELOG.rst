@@ -4,6 +4,8 @@
 Added
 -----
 
+* Added a setting to change the canvas background color
+  (Settings -> Settings -> View -> Canvas Color).
 * Added a setting to change the default memory limit for individual
   images. If a big image won't load, increase this limit. This
   setting can be overridden by Qt's default environment variable

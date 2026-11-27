@@ -23,7 +23,12 @@ from PyQt6.QtCore import Qt
 
 from beeref.actions import ActionsMixin, actions
 from beeref import commands
-from beeref.config import CommandlineArgs, BeeSettings, KeyboardSettings
+from beeref.config import (
+    BeeSettings,
+    CommandlineArgs,
+    KeyboardSettings,
+    settings_events,
+)
 from beeref import constants
 from beeref import fileio
 from beeref.fileio.errors import IMG_LOADING_ERROR_MSG
@@ -55,8 +60,8 @@ class BeeGraphicsView(MainControlsMixin,
         self.keyboard_settings = KeyboardSettings()
         self.welcome_overlay = widgets.welcome_overlay.WelcomeOverlay(self)
 
-        self.setBackgroundBrush(
-            QtGui.QBrush(QtGui.QColor(*constants.COLORS['Scene:Canvas'])))
+        self.apply_canvas_color()
+        settings_events.canvas_color_changed.connect(self.apply_canvas_color)
         self.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
         self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
 
@@ -118,6 +123,9 @@ class BeeGraphicsView(MainControlsMixin,
             del self.sample_color_widget
         if self.scene.has_multi_selection():
             self.scene.multi_select_item.bring_to_front()
+
+    def apply_canvas_color(self):
+        self.setBackgroundBrush(QtGui.QBrush(self.settings.canvas_color()))
 
     def update_window_title(self):
         clean = self.undo_stack.isClean()

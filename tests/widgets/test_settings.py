@@ -1,9 +1,10 @@
 from unittest.mock import patch
 
-from PyQt6 import QtWidgets
+from PyQt6 import QtGui, QtWidgets
 
 from beeref.widgets.settings import (
     ArrangeGapWidget,
+    CanvasColorWidget,
     ConfirmCloseUnsavedWidget,
     ImageStorageFormatWidget,
     SettingsDialog,
@@ -119,6 +120,53 @@ def test_confirm_closed_on_restore_defaults(settings, view):
     assert widget.title() == 'Confirm when closing an unsaved file:'
 
 
+def test_canvas_color_initialises_input_from_settings(settings, view):
+    settings.setValue('View/canvas_color', '#112233')
+    widget = CanvasColorWidget()
+    assert widget.input.text() == '#112233'
+
+
+def test_canvas_color_sets_title_when_not_edited(settings, view):
+    widget = CanvasColorWidget()
+    assert widget.title() == 'Canvas Color:'
+
+
+def test_canvas_color_sets_title_when_edited(settings, view):
+    settings.setValue('View/canvas_color', '#112233')
+    widget = CanvasColorWidget()
+    assert widget.title() == 'Canvas Color: ✎'
+
+
+@patch('PyQt6.QtWidgets.QColorDialog.getColor',
+       return_value=QtGui.QColor('#112233'))
+def test_canvas_color_saves_change(dialog_mock, settings, view):
+    widget = CanvasColorWidget()
+    widget.input.click()
+    dialog_mock.assert_called_once()
+    assert settings.valueOrDefault('View/canvas_color') == '#112233'
+    assert widget.input.text() == '#112233'
+    assert widget.title() == 'Canvas Color: ✎'
+
+
+@patch('PyQt6.QtWidgets.QColorDialog.getColor',
+       return_value=QtGui.QColor())
+def test_canvas_color_dialog_canceled(dialog_mock, settings, view):
+    widget = CanvasColorWidget()
+    widget.input.click()
+    assert settings.contains('View/canvas_color') is False
+    assert widget.input.text() == '#3c3c3c'
+    assert widget.title() == 'Canvas Color:'
+
+
+def test_canvas_color_on_restore_defaults(settings, view):
+    widget = CanvasColorWidget()
+    widget.set_value('#112233')
+    settings.setValue('View/canvas_color', '#3c3c3c')
+    widget.on_restore_defaults()
+    assert widget.input.text() == '#3c3c3c'
+    assert widget.title() == 'Canvas Color:'
+
+
 @patch('PyQt6.QtWidgets.QMessageBox.question',
        return_value=QtWidgets.QMessageBox.StandardButton.Yes)
 def test_settings_dialog_on_restore_defaults(msg_mock, settings, view):
@@ -126,8 +174,10 @@ def test_settings_dialog_on_restore_defaults(msg_mock, settings, view):
     settings.setValue('Items/image_storage_format', 'jpg')
     settings.setValue('Items/arrange_gap', 10)
     settings.setValue('Save/confirm_close_unsaved', False)
+    settings.setValue('View/canvas_color', '#112233')
     dialog.on_restore_defaults()
     msg_mock.assert_called_once()
     assert settings.valueOrDefault('Items/image_storage_format') == 'best'
     assert settings.valueOrDefault('Items/arrange_gap') == 0
     assert settings.valueOrDefault('Save/confirm_close_unsaved') is True
+    assert settings.valueOrDefault('View/canvas_color') == '#3c3c3c'

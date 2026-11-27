@@ -51,6 +51,19 @@ def test_init_with_filenames_images(insert_img_mock, qapp, commandline_args):
     del view
 
 
+def test_init_sets_canvas_color(settings, qapp):
+    settings.setValue('View/canvas_color', '#112233')
+    view = BeeGraphicsView(qapp, QtWidgets.QMainWindow())
+    assert view.backgroundBrush().color() == QtGui.QColor('#112233')
+
+
+def test_canvas_color_changes_on_setting_change(settings, view):
+    settings.setValue('View/canvas_color', '#112233')
+    assert view.backgroundBrush().color() == QtGui.QColor('#112233')
+    settings.remove('View/canvas_color')
+    assert view.backgroundBrush().color() == QtGui.QColor(60, 60, 60)
+
+
 @patch('beeref.widgets.welcome_overlay.WelcomeOverlay.hide')
 def test_on_scene_changed_when_items(hide_mock, view):
     item = BeePixmapItem(QtGui.QImage())
